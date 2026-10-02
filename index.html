@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>강릉제일고 1-2 학급 다이어리</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="1-2 다이어리">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#18241F">
+<style>
+html,body{margin:0;height:100%;background:#18241F;font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-tap-highlight-color:transparent}
+.app{position:fixed;inset:0;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
+.frames{flex:1;position:relative;background:#fff}
+.frames iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}
+.frames iframe[hidden]{display:none}
+.load{position:absolute;inset:0;display:grid;place-items:center;color:#6B7280;font-size:14px;background:#fff}
+.load[hidden]{display:none}
+.tabs{display:flex;background:#18241F;padding-bottom:env(safe-area-inset-bottom);border-top:1px solid rgba(255,255,255,.08)}
+.tabs button{flex:1;border:0;background:none;color:#9AA59E;font:inherit;font-size:11.5px;font-weight:700;padding:8px 2px 9px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+.tabs button svg{width:23px;height:23px}
+.tabs button.on{color:#F4D35E}
+.msg{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#F3F1E7;color:#18241F;padding:9px 15px;border-radius:10px;font-size:13px;font-weight:700;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+.msg.show{opacity:1}
+.off{position:fixed;top:env(safe-area-inset-top);left:0;right:0;background:#F2A7A0;color:#3A0F0B;text-align:center;font-size:13px;font-weight:700;padding:7px;z-index:5}
+.off[hidden]{display:none}
+</style>
+</head>
+<body>
+<div class="app"><div class="frames" id="frames"><div class="load" id="load">불러오는 중…</div></div>
+<nav class="tabs" id="tabs"><button data-id="21" aria-label="21일"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c1 3 4 4.5 4 8.5a4 4 0 0 1-8 0c0-1.6.7-2.8 1.6-3.7.2 1.4 1 2.2 1.9 2.2C11 8 10.5 5.5 12 3z"/><path d="M8.5 15.5A3.5 3.5 0 0 0 12 20a3.5 3.5 0 0 0 3.5-4.5"/></svg><span>21일</span></button><button data-id="pbl" aria-label="문제해결"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg><span>문제해결</span></button><button data-id="counsel" aria-label="상담"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/></svg><span>상담</span></button><button data-id="board" aria-label="클래스보드"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span>클래스보드</span></button></nav></div>
+<div class="off" id="off" hidden>인터넷 연결을 확인해 주세요</div><div class="msg" id="msg"></div>
+<script>
+var TABS=[{"id":"21","url":"https://script.google.com/macros/s/AKfycbyaOTg5Q_U6DwLEX7pO0McTV8aYR7jdYjb1P3K0JeloCEY1f-F4W0caHGN8HV8PQrno/exec?app=1&go=21"},{"id":"pbl","url":"https://script.google.com/macros/s/AKfycbyaOTg5Q_U6DwLEX7pO0McTV8aYR7jdYjb1P3K0JeloCEY1f-F4W0caHGN8HV8PQrno/exec?app=1&go=pbl"},{"id":"counsel","url":"https://script.google.com/macros/s/AKfycbyaOTg5Q_U6DwLEX7pO0McTV8aYR7jdYjb1P3K0JeloCEY1f-F4W0caHGN8HV8PQrno/exec?p=counsel&app=1"},{"id":"board","url":"https://script.google.com/macros/s/AKfycbyaOTg5Q_U6DwLEX7pO0McTV8aYR7jdYjb1P3K0JeloCEY1f-F4W0caHGN8HV8PQrno/exec?p=board&t=vc73c0a29edd&app=1"}];
+var cur=null,frames={},lastTap=0;
+function $(id){return document.getElementById(id);}
+function say(t){var m=$("msg");m.textContent=t;m.className="msg show";clearTimeout(say.t);say.t=setTimeout(function(){m.className="msg";},1600);}
+function show(id,reload){
+  var t=TABS.filter(function(x){return x.id===id;})[0]||TABS[0];id=t.id;
+  var f=frames[id];
+  if(!f||reload){
+    if(f)f.remove();
+    f=document.createElement("iframe");f.title=id;f.allow="fullscreen; clipboard-write";
+    $("load").hidden=false;f.onload=function(){if(cur===id)$("load").hidden=true;};
+    f.src=t.url;$("frames").appendChild(f);frames[id]=f;
+  }else{$("load").hidden=true;}
+  Object.keys(frames).forEach(function(k){frames[k].hidden=(k!==id);});
+  cur=id;document.querySelectorAll("#tabs button").forEach(function(b){b.className=b.dataset.id===id?"on":"";});
+  try{localStorage.setItem("diary_tab",id);}catch(e){}
+}
+document.querySelectorAll("#tabs button").forEach(function(b){b.onclick=function(){
+  var id=b.dataset.id,now=Date.now();
+  if(id===cur){if(now-lastTap<1500){show(id,true);say("새로 불러왔어요");lastTap=0;}else{lastTap=now;say("한 번 더 누르면 새로고침");}return;}
+  lastTap=0;show(id);
+};});
+function net(){$("off").hidden=navigator.onLine!==false;}
+addEventListener("online",net);addEventListener("offline",net);net();
+var first=null;try{first=localStorage.getItem("diary_tab");}catch(e){}
+show(first||TABS[0].id);
+if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(function(){});}
+</script>
+</body>
+</html>
