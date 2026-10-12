@@ -1,18 +1,18 @@
-var C = 'diary-site-v4';
+var C = 'diary-site-v5';
 var FILES = ['./', 'index.html', 'app.html', 'gas.js', 'config.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-180.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(C).then(function (c) { return Promise.all(FILES.map(function (f) { return c.add(f).catch(function () {}); })); }));
   self.skipWaiting();
 });
 self.addEventListener('activate', function (e) {
-  e.waitUntil(caches.keys().then(function (ks) { return Promise.all(ks.filter(function (k) { return k !== C && k !== C + '-font'; }).map(function (k) { return caches.delete(k); })); }));
+  e.waitUntil(caches.keys().then(function (ks) { return Promise.all(ks.filter(function (k) { return k !== C && k !== 'diary-font' && k !== 'diary-site-v4-font'; }).map(function (k) { return caches.delete(k); })); }));
   self.clients.claim();
 });
 self.addEventListener('fetch', function (e) {
   var u = new URL(e.request.url);
   if (u.origin !== location.origin || e.request.method !== 'GET') return;
   if (u.pathname.indexOf('/fonts/') >= 0) {
-    e.respondWith(caches.open(C + '-font').then(function (c) {
+    e.respondWith(caches.open('diary-font').then(function (c) {
       return c.match(e.request).then(function (r) {
         return r || fetch(e.request).then(function (n) { if (n.ok) c.put(e.request, n.clone()); return n; });
       });

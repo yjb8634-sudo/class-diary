@@ -117,6 +117,9 @@ if(sp){
   var f0=frames[cur];if(f0)f0.addEventListener("load",function(){setTimeout(go,Math.max(0,2200-(Date.now()-t0)));});
   setTimeout(go,5000);sp.addEventListener("click",go);
 }
+/* 첫 탭이 뜬 뒤, 다른 탭 화면을 뒤에서 미리 받아 둠 (하루 한 번) */
+var warmed=false;function warm(){if(warmed||!window.__diaryWarm)return;warmed=true;setTimeout(function(){__diaryWarm(TABS.filter(function(t){return t.id!==cur;}).map(function(t){return t.url;}));},2500);}
+(function(){var f=frames[cur];if(f)f.addEventListener("load",warm);setTimeout(warm,8000);})();
 if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(function(){});}
 </script>
 </body>
