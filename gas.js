@@ -5,10 +5,10 @@
   'use strict';
   var API = window.DIARY_API || '';
 
-  var DIAG = [];
+  var DIAG = [], PAGE0 = Date.now();
   function api(fn, args) {
     if (!API) return Promise.reject(new Error('config.js 에 Apps Script 주소가 없어요.'));
-    var t0 = Date.now(), note = function (ok) { DIAG.push([fn, Date.now() - t0, ok]); if (DIAG.length > 40) DIAG.shift(); };
+    var t0 = Date.now(), note = function (ok) { DIAG.push([fn, Date.now() - t0, ok, Math.round((Date.now() - PAGE0) / 100) / 10]); if (DIAG.length > 40) DIAG.shift(); var L = lsGet('diag') || []; L.push([fn, Date.now() - t0, ok, (location.search || '/').slice(0, 24), Date.now()]); lsSet('diag', L.slice(-30)); };
     return fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -207,10 +207,14 @@
     function draw(msg) {
       box.innerHTML = '<div style="padding:24px 18px;line-height:1.8;font-size:15px"><h2 style="margin:0 0 10px">속도 점검</h2>' +
         rows.map(function (r) { return '<div>' + esc(r[0]) + ' · <b>' + (r[1] / 1000).toFixed(1) + '초</b>' + (r[2] ? '' : ' (실패)') + '</div>'; }).join('') +
-        '<p style="opacity:.75">' + esc(msg) + '</p></div>';
+        '<p style="opacity:.75">' + esc(msg) + '</p>' + (msg.indexOf('다 쟀') === 0 ? recent() : '') + '</div>';
     }
     var steps = [['서버 연결 1', 'apiAppInfo', []], ['서버 연결 2', 'apiAppInfo', []], ['서버 연결 3', 'apiAppInfo', []],
       ['21일 화면 파일', 'apiPageBundle', [{ go: '21', app: '1' }, {}]]];
+    function recent() {
+      var L = lsGet('diag') || [];
+      return L.length ? '<hr><div style="font-size:13px;opacity:.85"><b>최근 서버 호출 기록</b><br>' + L.slice().reverse().slice(0, 25).map(function (x) { var d = new Date(x[4]); return d.getHours() + ':' + ('0' + d.getMinutes()).slice(-2) + ':' + ('0' + d.getSeconds()).slice(-2) + ' · ' + esc(x[3]) + ' · ' + esc(x[0]) + ' · ' + (x[1] / 1000).toFixed(1) + '초' + (x[2] ? '' : ' 실패'); }).join('<br>') + '</div>' : '';
+    }
     draw('재는 중…');
     (function next() {
       var s = steps.shift();
