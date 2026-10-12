@@ -105,13 +105,19 @@
     lsSet(rkey(q), { main: b.main, vars: b.vars, title: b.title, hashes: b.hashes, rel: b.rel, today: b.today, error: b.error || '' });
   }
   function fetchBundle(q) { return api('apiPageBundle', [q, haveMap()]).then(function (b) { storeBundle(q, b); return b; }); }
+  /* 서버가 화면 파일의 <?…?> 표시를 &lt;?…?&gt; 로 바꿔 보내도 원래대로 되돌립니다. */
+  function unesc(t) {
+    return String(t).replace(/&lt;\?([\s\S]*?)\?&gt;/g, function (_, m) {
+      return '<?' + m.replace(/&#0*39;|&#x27;|&apos;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&') + '?>';
+    });
+  }
   function build(b) {
     if (b.error) return null;
     var files = {};
     for (var n in b.hashes) {
       var t = lsGet('tpl:' + n);
       if (!t || t.h !== b.hashes[n]) return null;
-      files[n] = t.text;
+      files[n] = unesc(t.text);
     }
     var html = files[b.main];
     if (!html) return null;
