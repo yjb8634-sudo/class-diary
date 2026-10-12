@@ -2,11 +2,11 @@
   "name": "강릉제일고 1-2 학급 다이어리",
   "short_name": "1-2 다이어리",
   "lang": "ko",
-  "start_url": "./",
+  "start_url": "app.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#18241F",
-  "theme_color": "#18241F",
+  "background_color": "#22392E",
+  "theme_color": "#22392E",
   "icons": [
     {
       "src": "icon-192.png",
