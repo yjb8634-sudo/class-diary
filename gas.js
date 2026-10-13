@@ -157,6 +157,12 @@
   }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function show(html, b, q, cached) {
+    /* index.html 을 읽는 도중(저장본으로 바로 띄울 때)에는 document.open 이 무시되고 글이 덧붙기만 해서,
+       '불러오는 중' 고리가 화면을 덮어 버립니다. 다 읽은 뒤에 바꿔 그립니다. */
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () { show(html, b, q, cached); }, { once: true });
+      return;
+    }
     var info = { key: rkey(q), q: q, hashes: b.hashes, vars: b.vars, cached: !!cached, t0: Date.now() };
     var add = '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">' +
       '<title>' + esc(b.title || '학급 다이어리') + '</title>' +
