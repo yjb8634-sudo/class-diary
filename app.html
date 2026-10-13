@@ -59,6 +59,7 @@ html,body{margin:0;height:100%;background:#22392E;color:#16181D;font-family:"Bad
 <script src="gas.js"></script>
 <script>
 var ICON={
+home:'<path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5h4v5"/>',
 fire:'<path d="M12 3c1 3 4 4.5 4 8.5a4 4 0 0 1-8 0c0-1.6.7-2.8 1.6-3.7.2 1.4 1 2.2 1.9 2.2C11 8 10.5 5.5 12 3z"/><path d="M8.5 15.5A3.5 3.5 0 0 0 12 20a3.5 3.5 0 0 0 3.5-4.5"/>',
 bulb:'<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
 chat:'<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/>',
@@ -66,10 +67,13 @@ board:'<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4
 pen:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
 meet:'<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M15 14.5c3 0 6 1.8 6 5"/>'
 };
-var DEFAULT_TABS=[{"id":"board","label":"클래스보드","icon":"board","url":"./?p=board&t=vc73c0a29edd&app=1"},{"id":"21","label":"21일","icon":"fire","url":"./?go=21&app=1"},{"id":"pbl","label":"문제해결","icon":"bulb","url":"./?go=pbl&app=1"},{"id":"essay","label":"소감문","icon":"pen","url":"./?p=act&tab=essay&app=1"},{"id":"meet","label":"학급회의","icon":"meet","url":"./?p=act&tab=meet&app=1"},{"id":"counsel","label":"상담","icon":"chat","url":"./?p=counsel&app=1"}];
+var DEFAULT_TABS=[{"id":"home","label":"처음","icon":"home","url":"./?tab=home"},{"id":"board","label":"클래스보드","icon":"board","url":"./?p=board&t=vc73c0a29edd&app=1"},{"id":"21","label":"21일","icon":"fire","url":"./?go=21&app=1"},{"id":"pbl","label":"문제해결","icon":"bulb","url":"./?go=pbl&app=1"},{"id":"essay","label":"소감문","icon":"pen","url":"./?p=act&tab=essay&app=1"},{"id":"meet","label":"학급회의","icon":"meet","url":"./?p=act&tab=meet&app=1"},{"id":"counsel","label":"상담","icon":"chat","url":"./?p=counsel&app=1"}];
 var TABS=null;try{TABS=JSON.parse(localStorage.getItem("diary_tabs")||"null");}catch(e){}
 if(!TABS||!TABS.length)TABS=DEFAULT_TABS;
-var cur=null,frames={},lastTap=0;
+var cur=null,frames={},lastTap=0,APP0=Date.now();
+function hasTab(id){return TABS.some(function(t){return t.id===id;});}
+/* [처음] 탭의 메뉴를 누르면 해당 탭으로 */
+window.__appShow=function(id){if(!hasTab(id))return false;show(id);return true;};
 function $(id){return document.getElementById(id);}
 function say(t){var m=$("msg");m.textContent=t;m.className="msg show";clearTimeout(say.t);say.t=setTimeout(function(){m.className="msg";},1600);}
 function e2(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
@@ -99,8 +103,9 @@ addEventListener("online",net);addEventListener("offline",net);net();
 var started=false;
 function start(){
   started=true;drawTabs();
-  var first=null;try{first=localStorage.getItem("diary_tab");}catch(e){}
-  if(!TABS.some(function(t){return t.id===first;}))first=null;
+  /* 앱을 열면 늘 [처음] 화면부터 */
+  var first=hasTab("home")?"home":null;
+  if(!first){try{first=localStorage.getItem("diary_tab");}catch(e){}if(!hasTab(first))first=null;}
   show(first||TABS[0].id);
 }
 if(TABS.length)start();
@@ -109,7 +114,7 @@ if(window.__diaryApi)__diaryApi("apiAppInfo",[]).then(function(r){
   if(!r||!r.tabs||!r.tabs.length)return;
   var s=JSON.stringify(r.tabs);try{localStorage.setItem("diary_tabs",s);}catch(e){}
   if(!started){TABS=r.tabs;start();return;}
-  if(s!==JSON.stringify(TABS)){var keep=cur;TABS=r.tabs;Object.keys(frames).forEach(function(k){frames[k].remove();});frames={};drawTabs();show(TABS.some(function(t){return t.id===keep;})?keep:TABS[0].id);}
+  if(s!==JSON.stringify(TABS)){var keep=cur;TABS=r.tabs;Object.keys(frames).forEach(function(k){frames[k].remove();});frames={};drawTabs();show(hasTab("home")&&Date.now()-APP0<10000?"home":(hasTab(keep)?keep:TABS[0].id));}
 },function(e){if(!started)$("load").innerHTML="연결하지 못했어요. 인터넷을 확인한 뒤 다시 열어 주세요.";});
 var sp=$("splash"),t0=Date.now();
 if(sp){
