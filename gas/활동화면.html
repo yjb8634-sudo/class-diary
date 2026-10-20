@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base target="_top">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;background:var(--t-surface-3);color:var(--t-ink);font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+.wrap{max-width:760px;margin:0 auto;padding:18px 16px 60px}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.home{font-size:13.5px;font-weight:700;color:var(--t-ink-2);text-decoration:none;border:1px solid var(--t-line);background:var(--t-surface-2);border-radius:9px;padding:6px 11px}
+.home[hidden]{display:none}
+.lbl{font-size:13px;color:var(--t-ink-3);margin-left:auto}
+h1{font-size:23px;margin:10px 0 12px;letter-spacing:-.02em}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#E9ECF1;border-radius:12px;padding:4px;margin-bottom:14px}
+.tabs button{border:0;background:none;border-radius:9px;padding:10px 6px;font-size:15px;font-weight:700;color:var(--t-ink-3);cursor:pointer}
+.tabs button.on{background:var(--t-surface-2);color:var(--t-ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.card{background:var(--t-surface-2);border:1px solid var(--t-line);border-radius:14px;padding:16px;margin-bottom:12px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.grow{flex:1}
+.in{border:1px solid var(--t-line-2);border-radius:9px;padding:9px 11px;background:var(--t-surface-2);min-width:0}
+textarea.in{width:100%;resize:vertical;line-height:1.55}
+.btn{border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;background:var(--t-surface-3);color:var(--t-ink)}
+.btn.pri{background:var(--t-blue);color:var(--t-surface-2)}
+.btn.sm{padding:6px 11px;font-size:13px}
+.btn.ghost{background:none;border:1px solid var(--t-line-2)}
+.btn.neg{color:#FF9B9B}
+.btn[disabled]{opacity:.5;cursor:default}
+.muted{color:var(--t-ink-3)}
+.small{font-size:13px}
+.lead{font-size:14px;color:var(--t-ink-2);line-height:1.6;margin:0 0 10px}
+.chip{display:inline-block;font-size:12px;font-weight:800;border-radius:6px;padding:2px 7px;margin-right:6px;vertical-align:1px}
+.c-ok{background:rgba(127,216,196,.18);color:#9FE6D6}.c-no{background:rgba(255,194,74,.16);color:#FFC24A}
+.c-제안{background:rgba(30,75,215,.24);color:#9FB6FF}.c-논의{background:rgba(200,155,224,.18);color:#F2A7A0}.c-결정{background:rgba(127,216,196,.18);color:#9FE6D6}
+.item{cursor:pointer}
+.item h3{font-size:17px;margin:2px 0 4px;letter-spacing:-.01em}
+.q{margin-top:12px}
+.q label{display:block;font-size:14px;font-weight:700;margin-bottom:6px}
+.cnt{font-size:12px;color:var(--t-ink-3);text-align:right;margin-top:3px}
+.guide{background:var(--t-surface-3);border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.6;white-space:pre-wrap;margin:8px 0}
+.rec{border-top:1px solid var(--t-surface-3);padding:9px 0;font-size:14.5px;line-height:1.55}
+.rec b{color:var(--t-ink)}
+.vote{background:var(--t-surface-3);border-radius:12px;padding:12px;margin:10px 0}
+.vote .opt{display:block;width:100%;text-align:left;margin-top:7px;border:2px solid var(--t-line);background:var(--t-surface-2);border-radius:10px;padding:10px 12px;font-weight:700;cursor:pointer}
+.vote .opt.on{border-color:var(--t-blue);background:rgba(30,75,215,.18)}
+.bar{height:8px;background:var(--t-line);border-radius:5px;overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%;background:var(--t-blue)}
+.clerk{border:2px dashed var(--t-yellow);background:rgba(255,194,74,.1)}
+.decide{background:rgba(127,216,196,.14);border-radius:10px;padding:10px 12px;margin:8px 0;font-size:14.5px;white-space:pre-wrap}
+.empty{text-align:center;color:var(--t-ink-3);padding:22px 0;font-size:14px}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--t-ink);color:var(--t-surface-2);padding:11px 16px;border-radius:11px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center;z-index:9}
+#toast.show{opacity:1}#toast.bad{background:#FF9B9B}
+.hr{height:1px;background:var(--t-line);margin:12px 0}
+#busy{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:rgba(245,246,248,.55)}
+#busy.show{display:flex}
+.ring{width:36px;height:36px;border-radius:50%;border:3.5px solid rgba(31,36,48,.12);border-top-color:var(--t-ink);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+<?!= include_('테마') ?>
+</head>
+<body>
+<?!= include_('게이트') ?>
+<div class="wrap">
+  <div class="top"><a class="home" id="homeLink" href="#">← 처음으로</a><span class="lbl" id="lbl"></span></div>
+  <h1 id="ttl">교육 후 소감문</h1>
+  <div class="tabs" role="tablist">
+    <button type="button" data-tab="essay">교육 후 소감문</button>
+    <button type="button" data-tab="meet">학급 회의</button>
+  </div>
+  <div class="card" id="login"></div>
+  <div id="main"><div class="empty">불러오는 중…</div></div>
+</div>
+<div id="toast" role="status"></div>
+<div id="busy" aria-hidden="true"><div class="ring"></div></div>
+<script>
+var FILE_VER = '2026-10-25a';
+var BOOT = <?!= boot ?>;
+var LASTNO = 0, INIT = null, ME = null, CRED = null, OPEN = '', DET = null, TAB = BOOT.tab || 'essay', BUSY = false;
+
+function $(id){ return document.getElementById(id); }
+/* 서버에 묻는 동안 0.35초가 넘으면 도는 표시를 띄웁니다. */
+var BN = 0, BT = null;
+function busyOn(){ BN++; if (!BT) BT = setTimeout(function(){ if (BN > 0) $('busy').className = 'show'; }, 350); }
+function busyOff(){ BN = Math.max(0, BN - 1); if (!BN){ clearTimeout(BT); BT = null; $('busy').className = ''; } }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function call(fn){
+  var args = Array.prototype.slice.call(arguments, 1);
+  return new Promise(function(ok, no){
+    busyOn();
+    var r = google.script.run.withSuccessHandler(function(v){ busyOff(); ok(v); }).withFailureHandler(function(e){ busyOff(); no(e); });
+    r[fn].apply(r, args);
+  });
+}
+var toastT;
+function toast(m, bad){ var t = $('toast'); t.textContent = m; t.className = 'show' + (bad ? ' bad' : ''); clearTimeout(toastT); toastT = setTimeout(function(){ t.className = ''; }, 3200); }
+function md(d){ if (!d) return ''; var p = d.split('-'); return Number(p[1]) + '/' + Number(p[2]); }
+function nameOf(no){ var s = (INIT && INIT.students || []).filter(function(x){ return x.no === no; })[0]; return s ? s.name : no + '번'; }
+
+/* ---------- 학급 로그인 (공용 로그인 창) ---------- */
+function drawLogin(){
+  var L = $('login');
+  if (ME){
+    L.innerHTML = '<div class="row"><b>' + esc(Gate.me() ? Gate.me().sid : ME.no) + ' ' + esc(ME.name) + '</b>' + (ME.clerk ? '<span class="chip c-논의">서기</span>' : '') +
+      '<span class="grow"></span><button class="btn sm ghost" data-a="logout">로그아웃</button></div>';
+    return;
+  }
+  L.innerHTML = '<div class="row"><span class="lead" style="margin:0">우리 반 학생만 볼 수 있어요. 학번과 PIN으로 로그인해 주세요.</span>' +
+    '<span class="grow"></span><button class="btn pri" data-a="glogin">로그인</button></div>';
+}
+function start(m){
+  CRED = {no: m.no, pin: m.pin};
+  call('actStart', m.no, m.pin).then(function(r){
+    INIT = r.init; ME = r.me; $('lbl').textContent = INIT.label + ' 학급 다이어리'; drawLogin(); render();
+    if (r && r.__stale) setTimeout(function(){ start(m); }, 0);   /* 휴대폰에 저장해 둔 자료를 먼저 보여 줬으면 바로 새 자료로 */
+  }).catch(function(e){ if (!Gate.fail(e, start)) toast(e.message, true); });
+}
+
+/* ---------- 그리기 ---------- */
+function render(){
+  document.querySelectorAll('.tabs button').forEach(function(b){ b.className = b.getAttribute('data-tab') === TAB ? 'on' : ''; });
+  $('ttl').textContent = TAB === 'essay' ? '교육 후 소감문' : '학급 회의';
+  if (!INIT){ return; }
+  $('main').innerHTML = TAB === 'essay' ? essayView() : meetView();
+}
+function essayView(){
+  var E = INIT.essays;
+  if (!E.length) return '<div class="card empty">지금 낼 소감문이 없어요.</div>';
+  return E.map(function(e){
+    var mine = ME && ME.essays[e.id];
+    var head = '<div class="item" data-a="open" data-id="' + esc(e.id) + '">' +
+      (ME ? (mine ? '<span class="chip c-ok">제출함</span>' : '<span class="chip c-no">아직 안 냄</span>') : '') +
+      '<h3>' + esc(e.title) + '</h3><div class="small muted">' + (e.date ? '교육 ' + md(e.date) : '') + (e.due ? ' · 마감 ' + md(e.due) + '까지' : '') + '</div></div>';
+    if (OPEN !== e.id) return '<div class="card">' + head + '</div>';
+    var body = (e.guide ? '<div class="guide">' + esc(e.guide) + '</div>' : '') +
+      (e.file ? '<p><a class="btn sm ghost" href="' + esc(e.file.url) + '" target="_blank" rel="noopener">' + esc(e.file.name) + ' 보기</a></p>' : '');
+    if (!ME) return '<div class="card">' + head + body + '<p class="lead" style="margin-top:10px">위에서 번호와 PIN으로 들어오면 쓸 수 있어요.</p></div>';
+    body += e.questions.map(function(q, i){
+      var v = mine ? (mine.answers[i] || '') : '';
+      return '<div class="q"><label for="ans' + i + '">' + (i + 1) + '. ' + esc(q) + '</label>' +
+        '<textarea class="in" id="ans' + i + '" rows="4" maxlength="2000" data-cnt="c' + i + '">' + esc(v) + '</textarea>' +
+        '<div class="cnt" id="c' + i + '">' + v.length + '자</div></div>';
+    }).join('');
+    body += '<div class="row" style="margin-top:12px"><span class="small muted">' + (mine ? '제출: ' + esc(mine.at) : '') + '</span><span class="grow"></span>' +
+      '<button class="btn pri" data-a="submit" data-id="' + esc(e.id) + '">' + (mine ? '고쳐서 다시 제출' : '제출하기') + '</button></div>';
+    return '<div class="card">' + head + body + '</div>';
+  }).join('');
+}
+function meetView(){
+  var h = '<div class="card"><b>의제 내기</b><p class="lead" style="margin:6px 0 8px">우리 반에서 이야기하고 싶은 것을 적어 주세요.</p>';
+  h += ME ? ('<input class="in" id="agT" style="width:100%" maxlength="80" placeholder="예) 청소 당번을 바꾸는 방법">' +
+    '<textarea class="in" id="agD" rows="2" style="margin-top:8px" maxlength="500" placeholder="자세한 내용 (선택)"></textarea>' +
+    '<div class="row" style="margin-top:8px"><span class="grow"></span><button class="btn pri" data-a="propose">의제 내기</button></div>')
+    : '<p class="small muted">위에서 번호와 PIN으로 들어오면 의제를 낼 수 있어요.</p>';
+  h += '</div>';
+  var A = INIT.agendas;
+  if (!A.length) return h + '<div class="card empty">아직 올라온 의제가 없어요.</div>';
+  return h + A.map(function(a){
+    var vts = INIT.votes.filter(function(v){ return v.agId === a.id && v.open; }).length;
+    var head = '<div class="item" data-a="agenda" data-id="' + esc(a.id) + '"><span class="chip c-' + a.status + '">' + a.status + '</span>' +
+      (vts ? '<span class="chip c-no">투표 중</span>' : '') +
+      '<h3>' + esc(a.title) + '</h3><div class="small muted">제안: ' + esc(a.propName) + (a.date ? ' · 회의 ' + md(a.date) : '') + (a.recCount ? ' · 기록 ' + a.recCount + '개' : '') + '</div></div>';
+    if (OPEN !== a.id) return '<div class="card">' + head + '</div>';
+    if (!ME) return '<div class="card">' + head + '<p class="lead" style="margin-top:10px">회의록과 투표는 번호와 PIN으로 들어온 뒤에 볼 수 있어요.</p></div>';
+    if (!DET || DET.agenda.id !== a.id) return '<div class="card">' + head + '<p class="small muted" style="margin-top:8px">불러오는 중…</p></div>';
+    return '<div class="card">' + head + detailView() + '</div>';
+  }).join('');
+}
+function detailView(){
+  var a = DET.agenda, h = '';
+  if (a.desc) h += '<div class="guide">' + esc(a.desc) + '</div>';
+  if (a.decision) h += '<div class="decide"><b>결정 사항</b><br>' + esc(a.decision) + '</div>';
+  DET.votes.forEach(function(v){
+    var my = ME.votes[v.id];
+    h += '<div class="vote"><b>' + esc(v.question) + '</b> <span class="small muted">' + (v.open ? '투표 중' : '마감') + ' · ' + v.total + '명 참여</span>';
+    if (v.open){
+      h += v.options.map(function(o, i){ return '<button class="opt' + (my === i ? ' on' : '') + '" data-a="vote" data-id="' + esc(v.id) + '" data-i="' + i + '">' + (my === i ? '✓ ' : '') + esc(o) + '</button>'; }).join('');
+      if (my != null) h += '<p class="small muted" style="margin:6px 0 0">다른 보기를 누르면 바꿀 수 있어요. 결과는 마감 뒤에 보여요.</p>';
+    }
+    if (v.counts){
+      var mx = Math.max.apply(null, [1].concat(v.counts));
+      h += v.options.map(function(o, i){ return '<div style="margin-top:8px"><div class="row small"><b>' + esc(o) + '</b><span class="grow"></span>' + v.counts[i] + '표</div><div class="bar"><i style="width:' + Math.round(v.counts[i] / mx * 100) + '%"></i></div></div>'; }).join('');
+    }
+    if (ME.clerk) h += '<div class="row" style="margin-top:8px"><span class="grow"></span><button class="btn sm ghost" data-a="vclose" data-id="' + esc(v.id) + '">' + (v.open ? '투표 마감' : '다시 열기') + '</button></div>';
+    h += '</div>';
+  });
+  h += '<div style="margin-top:10px"><b>회의록</b></div>';
+  h += DET.records.length ? DET.records.map(function(r){
+    return '<div class="rec"><b>' + r.no + '. ' + esc(r.name) + '</b> ' + esc(r.text) +
+      (ME.clerk ? ' <button class="btn sm ghost neg" data-a="recdel" data-id="' + esc(r.id) + '">지우기</button>' : '') + '</div>';
+  }).join('') : '<p class="small muted">아직 기록이 없어요.</p>';
+  if (ME.clerk){
+    var opts = INIT.students.map(function(s){ return '<option value="' + s.no + '">' + s.no + '. ' + esc(s.name) + '</option>'; }).join('');
+    h += '<div class="card clerk" style="margin-top:12px"><b>서기 기록</b>' +
+      '<p class="small muted" style="margin:4px 0 8px">학번과 이름을 고르고, 그 학생의 의견을 말한 그대로 적어 주세요.</p>' +
+      '<div class="row"><select class="in" id="rcNo"><option value="">발언한 학생</option>' + opts + '</select></div>' +
+      '<textarea class="in" id="rcT" rows="3" style="margin-top:8px" maxlength="1000" placeholder="학생이 말한 의견을 그대로"></textarea>' +
+      '<div class="row" style="margin-top:8px"><span class="grow"></span><button class="btn pri" data-a="record">기록하기</button></div>' +
+      '<div class="hr"></div><b>투표 만들기</b>' +
+      '<input class="in" id="vQ" style="width:100%;margin-top:8px" placeholder="질문 (비우면 의제 제목)">' +
+      '<textarea class="in" id="vO" rows="3" style="margin-top:8px" placeholder="보기를 한 줄에 하나씩&#10;찬성&#10;반대"></textarea>' +
+      '<div class="row" style="margin-top:8px"><span class="grow"></span><button class="btn" data-a="vopen">투표 열기</button></div>' +
+      '<div class="hr"></div><b>결정 사항</b>' +
+      '<textarea class="in" id="dcT" rows="2" style="margin-top:8px" placeholder="회의에서 정한 내용">' + esc(a.decision) + '</textarea>' +
+      '<div class="row" style="margin-top:8px"><span class="small muted">회의 날짜</span><input class="in" type="date" id="dcD" value="' + esc(a.date) + '"><span class="grow"></span><button class="btn" data-a="decide">저장</button></div></div>';
+  }
+  return h;
+}
+
+/* ---------- 누르기 ---------- */
+function act(p){ BUSY = true; return p.then(function(r){ BUSY = false; return r; }, function(e){ BUSY = false; if (!Gate.fail(e, start)) toast(e.message || '잠시 뒤 다시 해 주세요.', true); throw e; }); }
+function loadDetail(id){
+  DET = null; render();
+  act(call('meetDetail', CRED.no, CRED.pin, id)).then(function(d){ DET = d; render(); }).catch(function(){});
+}
+document.addEventListener('input', function(ev){
+  var c = ev.target.getAttribute && ev.target.getAttribute('data-cnt');
+  if (c && $(c)) $(c).textContent = ev.target.value.length + '자';
+});
+document.addEventListener('click', function(ev){
+  var t = ev.target.closest('[data-a],[data-tab]');
+  if (!t || BUSY) return;
+  if (t.getAttribute('data-tab')){ TAB = t.getAttribute('data-tab'); OPEN = ''; DET = null; render(); return; }
+  var a = t.getAttribute('data-a'), id = t.getAttribute('data-id');
+  if (a === 'glogin'){ Gate.ensure(start); return; }
+  if (a === 'logout'){ Gate.logout(); ME = null; CRED = null; INIT = null; OPEN = ''; DET = null; drawLogin(); $('main').innerHTML = '<div class="card empty">로그아웃했어요.</div>'; return; }
+  if (a === 'open'){ OPEN = OPEN === id ? '' : id; render(); return; }
+  if (a === 'agenda'){ if (OPEN === id){ OPEN = ''; render(); return; } OPEN = id; if (ME) loadDetail(id); else render(); return; }
+  if (a === 'submit'){
+    var e = INIT.essays.filter(function(x){ return x.id === id; })[0];
+    var ans = e.questions.map(function(q, i){ return $('ans' + i).value; });
+    act(call('essaySubmit', CRED.no, CRED.pin, id, ans)).then(function(me){ ME = me; render(); toast('소감문을 냈어요. 고마워요!'); }).catch(function(){});
+    return;
+  }
+  if (a === 'propose'){
+    var tt = $('agT').value.trim();
+    if (tt.length < 2) return toast('의제를 적어 주세요.', true);
+    act(call('meetPropose', CRED.no, CRED.pin, tt, $('agD').value)).then(function(r){ INIT = r; render(); toast('의제를 냈어요.'); }).catch(function(){});
+    return;
+  }
+  if (a === 'vote'){
+    act(call('meetVote', CRED.no, CRED.pin, id, Number(t.getAttribute('data-i')))).then(function(r){
+      ME = r.me; DET.votes = DET.votes.map(function(v){ return v.id === r.vote.id ? (ME.clerk ? v : r.vote) : v; });
+      if (ME.clerk) loadDetail(DET.agenda.id); else render();
+      toast('투표했어요.');
+    }).catch(function(){});
+    return;
+  }
+  var after = function(d){ DET = d; refreshInit(); render(); };
+  if (a === 'record'){
+    var who = Number($('rcNo').value), txt = $('rcT').value.trim();
+    if (!who) return toast('발언한 학생을 골라 주세요.', true);
+    if (txt.length < 2) return toast('의견을 적어 주세요.', true);
+    act(call('meetRecord', CRED.no, CRED.pin, DET.agenda.id, who, txt)).then(function(d){ after(d); toast(nameOf(who) + ' 학생 의견을 기록했어요.'); }).catch(function(){});
+    return;
+  }
+  if (a === 'recdel'){ if (!confirm('이 기록을 지울까요?')) return; act(call('meetRecordDel', CRED.no, CRED.pin, id)).then(after).catch(function(){}); return; }
+  if (a === 'vopen'){
+    var opts = $('vO').value.split('\n').map(function(x){ return x.trim(); }).filter(Boolean);
+    if (opts.length < 2) return toast('보기를 두 줄 이상 적어 주세요.', true);
+    act(call('meetVoteOpen', CRED.no, CRED.pin, DET.agenda.id, $('vQ').value, opts)).then(function(d){ after(d); toast('투표를 열었어요.'); }).catch(function(){});
+    return;
+  }
+  if (a === 'vclose'){ act(call('meetVoteClose', CRED.no, CRED.pin, id)).then(after).catch(function(){}); return; }
+  if (a === 'decide'){
+    act(call('meetDecide', CRED.no, CRED.pin, DET.agenda.id, $('dcT').value, $('dcD').value)).then(function(d){ after(d); toast('결정 사항을 저장했어요.'); }).catch(function(){});
+    return;
+  }
+});
+function refreshInit(){ call('actInit', CRED.no, CRED.pin).then(function(r){ INIT = r; render(); }).catch(function(){}); }
+
+/* ---------- 시작 ---------- */
+(function(){
+  var hl = $('homeLink');
+  if (BOOT.app){ hl.hidden = true; } else { hl.href = BOOT.home || '#'; hl.addEventListener('click', function(){ $('busy').className = 'show'; }); }
+  window.addEventListener('pageshow', function(){ $('busy').className = ''; });
+  drawLogin();
+  $('main').innerHTML = '<div class="card empty">로그인하면 보여요.</div>';
+  Gate.ensure(start);
+})();
+</script>
+</body>
+</html>

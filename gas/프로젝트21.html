@@ -1,0 +1,703 @@
+<!-- 21일 프로젝트 화면 · 학급 다이어리의 한 화면입니다. Index 화면이 ?go=21 로 열릴 때만 끼워 넣습니다.
+     이 파일 안에는 템플릿 표시(물음표 꺾쇠)를 쓰지 않습니다. -->
+<!-- ===== ① 21일 프로젝트 ===== -->
+<div id="app-21" hidden>
+<nav>
+  <button class="on" data-t="board">전체 현황판</button>
+  <button data-t="my">내 인증하기</button>
+  <button data-t="plan">내 계획서</button>
+  <button data-t="admin">담임</button>
+  <button class="backbtn" onclick="goHome()">↩ 활동 바꾸기</button>
+</nav>
+
+<!-- ===== 현황판 ===== -->
+<section id="tab-board">
+  <div class="stats" id="stats"></div>
+  <div class="legend">
+    <span><i style="background:var(--w1)"></i>1주차 (1~7일)</span>
+    <span><i style="background:var(--w2)"></i>2주차 (8~14일)</span>
+    <span><i style="background:var(--w3)"></i>3주차 (15~21일)</span>
+    <span><i style="background:var(--gold)"></i>21일 완주 ★</span>
+  </div>
+  <div class="card">
+    <div id="board" class="loading">불러오는 중…</div>
+    <div class="hint" style="text-align:center;margin-top:14px">
+      이름을 누르면 그 친구의 진행 내역이 열려요 · <span id="rtxt"></span>초마다 자동 새로고침
+    </div>
+  </div>
+</section>
+
+<!-- ===== 내 인증 ===== -->
+<section id="tab-my" hidden>
+  <div class="viewas" hidden><b>점검 보기</b><select class="vsel"></select><span class="vnote">고른 학생이 보는 화면을 읽기 전용으로 봅니다. 아무것도 저장되지 않아요.</span></div>
+  <div class="card" id="loginCard">
+    <h2>내 번호로 들어가기</h2>
+    <p class="desc">번호를 고르고 PIN 4자리를 넣어 주세요. 처음 들어오는 사람은 지금 입력한 4자리가 <b>내 PIN으로 등록</b>됩니다. 꼭 기억해 두세요!</p>
+    <div class="row2">
+      <div>
+        <label>번호 · 이름</label>
+        <select id="lgNo"></select>
+      </div>
+      <div>
+        <label>PIN <span>숫자 4자리</span></label>
+        <input id="lgPin" type="tel" inputmode="numeric" maxlength="4" placeholder="0000" autocomplete="off">
+      </div>
+    </div>
+    <div id="joinWrap" hidden style="margin-top:10px">
+      <label style="display:block;font-size:12.5px;font-weight:700;color:var(--t-ink-2);margin-bottom:4px">가입암호 <span style="font-weight:500;color:var(--t-ink-3)">— 처음 PIN을 정할 때만 필요해요. 담임 선생님께 여쭤보세요.</span></label>
+      <input id="lgJoin" type="text" autocomplete="off" placeholder="선생님이 알려 주신 암호" style="width:100%">
+    </div>
+    <button class="act" id="btnLogin">들어가기</button>
+    <div class="msg" id="lgMsg"></div>
+    <div class="hint">PIN을 잊었다면 담임 선생님께 초기화를 요청하세요.</div>
+  </div>
+
+  <div id="myArea" hidden>
+    <div class="card">
+      <h2 id="myName"></h2>
+      <div class="mybig">
+        <div class="num" id="myNum">0</div>
+        <div class="of" id="myOf"></div>
+      </div>
+      <div class="grid21" id="myGrid"></div>
+      <div class="hint" id="myInfo" style="text-align:center"></div>
+      <div class="trobox" id="myTro"></div>
+      <button class="act newround" id="btnNewRound" hidden></button>
+      <div class="msg" id="nrMsg"></div>
+    </div>
+
+    <div class="card inq" id="inqCard" hidden></div>
+
+    <div class="card" id="dailyCard">
+      <h2>오늘 인증하기</h2>
+      <div class="notice" style="margin-top:12px">
+        
+        <div>
+          <div class="t">나의 수행내용 및 결과물은 공유되지 않습니다.</div>
+          <div class="s">현황판에는 <b>진행 일수와 프로젝트 주제</b>만 보여요.
+          내가 쓴 기록과 올린 파일은 <b>담임 선생님과 나만</b> 볼 수 있습니다.</div>
+        </div>
+      </div>
+      <p class="desc">오늘 무엇을 했는지 짧게 쓰고, 사진이나 파일(hwp·hwpx·docx·pdf)을 올려 주세요. 하루에 한 번만 인증할 수 있어요.</p>
+      <label>인증 날짜</label>
+      <input id="cDate" type="date">
+      <label>오늘 한 일 <span>구체적으로 한 줄이라도</span></label>
+      <textarea id="cText" placeholder="예) 확률과 통계 조건부확률 15문제 풀고 오답 정리 3문항 완료"></textarea>
+      <label id="cFileLabel">파일 첨부 <span>선택</span></label>
+      <div class="file-pick" id="cPick">사진 또는 파일 선택 (최대 <span id="mx">10</span>MB)</div>
+      <input id="cFile" type="file" hidden accept="image/*,.hwp,.hwpx,.doc,.docx,.pdf,.ppt,.pptx,.txt">
+      <button class="act green" id="btnSubmit">인증 제출하기</button>
+      <div class="msg" id="cMsg"></div>
+    </div>
+
+    <div class="card">
+      <h2>내 인증 기록</h2>
+      <div class="tbl-wrap"><table id="myTbl"></table></div>
+      <button class="act ghost" id="btnOut">로그아웃</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 계획서 ===== -->
+<section id="tab-plan" hidden>
+  <div class="viewas" hidden><b>점검 보기</b><select class="vsel"></select><span class="vnote">고른 학생이 보는 화면을 읽기 전용으로 봅니다. 아무것도 저장되지 않아요.</span></div>
+  <div class="card">
+    <h2>21일 프로젝트 계획서<span id="planRound"></span></h2>
+    <p class="desc">
+      잘하는 것을 더 키우기보다 <b>나의 약점을 찾아 극복하는</b> 프로젝트면 더 좋습니다.
+      생활기록부는 <b>양적 팽창</b>과 <b>질적 심화</b> 두 방향으로 움직여야 해요.<br><br>
+      <b>예시)</b> 단점 — 경영학과에 가고 싶은데 확률과 통계 점수가 낮다.<br>
+      동기 — 나의 단점인 확통 등급 극복하기 /
+      방법 — 매일 확통 문제지를 풀고 인증(학력 신장), 통계청 자료로 매일 다른 주제의 분석 칼럼 쓰기(정보활용역량)
+    </p>
+    <div id="planLoginHint" class="msg err" style="display:block">
+      먼저 <b>[내 인증하기]</b> 탭에서 번호와 PIN으로 들어와 주세요.
+    </div>
+    <div id="planForm" hidden>
+      <div class="row2">
+        <div><label>희망 직업(진로)</label><input id="pJob" placeholder="예) 간호사"></div>
+        <div><label>핵심 역량</label><input id="pSkill" placeholder="예) 지식의 양적 팽창"></div>
+      </div>
+      <label>★ 활동 동기 <span>내 단점 + 왜 극복하려 하는지</span></label>
+      <textarea id="pMotive" placeholder="예) 간호학과 관련 활동이 응급처치 쪽으로만 쏠려 있어 다양성이 부족하다."></textarea>
+      <label>★ 프로젝트 주제</label>
+      <input id="pTopic" placeholder="예) 의료 분야 신문 기사 스크랩 21일">
+      <label>세부 계획 <span>매일 무엇을 할지 구체적으로</span></label>
+      <textarea id="pDetail" placeholder="예) 매일 신체구조·의약품·의료윤리 중 한 주제를 골라 기사 1건 스크랩 + 3줄 요약"></textarea>
+      <button class="act" id="btnPlan">계획서 저장</button>
+      <div class="msg" id="pMsg"></div>
+      <div class="hint" id="pApproved"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 관리자 ===== -->
+<section id="tab-admin" hidden>
+  <div class="card" id="admLogin">
+    <h2>담임 전용</h2>
+    <p class="desc">[설정] 시트에 적어 둔 관리자 비밀번호를 입력하세요.</p>
+    <input id="admPw" type="password" placeholder="관리자 비밀번호" autocomplete="off">
+    <button class="act" id="btnAdm">확인</button>
+    <div class="msg" id="admMsg"></div>
+  </div>
+  <div id="admArea" hidden></div>
+</section>
+</div><!-- /app-21 -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+<script>
+var FILE_VER = '2026-11-01a';   /* 파일 버전 (점검용) */
+/* ---------- 탭 ---------- */
+document.querySelectorAll('#app-21 nav button[data-t]').forEach(function(b){
+  b.onclick=function(){
+    document.querySelectorAll('#app-21 nav button').forEach(function(x){x.classList.remove('on');});
+    b.classList.add('on');
+    ['board','my','plan','admin'].forEach(function(t){ $('tab-'+t).hidden = (t!==b.dataset.t); });
+    if(b.dataset.t==='board') loadBoard();
+    if(b.dataset.t==='admin') admAuto();
+  };
+});
+/* 담임 선생님으로 들어와 있으면 담임 탭에서 비밀번호를 다시 묻지 않습니다 */
+function admAuto(){
+  if (ADMPW) return;
+  var tp = (typeof G !== 'undefined' && G && G.teacher && G.pin) ? String(G.pin).slice(3) : '';
+  if (!tp) return;
+  ADMPW = tp; $('admLogin').hidden = true; $('admArea').hidden = false; loadAdmin();
+}
+
+/* ---------- 21일 화면 초기화 ---------- */
+$('mx').textContent = CFG.maxMB;
+$('rtxt').textContent = CFG.refreshSec;
+$('cDate').value = CFG.today;
+$('cDate').max = CFG.today;
+if(!CFG.allowUpload){ $('cPick').style.display='none'; $('cFileLabel').style.display='none'; }
+
+/* ---------- 현황판 ---------- */
+function loadBoard(silent){
+  if(!silent) $('board').innerHTML='<div class="loading">불러오는 중…</div>';
+  google.script.run.withSuccessHandler(function(d){
+    BOARD=d; renderBoard(d); fillSelect(d);
+    $('loginCard').hidden = true;
+  }).withFailureHandler(function(e){
+    if (Gate.fail(e, function(m){ G = m; loadBoard(); })) return;
+    $('board').innerHTML='<div class="msg err" style="display:block">'+esc(e.message)+'</div>';
+  }).apiBoard(G.no, G.pin);
+}
+
+function renderBoard(d){
+  $('board').className='';
+  var s=d.stat;
+  $('stats').innerHTML =
+    '<div class="stat"><b>'+s.students+'</b><span>참여 인원</span></div>'+
+    '<div class="stat g"><b>'+s.todayDone+'</b><span>오늘 인증 완료</span></div>'+
+    '<div class="stat"><b>'+s.avg+'</b><span>평균 진행일수</span></div>'+
+    '<div class="stat o"><b>'+(s.trophies||0)+'</b><span>반 전체 트로피 ★</span></div>';
+
+  var h='<div class="rows">';
+  d.list.forEach(function(b){
+    var cells='';
+    if (b.inq){
+      for(var k=1;k<=b.inq.total;k++) cells+='<div class="cell'+(k<=b.inq.done?' f3':'')+'" style="flex:4"></div>';
+    } else for(var i=1;i<=d.total;i++){
+      var f = i<=b.count ? ' '+weekClass(i) : '';
+      var t = (b.todayDone && i===b.count) ? ' tdy' : '';
+      cells+='<div class="cell'+f+t+'"></div>';
+    }
+    h+='<div class="rw'+(b.completed?' done':'')+'" data-no="'+b.no+'">'+
+        '<div class="no">'+b.no+'</div>'+
+        '<div class="who"><div class="nm">'+esc(b.name)+trophyHtml(b.trophies)+'</div>'+
+        '<div class="tp" title="'+esc(b.inq?b.inq.topic:b.topic)+'">'+(b.round>1?b.round+'회차 탐구 · ':'')+((b.inq?b.inq.topic:b.topic)?esc(b.inq?b.inq.topic:b.topic):'주제 미정')+'</div></div>'+
+        '<div class="bar">'+cells+'</div>'+
+        (b.inq ? '<div class="cnt">'+b.inq.done+'<small>/'+b.inq.total+'단계</small></div>' : '<div class="cnt">'+b.count+'<small>/'+d.total+'</small></div>')+
+       '</div><div id="dt'+b.no+'"></div>';
+  });
+  h+='</div>';
+  $('board').innerHTML=h;
+
+  document.querySelectorAll('.rw').forEach(function(r){
+    r.onclick=function(){ toggleDetail(Number(r.dataset.no)); };
+  });
+}
+
+function trophyHtml(n){
+  if(!n) return '';
+  return '<span class="tro" title="21일 완주 '+n+'회">'+(n<=3?'★'.repeat(n):'★<small>×'+n+'</small>')+'</span>';
+}
+
+function toggleDetail(no){
+  var box=$('dt'+no);
+  if(box.innerHTML){ box.innerHTML=''; return; }
+  var b=null;
+  BOARD.list.forEach(function(x){ if(x.no===no) b=x; });
+  if(!b) return;
+  var h='<div class="detail">';
+  h+='<b>'+esc(b.name)+'</b> · '+(b.round>1?b.round+'회차 · ':'')+b.count+'/'+BOARD.total+'일 ('+b.pct+'%)';
+  if(b.completed) h+=' <b style="color:#FFC24A">이번 회차 완주!</b>';
+  if(b.trophies) h+='<br><b>트로피</b> : ★ '+b.trophies+'개 (21일 완주 '+b.trophies+'회)';
+  h+='<br><b>프로젝트 주제</b> : '+(b.topic?esc(b.topic):'<span style="color:var(--t-ink-3)">아직 계획서 미제출</span>');
+  if(b.topic) h+=' '+(b.approved?'<span class="pill ok">담임 승인</span>':'<span class="pill wait">승인 대기</span>');
+  if(b.start) h+='<br><b>시작일</b> '+b.start+' · <b>목표일</b> '+b.target+' · 시작한 지 '+b.elapsed+'일째';
+  if(b.days.length){
+    h+='<div class="chips">';
+    b.days.forEach(function(x){ h+='<span class="chip">'+x.n+'일차 · '+x.d.slice(5)+'</span>'; });
+    h+='</div>';
+  } else {
+    h+='<br><span style="color:var(--t-ink-3)">아직 인증 기록이 없어요. 오늘 시작해 볼까요?</span>';
+  }
+  h+='</div>';
+  box.innerHTML=h;
+}
+
+function fillSelect(d){
+  var sel=$('lgNo');
+  if(sel.options.length) return;
+  d.list.forEach(function(b){
+    var o=document.createElement('option');
+    o.value=b.no; o.textContent=b.no+'번 · '+b.name;
+    sel.appendChild(o);
+  });
+}
+
+/* ---------- 로그인 (학급 로그인 표로 자동) ---------- */
+function login21(){
+  google.script.run.withSuccessHandler(function(r){
+    ME={no:r.no,pin:G.pin}; renderMine(r.mine);
+    $('loginCard').hidden=true; $('myArea').hidden=false;
+    $('planLoginHint').style.display='none'; $('planForm').hidden=false;
+    fillPlan(r.mine.plan);
+  }).withFailureHandler(function(e){
+    if (Gate.fail(e, function(m){ G = m; login21(); })) return;
+    say($('lgMsg'),'err',esc(e.message));
+  }).apiLogin(G.no, G.pin);
+}
+$('btnLogin').onclick=function(){
+  var no=$('lgNo').value, pin=$('lgPin').value.trim();
+  if(!/^\d{4}$/.test(pin)){ say($('lgMsg'),'err','PIN은 숫자 4자리로 입력해 주세요.'); return; }
+  this.disabled=true; this.textContent='확인 중…';
+  var btn=this;
+  google.script.run.withSuccessHandler(function(r){
+    btn.disabled=false; btn.textContent='들어가기'; clear($('lgMsg'));
+    ME={no:r.no,pin:pin}; renderMine(r.mine);
+    $('loginCard').hidden=true; $('myArea').hidden=false;
+    $('planLoginHint').style.display='none'; $('planForm').hidden=false;
+    fillPlan(r.mine.plan);
+  }).withFailureHandler(function(e){
+    btn.disabled=false; btn.textContent='들어가기'; say($('lgMsg'),'err',esc(e.message));
+    if(/가입암호/.test(e.message||'')){ $('joinWrap').hidden=false; $('lgJoin').focus(); }
+  }).apiLogin(no,pin,$('lgJoin').value.trim());
+};
+
+$('btnOut').onclick=function(){ logoutAll(); };
+
+/* ---------- 내 화면 ---------- */
+function renderMine(m){
+  $('myName').textContent = m.no+'번 '+m.name+(m.round>1?' · '+m.round+'회차':'');
+  $('planRound').textContent = m.round>1 ? ' · '+m.round+'회차' : '';
+  var done = m.count>=m.total;
+  $('myNum').textContent = m.count;
+  $('myNum').className = 'num'+(done?' gold':'');
+  $('myOf').innerHTML = done
+    ? '★ <b>'+(m.round>1?m.round+'회차 ':'')+'21일 완주 성공!</b> 정말 대단해요.'
+    : m.total+'일 중 '+m.count+'일 완료 · 앞으로 <b>'+(m.total-m.count)+'일</b>';
+
+  var t = m.trophies||0;
+  $('myTro').innerHTML = t
+    ? '<div class="shelf">'+'★'.repeat(Math.min(t,10))+(t>10?' <small style="font-size:14px">×'+t+'</small>':'')+'</div>'+
+      '<div class="cap">지금까지 모은 트로피 <b>'+t+'개</b></div>'+
+      (m.history&&m.history.length?'<div class="hist">'+m.history.map(function(x){
+        return '<b>'+x.round+'회차</b> '+(x.topic?esc(x.topic):'주제 없음')+' · '+x.count+'/'+m.total+'일'+(x.done?' ★':'')+
+          (x.start?' <span style="color:var(--t-ink-3)">('+x.start.slice(5)+' ~ '+x.end.slice(5)+')</span>':'');
+      }).join('<br>')+'</div>':'')
+    : '';
+  if(ME) ME.round = m.round || 1;
+  $('btnNewRound').hidden = !done;
+  $('btnNewRound').textContent = '새 프로젝트 시작하기 ('+(m.round+1)+'회차)';
+  clear($('nrMsg'));
+
+  var g='';
+  for(var i=1;i<=m.total;i++){
+    var cls = i<=m.count ? (done?'gold':weekClass(i)) : '';
+    var L = m.logs[i-1];
+    g+='<div class="d '+cls+'">'+i+(L?'<small>'+L.date.slice(5)+'</small>':'')+'</div>';
+  }
+  $('myGrid').innerHTML=g;
+  $('myInfo').innerHTML = m.start
+    ? '시작일 '+m.start+' · '+(m.todayDone?'<b style="color:#7FD8C4">오늘 인증 완료 ✓</b>':'<b style="color:#FFC24A">오늘 아직 인증 전</b>')
+    : '아직 시작 전이에요. 첫 인증을 하면 오늘이 시작일이 됩니다.';
+
+  var t='<tr><th>일차</th><th>날짜</th><th>기록</th><th>파일</th></tr>';
+  if(!m.logs.length) t+='<tr><td colspan="4" style="color:var(--t-ink-3)">아직 기록이 없습니다.</td></tr>';
+  m.logs.slice().reverse().forEach(function(l){
+    t+='<tr><td><b>'+l.day+'</b></td><td>'+l.date+'</td><td>'+esc(l.text)+'</td><td>'+
+       (l.fileUrl?'<a href="'+l.fileUrl+'" target="_blank">열기</a>':'-')+'</td></tr>';
+  });
+  $('myTbl').innerHTML=t;
+
+  $('btnSubmit').disabled = m.count>=m.total;
+  $('btnSubmit').textContent = m.count>=m.total ? '이번 회차를 모두 채웠습니다 ★' : '인증 제출하기';
+  renderInq(m);
+}
+
+/* ================= 2회차부터: 탐구 노트 =================
+ * 1회차를 마치면 '다리'(한계 → 새 질문 → 주제)를 쓰고 넘어가고,
+ * 2회차부터는 날짜 제한 없이 '탐구 격 체크' 5단계를 스스로 점검하며 진행합니다. */
+var INQ = {open: 0, bridge: false};
+var CIRC = ['①','②','③','④','⑤','⑥'];
+function renderInq(m){
+  MINE = m;
+  var card = $('inqCard'), inq = m.mode === 'inquiry';
+  $('dailyCard').hidden = inq;
+  $('myGrid').style.display = inq ? 'none' : '';
+  if (inq){
+    var q = m.inquiry;
+    $('myNum').textContent = q.done;
+    $('myNum').className = 'num' + (q.complete ? ' gold' : '');
+    $('myOf').innerHTML = q.complete ? '★ <b>' + m.round + '회차 탐구 완주!</b> 다섯 단계를 모두 마쳤어요.'
+      : '탐구 ' + q.total + '단계 중 <b>' + q.done + '단계</b> 완료 · 날짜 제한 없이 내 속도로';
+    $('myInfo').innerHTML = '';
+    $('btnNewRound').hidden = !q.complete;
+    $('btnNewRound').textContent = '다음 회차로 넘어가기 (' + (m.round + 1) + '회차)';
+  } else if (m.count >= m.total){
+    $('btnNewRound').textContent = '2회차 탐구로 넘어가기 →';
+  }
+  if (!inq && !INQ.bridge){ card.hidden = true; return; }
+  card.hidden = false;
+  if (INQ.bridge){ card.innerHTML = bridgeHtml(m); return; }
+  var q2 = m.inquiry, h = '<h2>' + m.round + '회차 · 탐구 노트</h2>' +
+    '<p class="desc">다섯 단계마다 <b>스스로 점검하는 질문</b>이 있어요. 계획을 세울 때부터 이 질문을 보면, 선생님이 중요하게 보는 것과 내가 중요하게 보는 것이 같아져요.</p>';
+  if (q2.bridge) h += '<div class="inq-from"><div class="k">내 탐구의 출발점 · 지난 회차에서 이어진 것</div>' +
+    '<div><b>한계</b> ' + esc(q2.bridge.limit) + '</div><div><b>새 질문</b> ' + esc(q2.bridge.question) + '</div><div><b>탐구 주제</b> ' + esc(q2.bridge.topic) + '</div></div>';
+  h += '<div class="inq-steps">' + m.stages.map(function(stg, i){
+    var s = q2.stages[i], open = INQ.open === stg.n;
+    var st = s.done ? '<span class="ist ok">완료</span>' : (s.at ? '<span class="ist mid">작성 중</span>' : '<span class="ist">시작 전</span>');
+    var head = '<button type="button" class="inq-h" data-inq="' + stg.n + '"><span class="n">' + CIRC[i] + '</span><span class="t"><b>' + esc(stg.title) + '</b><small>' + esc(stg.level) + '</small></span>' + st + '</button>' +
+      '<div class="ask">스스로 점검 · ' + esc(stg.ask) + '</div>';
+    if (!open) return '<div class="inq-s' + (s.done ? ' done' : '') + '">' + head + '</div>';
+    var body = stg.fields.map(function(lb, k){
+      return '<label>' + esc(lb) + '</label><textarea id="iqf' + k + '" rows="3">' + esc((s.fields || [])[k] || '') + '</textarea>';
+    }).join('') + '<div class="chk"><div class="k">점검해 보기 · 모두 체크되면 이 단계 완료</div>' + stg.checks.map(function(c, k){
+      return '<label class="ck"><input type="checkbox" id="iqc' + k + '"' + ((s.checks || [])[k] ? ' checked' : '') + '> ' + esc(c) + '</label>';
+    }).join('') + '</div><button class="act green" data-inqsave="' + stg.n + '">저장</button><div class="msg" id="iqMsg"></div>';
+    return '<div class="inq-s open' + (s.done ? ' done' : '') + '">' + head + body + '</div>';
+  }).join('') + '</div>';
+  card.innerHTML = h;
+}
+function bridgeHtml(m){
+  var from = m.round < 2 ? '1회차(21일)' : m.round + '회차 탐구';
+  return '<h2>' + from + ' → ' + (m.round + 1) + '회차로 넘어가는 다리</h2>' +
+    '<p class="desc"><b>' + from + '의 한계가 ' + (m.round + 1) + '회차의 시작이 돼요.</b> 해 보며 막혔던 점에서 새 질문이 생기고, 그 질문이 다음 탐구의 주제가 됩니다. ' +
+    (m.round + 1) + '회차는 날짜 제한 없이 다섯 단계를 스스로 점검하며 진행해요.</p>' +
+    m.bridgeForm.map(function(f){ return '<label>' + esc(f.label) + '</label><textarea id="br_' + f.k + '" rows="3" placeholder="' + esc(f.ph) + '"></textarea>'; }).join('') +
+    '<button class="act green" id="btnBridge">' + (m.round + 1) + '회차 시작하기</button><button class="act" id="btnBridgeX" style="background:var(--t-surface-3);color:var(--t-ink-2);margin-top:8px">닫기</button><div class="msg" id="brMsg"></div>';
+}
+var MINE = null;
+document.addEventListener('click', function(ev){
+  var t = ev.target.closest && ev.target.closest('[data-inq],[data-inqsave],#btnBridge,#btnBridgeX');
+  if (!t || !MINE) return;
+  if (t.id === 'btnBridgeX'){ INQ.bridge = false; renderInq(MINE); return; }
+  if (t.id === 'btnBridge'){
+    var b = {}; MINE.bridgeForm.forEach(function(f){ b[f.k] = $('br_' + f.k).value.trim(); });
+    if (b.limit.length < 10) return say($('brMsg'), 'err', '잘 안 되었던 점을 조금 더 자세히 적어 주세요. (10자 이상)');
+    if (b.question.length < 5) return say($('brMsg'), 'err', '새로 생긴 질문을 적어 주세요.');
+    if (b.topic.length < 4) return say($('brMsg'), 'err', '탐구할 주제를 한 줄로 적어 주세요.');
+    t.disabled = true;
+    google.script.run.withSuccessHandler(function(r){
+      INQ.bridge = false; INQ.open = 1; renderMine(r.mine); loadBoard(true);
+      say($('nrMsg'), 'ok', '<b>' + r.round + '회차 탐구 시작!</b> 아래 탐구 노트의 ① 주제 선정부터 써 보세요.');
+    }).withFailureHandler(function(e){ t.disabled = false; say($('brMsg'), 'err', esc(e.message)); })
+      .apiStartNewRound(ME.no, ME.pin, b);
+    return;
+  }
+  if (t.hasAttribute('data-inq')){ var n = Number(t.getAttribute('data-inq')); INQ.open = INQ.open === n ? 0 : n; renderInq(MINE); return; }
+  var step = Number(t.getAttribute('data-inqsave')), stg = MINE.stages[step - 1];
+  var fields = stg.fields.map(function(_, k){ return $('iqf' + k).value; });
+  var checks = stg.checks.map(function(_, k){ return $('iqc' + k).checked; });
+  t.disabled = true;
+  google.script.run.withSuccessHandler(function(r){
+    var was = MINE.inquiry.stages[step - 1].done;
+    renderMine(r.mine); loadBoard(true);
+    var now = r.mine.inquiry.stages[step - 1].done;
+    if (now && !was && step < 5) INQ.open = step + 1;
+    renderInq(r.mine);
+    say($('nrMsg'), 'ok', now ? CIRC[step - 1] + ' ' + esc(stg.title) + ' 단계를 마쳤어요.' : '저장했어요. 칸을 모두 채우고 점검 항목에 모두 체크하면 이 단계가 완료돼요.');
+  }).withFailureHandler(function(e){ t.disabled = false; say($('iqMsg'), 'err', esc(e.message)); })
+    .apiInqSave(ME.no, ME.pin, step, fields, checks);
+});
+
+$('btnNewRound').onclick=function(){
+  if(!ME || !MINE) return;
+  INQ.bridge = true; renderInq(MINE);
+  setTimeout(function(){ try { $('inqCard').scrollIntoView({behavior:'smooth', block:'start'}); } catch (e) {} }, 50);
+};
+
+/* ---------- 파일 ---------- */
+var PICKED=null;
+$('cPick').onclick=function(){ $('cFile').click(); };
+$('cFile').onchange=function(){
+  var f=this.files[0];
+  if(!f){ PICKED=null; return; }
+  if(f.size > CFG.maxMB*1024*1024){
+    say($('cMsg'),'err','파일이 너무 큽니다. '+CFG.maxMB+'MB 이하로 올려 주세요.');
+    this.value=''; PICKED=null; $('cPick').className='file-pick'; $('cPick').textContent='사진 또는 파일 선택';
+    return;
+  }
+  PICKED=f; clear($('cMsg'));
+  $('cPick').className='file-pick has';
+  $('cPick').textContent='✓ '+f.name+' ('+Math.round(f.size/1024)+'KB) — 다시 누르면 변경';
+};
+
+/* ---------- 인증 제출 ---------- */
+$('btnSubmit').onclick=function(){
+  if(!ME) return;
+  var text=$('cText').value.trim();
+  if(!text && !PICKED){ say($('cMsg'),'err','기록 내용을 쓰거나 파일을 올려 주세요.'); return; }
+  var btn=this; btn.disabled=true; btn.textContent='제출 중…';
+  clear($('cMsg'));
+
+  var payload={no:ME.no,pin:ME.pin,date:$('cDate').value,text:text,file:null};
+
+  function send(){
+    google.script.run.withSuccessHandler(function(r){
+      btn.disabled=false; btn.textContent='인증 제출하기';
+      $('cText').value=''; $('cFile').value=''; PICKED=null;
+      $('cPick').className='file-pick'; $('cPick').innerHTML='사진 또는 파일 선택 (최대 '+CFG.maxMB+'MB)';
+      say($('cMsg'),'ok', r.completed
+        ? '★ <b>21일 완주 성공! 트로피 '+r.mine.trophies+'개째</b>예요. 위의 <b>[새 프로젝트 시작하기]</b>로 다음 회차에 도전할 수 있어요.'
+        : '<b>'+r.day+'일차 인증 완료!</b> '+(r.total-r.day)+'일 남았어요. 내일도 만나요 ');
+      renderMine(r.mine);
+      loadBoard(true);
+    }).withFailureHandler(function(e){
+      btn.disabled=false; btn.textContent='인증 제출하기';
+      say($('cMsg'),'err',esc(e.message));
+    }).apiSubmit(payload);
+  }
+
+  if(PICKED){
+    btn.textContent='파일 올리는 중…';
+    var rd=new FileReader();
+    rd.onload=function(){
+      payload.file={name:PICKED.name,mime:PICKED.type||'application/octet-stream',
+                    data:rd.result.split(',')[1]};
+      send();
+    };
+    rd.onerror=function(){ btn.disabled=false; btn.textContent='인증 제출하기';
+      say($('cMsg'),'err','파일을 읽지 못했습니다.'); };
+    rd.readAsDataURL(PICKED);
+  } else send();
+};
+
+/* ---------- 계획서 ---------- */
+function fillPlan(p){
+  if(!p){
+    ['pJob','pSkill','pMotive','pTopic','pDetail'].forEach(function(id){ $(id).value=''; });
+    $('pApproved').innerHTML='';
+    return;
+  }
+  $('pJob').value=p.job; $('pSkill').value=p.skill; $('pMotive').value=p.motive;
+  $('pTopic').value=p.topic; $('pDetail').value=p.detail;
+  $('pApproved').innerHTML = p.approved
+    ? '<span class="pill ok">담임 승인 완료</span> 승인된 계획서는 수정해도 승인이 유지됩니다.'
+    : '<span class="pill wait">승인 대기</span> 담임 선생님이 확인 후 승인합니다.';
+}
+
+$('btnPlan').onclick=function(){
+  if(!ME){ say($('pMsg'),'err','먼저 번호와 PIN으로 들어와 주세요.'); return; }
+  if(!$('pTopic').value.trim()){ say($('pMsg'),'err','프로젝트 주제를 적어 주세요.'); return; }
+  var btn=this; btn.disabled=true; btn.textContent='저장 중…';
+  google.script.run.withSuccessHandler(function(r){
+    btn.disabled=false; btn.textContent='계획서 저장';
+    say($('pMsg'),'ok','계획서를 저장했습니다. 담임 선생님 승인을 기다려 주세요.');
+    fillPlan(r.mine.plan); loadBoard(true);
+  }).withFailureHandler(function(e){
+    btn.disabled=false; btn.textContent='계획서 저장'; say($('pMsg'),'err',esc(e.message));
+  }).apiSavePlan({
+    no:ME.no, pin:ME.pin,
+    job:$('pJob').value, skill:$('pSkill').value, motive:$('pMotive').value,
+    topic:$('pTopic').value, detail:$('pDetail').value
+  });
+};
+
+/* ---------- 관리자 ---------- */
+$('btnAdm').onclick=function(){
+  var pw=$('admPw').value;
+  var btn=this; btn.disabled=true; btn.textContent='확인 중…';
+  google.script.run.withSuccessHandler(function(r){
+    btn.disabled=false; btn.textContent='확인';
+    ADMPW=(r&&r.admTok)||pw; if (window.AdmTok) AdmTok.set(ADMPW);
+    $('admLogin').hidden=true; $('admArea').hidden=false; loadAdmin();
+  }).withFailureHandler(function(e){
+    btn.disabled=false; btn.textContent='확인'; say($('admMsg'),'err',esc(e.message));
+  }).apiAdminLogin(pw);
+};
+
+function loadAdmin(){
+  $('admArea').innerHTML='<div class="loading">불러오는 중…</div>';
+  google.script.run.withSuccessHandler(function(d){ ADMDATA=d; renderAdmin(d); })
+    .withFailureHandler(function(e){
+      if (/로그인 시간|비밀번호/.test(e.message)){ ADMPW=''; $('admArea').hidden=true; $('admLogin').hidden=false; say($('admMsg'),'err',esc(e.message)); return; }
+      $('admArea').innerHTML='<div class="msg err" style="display:block">'+esc(e.message)+'</div>'; })
+    .apiAdminData(ADMPW);
+}
+
+function renderAdmin(d){
+  var h='';
+  h+=hubLink();
+
+  /* QR */
+  h+='<div class="card"><h2>학생 배포용 QR / 링크</h2>'+
+     '<p class="desc">이 주소만 학생에게 공유하세요. 스프레드시트 주소는 절대 공유하지 마세요.</p>'+
+     '<input id="admUrl" readonly value="'+esc(d.url||'')+'">'+
+     '<div id="qr"></div>'+
+     '<button class="act ghost" onclick="window.print()">현황판 인쇄하기</button></div>';
+
+  /* 내보내기 */
+  h+='<div class="card"><h2>생활기록부 정리용 내보내기</h2>'+
+     '<p class="desc">계획서·전체 인증기록·학생별 기록 모음이 <b>시트 3장</b>으로 정리된 엑셀 파일입니다.'+
+     ' 이 기능은 담임 탭에만 있고 학생에게는 보이지 않습니다.<br>'+
+     '· <b>요약</b> — 번호·이름·주제·진로·역량·동기·세부계획·달성률<br>'+
+     '· <b>인증기록(전체)</b> — 날짜·요일·일차·기록 내용·파일 링크<br>'+
+     '· <b>학생별 기록모음</b> — 21일치 기록이 한 칸에 이어져 있어 생기부 문장 쓸 때 바로 씁니다</p>'+
+     '<button class="act" onclick="xlsx(this)">엑셀(.xlsx)로 내려받기</button>'+
+     '<button class="act ghost" onclick="csv()">CSV로 내려받기</button>'+
+     '<div class="msg" id="xlMsg"></div></div>';
+
+  /* 계획서 승인 */
+  h+='<div class="card"><h2>계획서 승인</h2><div class="tbl-wrap"><table>'+
+     '<tr><th>번호</th><th>이름</th><th>주제</th><th>동기</th><th>승인</th></tr>';
+  d.students.forEach(function(s){
+    var p=d.plans[s.no];
+    h+='<tr><td>'+s.no+'</td><td>'+esc(s.name)+'</td>'+
+       '<td>'+(p?esc(p.topic):'<span style="color:var(--t-ink-3)">미제출</span>')+'</td>'+
+       '<td style="max-width:220px">'+(p?esc(p.motive):'')+'</td>'+
+       '<td>'+(p?('<button class="chip" style="cursor:pointer" onclick="approve('+s.no+','+(p.approved?'false':'true')+')">'+
+         (p.approved?'승인됨 ✓':'승인하기')+'</button>'):'-')+'</td></tr>';
+  });
+  h+='</table></div></div>';
+
+  /* 학생 관리 */
+  h+='<div class="card"><h2>학생별 관리</h2>'+
+     '<p class="desc">PIN 초기화 후 학생이 다시 들어오면 새 PIN이 등록됩니다. 아래 \'설정됨\' 밑의 시각은 그 PIN을 처음 정한 때입니다. 학생이 "내가 정한 적 없다"고 하면 그 시각을 확인하고 초기화해 주세요.<br>[설정] 시트의 <b>가입암호</b>를 적어 두면, 그 암호를 아는 학생만 처음 PIN을 정할 수 있습니다. 대리 입력은 학생이 오프라인으로 인증했을 때 사용하세요.</p>'+
+     '<div class="tbl-wrap"><table><tr><th>번호</th><th>이름</th><th>인증</th><th>시작일</th><th>PIN</th><th>작업</th></tr>';
+  var bmap={};
+  (d.board||[]).forEach(function(b){ bmap[b.no]=b; });
+  d.students.forEach(function(s){
+    var bb=bmap[s.no]||{count:0,round:1,trophies:0};
+    h+='<tr><td>'+s.no+'</td><td>'+esc(s.name)+'</td><td>'+(bb.round>1?bb.round+'회차 ':'')+'<b>'+bb.count+'</b>/'+d.cfg['총일수']+
+       (bb.trophies?' ★'+bb.trophies:'')+'</td>'+
+       '<td>'+(s.start||'-')+'</td><td>'+(s.hasPin?'설정됨'+(s.pinAt?'<div style="font-size:11px;color:var(--t-ink-3)">'+esc(s.pinAt)+'</div>':''):'<span style="color:var(--t-ink-3)">미설정</span>')+'</td>'+
+       '<td style="white-space:nowrap">'+
+       '<button class="chip" style="cursor:pointer" onclick="resetPin('+s.no+')">PIN 초기화</button> '+
+       '<button class="chip" style="cursor:pointer" onclick="addLog('+s.no+')">대리 인증</button></td></tr>';
+  });
+  h+='</table></div></div>';
+
+  /* 인증 기록 */
+  h+='<div class="card"><h2>전체 인증 기록 <span style="font-size:12px;color:var(--t-ink-3)">('+d.logs.length+'건)</span></h2>'+
+     '<div class="tbl-wrap"><table><tr><th>번호</th><th>이름</th><th>날짜</th><th>회차·일차</th><th>기록</th><th>파일</th><th></th></tr>';
+  d.logs.slice().sort(function(a,b){ return a.date<b.date?1:-1; }).forEach(function(l){
+    h+='<tr><td>'+l.no+'</td><td>'+esc(l.name)+'</td><td>'+l.date+'</td><td>'+(l.round>1?l.round+'회차 ':'')+l.day+'일차</td>'+
+       '<td style="max-width:260px">'+esc(l.text)+'</td>'+
+       '<td>'+(l.fileUrl?'<a href="'+l.fileUrl+'" target="_blank">열기</a>':'-')+'</td>'+
+       '<td><button class="chip" style="cursor:pointer;color:#FF9B9B" onclick="delLog(\''+l.id+'\')">삭제</button></td></tr>';
+  });
+  h+='</table></div></div>';
+
+  /* 설정 */
+  h+='<div class="card"><h2>설정</h2><div class="row2">'+
+     cfgRow('총일수',d.cfg['총일수'])+cfgRow('소급허용일수',d.cfg['소급허용일수'])+
+     cfgRow('최대파일MB',d.cfg['최대파일MB'])+cfgRow('현황판자동새로고침초',d.cfg['현황판자동새로고침초'])+
+     '</div>'+
+     '<label>파일업로드허용</label>'+
+     '<select id="cfg_파일업로드허용"><option'+(d.cfg['파일업로드허용']!=='아니오'?' selected':'')+'>예</option><option'+(d.cfg['파일업로드허용']==='아니오'?' selected':'')+'>아니오</option></select>'+
+     '<label>부제 <span>제목 아래 문구</span></label><input id="cfg_부제" value="'+esc(d.cfg['부제'])+'">'+
+     '<button class="act" onclick="saveCfg()">설정 저장</button>'+
+     '<div class="msg" id="cfgMsg"></div></div>';
+
+  /* 명단 */
+  h+='<div class="card"><h2>학생 명단 바꾸기</h2>'+
+     '<p class="desc">한 줄에 한 명씩. "1,김동언" 처럼 번호를 같이 써도 됩니다. 이름이 같으면 기존 PIN·기록이 유지됩니다.</p>'+
+     '<textarea id="rosterTxt" style="min-height:150px">'+
+     d.students.map(function(s){ return s.no+','+s.name; }).join('\n')+'</textarea>'+
+     '<button class="act ghost" onclick="saveRoster()">명단 저장</button>'+
+     '<div class="msg" id="rosterMsg"></div></div>';
+
+  $('admArea').innerHTML=h;
+
+  if(d.url && window.QRCode){
+    try{ new QRCode($('qr'),{text:d.url,width:170,height:170,correctLevel:QRCode.CorrectLevel.M}); }catch(e){}
+  }
+}
+
+function cfgRow(k,v){
+  return '<div><label>'+k+'</label><input id="cfg_'+k+'" value="'+esc(v)+'"></div>';
+}
+
+function approve(no,on){
+  google.script.run.withSuccessHandler(loadAdmin)
+    .withFailureHandler(function(e){ alert(e.message); })
+    .apiAdminApprove(ADMPW,no,on);
+}
+function resetPin(no){
+  if(!confirm(no+'번 학생의 PIN을 초기화할까요?\n다음에 들어올 때 새 PIN을 정하게 됩니다.')) return;
+  google.script.run.withSuccessHandler(function(){ alert('초기화했습니다.'); loadAdmin(); })
+    .withFailureHandler(function(e){ alert(e.message); }).apiAdminResetPin(ADMPW,no);
+}
+function addLog(no){
+  var d=prompt('인증 날짜 (YYYY-MM-DD)', CFG.today); if(!d) return;
+  var t=prompt('기록 내용','오프라인 인증 확인'); if(t===null) return;
+  google.script.run.withSuccessHandler(function(){ loadAdmin(); loadBoard(true); })
+    .withFailureHandler(function(e){ alert(e.message); }).apiAdminAddLog(ADMPW,no,d,t);
+}
+function delLog(id){
+  if(!confirm('이 인증 기록을 삭제할까요?')) return;
+  google.script.run.withSuccessHandler(function(){ loadAdmin(); loadBoard(true); })
+    .withFailureHandler(function(e){ alert(e.message); }).apiAdminDeleteLog(ADMPW,id);
+}
+function saveCfg(){
+  var keys=['총일수','소급허용일수','최대파일MB','현황판자동새로고침초','파일업로드허용','부제'];
+  var left=keys.length, err='';
+  keys.forEach(function(k){
+    google.script.run.withSuccessHandler(function(){
+      if(--left===0){ say($('cfgMsg'),'ok','저장했습니다. 새로고침하면 반영됩니다.'); }
+    }).withFailureHandler(function(e){
+      err=e.message; if(--left===0) say($('cfgMsg'),'err',esc(err));
+    }).apiAdminSetConfig(ADMPW,k,$('cfg_'+k).value);
+  });
+}
+function saveRoster(){
+  if(!confirm('명단을 저장할까요?')) return;
+  google.script.run.withSuccessHandler(function(r){
+    say($('rosterMsg'),'ok',r.count+'명 저장했습니다.'); loadAdmin(); loadBoard(true);
+  }).withFailureHandler(function(e){ say($('rosterMsg'),'err',esc(e.message)); })
+   .apiAdminSetRoster(ADMPW,$('rosterTxt').value);
+}
+function xlsx(btn){
+  var old=btn.textContent;
+  btn.disabled=true; btn.textContent='엑셀 파일 만드는 중… (10초쯤 걸려요)';
+  clear($('xlMsg'));
+  google.script.run.withSuccessHandler(function(r){
+    btn.disabled=false; btn.textContent=old;
+    try{
+      var bin=atob(r.data), arr=new Uint8Array(bin.length);
+      for(var i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+      var blob=new Blob([arr],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement('a'); a.href=url; a.download=r.name;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); },4000);
+      say($('xlMsg'),'ok','<b>'+esc(r.name)+'</b> 내려받기를 시작했습니다.');
+    }catch(e){ say($('xlMsg'),'err','파일을 저장하지 못했습니다: '+esc(e.message)); }
+  }).withFailureHandler(function(e){
+    btn.disabled=false; btn.textContent=old; say($('xlMsg'),'err',esc(e.message));
+  }).apiAdminXlsx(ADMPW);
+}
+function csv(){
+  google.script.run.withSuccessHandler(function(t){
+    var a=document.createElement('a');
+    a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(t);
+    a.download='21일프로젝트_현황_'+CFG.today+'.csv';
+    a.click();
+  }).withFailureHandler(function(e){ alert(e.message); }).apiAdminCsv(ADMPW);
+}
+
+</script>

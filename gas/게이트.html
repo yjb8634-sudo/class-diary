@@ -1,0 +1,180 @@
+<style>
+.gt{position:fixed;inset:0;z-index:200;background:rgba(10,10,10,.78);display:flex;align-items:center;justify-content:center;padding:16px;font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:var(--t-ink)}
+.gt[hidden]{display:none}
+.gt-box{width:100%;max-width:420px;background:var(--t-surface-2);border-radius:var(--t-r) var(--t-r) 0 0;padding:22px 20px 20px;max-height:92vh;overflow:auto;box-shadow:0 24px 60px rgba(0,0,0,.55)}
+@media (max-width:640px){.gt{align-items:flex-end;padding:0}.gt-box{max-width:none;border-radius:var(--t-r) var(--t-r) 0 0;padding-bottom:calc(20px + env(safe-area-inset-bottom))}}
+.gt-head{display:flex;align-items:center;gap:8px}
+.gt-head b{font-size:23px;letter-spacing:-.01em;font-family:var(--t-display);font-weight:600}
+.gt-x{margin-left:auto;border:1px solid var(--t-line);background:transparent;border-radius:999px;padding:7px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;color:var(--t-ink)}
+.gt-lead{font-size:13.5px;color:var(--t-ink-3);line-height:1.6;margin:8px 0 2px}
+.gt label{display:block;font-size:13px;font-weight:700;margin:12px 0 6px}
+.gt input{width:100%;box-sizing:border-box;border:1px solid var(--t-line);border-radius:var(--t-r) var(--t-r) 0 0;padding:12px;font:inherit;font-size:16px;background:var(--t-surface-2);color:var(--t-ink)}
+.gt input:focus{outline:none;border-color:var(--t-yellow);box-shadow:0 1px 0 0 var(--t-yellow)}
+.gt-go{width:100%;margin-top:16px;border:0;border-radius:var(--t-r) var(--t-r) 0 0;background:var(--t-blue);color:var(--t-ink);font:inherit;font-size:15.5px;font-weight:800;padding:14px;cursor:pointer}
+.gt-go[disabled]{opacity:.5}
+.gt-links{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.gt-links button{border:0;background:none;font:inherit;font-size:13px;font-weight:700;color:var(--t-ink-3);cursor:pointer;padding:4px}
+.gt-links button:hover{color:var(--t-yellow)}
+.gt-note{margin-top:12px;font-size:13.5px;line-height:1.6;border-radius:10px;padding:10px 12px;display:none}
+.gt-note.ok{display:block;background:rgba(127,216,196,.14);color:#9FE6D6}.gt-note.err{display:block;background:rgba(215,30,30,.18);color:#FF9B9B}
+.gt-rule{font-size:12.5px;color:var(--t-ink-3);line-height:1.6;margin-top:10px}
+</style>
+<div class="gt" id="gate" hidden role="dialog" aria-modal="true" aria-labelledby="gtTitle">
+  <div class="gt-box">
+    <div class="gt-head"><b id="gtTitle">학급 로그인</b><button type="button" class="gt-x" id="gtX">닫기</button></div>
+    <div id="gtBody"></div>
+  </div>
+</div>
+<script>
+var FILE_VER = '2026-11-01a';
+/* 담임 로그인 표 (담임 기록실 · 상담 신청판 · 21일 · 문제해결 담임 탭이 함께 씀) */
+window.AdmTok = window.AdmTok || {
+  get: function(){ try { var v = JSON.parse(localStorage.getItem('gjd_atok') || 'null'); return v && v.t && v.e > Date.now() ? v.t : ''; } catch (e) { return ''; } },
+  set: function(t){ if (!/^at_[0-9a-f]{32}$/.test(String(t || ''))) return; try { localStorage.setItem('gjd_atok', JSON.stringify({t: t, e: Date.now() + 8 * 3600000})); } catch (e) {} },
+  clear: function(){ var t = this.get(); try { localStorage.removeItem('gjd_atok'); } catch (e) {} if (t){ try { google.script.run.withFailureHandler(function(){}).apiAdminLogout(t); } catch (e) {} } }
+};
+/* 학급 로그인 창 (여러 화면이 함께 씀)
+ * 로그인하면 '로그인 표'를 이 기기에 저장해 두고, 다른 탭 · 화면에서는 다시 묻지 않습니다. */
+(function(){
+  var KEY = 'gate1', MODE = 'login', CB = null, OPT = {}, CHECKED = false, OLD = null, JOIN = null;
+  function el(id){ return document.getElementById(id); }
+  function e2(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function run(fn, args){
+    return new Promise(function(ok, no){
+      var r = google.script.run.withSuccessHandler(ok).withFailureHandler(no);
+      r[fn].apply(r, args || []);
+    });
+  }
+  function load(){ try { var v = JSON.parse(localStorage.getItem(KEY) || 'null'); return v && v.no && v.tok ? v : null; } catch (e) { return null; } }
+  function save(r){ try { localStorage.setItem(KEY, JSON.stringify({no: r.no, sid: r.sid, name: r.name, tok: r.tok})); } catch (e) {} }
+  function clear(){ try { localStorage.removeItem(KEY); } catch (e) {} CHECKED = false; }
+  function me(){ var v = load(); return v ? {no: v.no, sid: v.sid, name: v.name, pin: 't:' + v.tok} : null; }
+  function weak(p){ return /^(\d)\1{5}$/.test(p) || '01234567890'.indexOf(p) >= 0 || '09876543210'.indexOf(p) >= 0; }
+  function note(cls, t){ var n = el('gtNote'); if (!n) return; n.className = 'gt-note ' + cls; n.textContent = t; }
+  function field(id, label, type, ph, max){
+    return '<label for="' + id + '">' + label + '</label><input id="' + id + '" type="' + (type || 'text') + '"' +
+      (type === 'password' || id === 'gtSid' ? ' inputmode="numeric"' : '') + (max ? ' maxlength="' + max + '"' : '') +
+      ' autocomplete="off" placeholder="' + (ph || '') + '">';
+  }
+  function draw(){
+    var t = {login: '학급 로그인', join: '학급가입', change: 'PIN 바꾸기', upgrade: 'PIN을 6자리로', teacher: '담임 선생님'}[MODE];
+    el('gtTitle').textContent = t;
+    var h = '';
+    if (MODE === 'login'){
+      h = '<p class="gt-lead">우리 반 학생만 들어올 수 있어요. 학번과 PIN을 넣어 주세요.</p>' +
+        field('gtSid', '학번', 'text', '예) 10203', 6) + field('gtPin', 'PIN', 'password', '숫자 6자리', 6) +
+        '<button type="button" class="gt-go" data-g="login">로그인</button><div class="gt-note" id="gtNote"></div>' +
+        '<div class="gt-links"><button type="button" data-gm="join">처음이면 학급가입</button><button type="button" data-gm="change">PIN 바꾸기</button>' +
+        (OPT.teacher ? '<button type="button" data-gm="teacher">선생님이신가요?</button>' : '') + '</div>';
+    } else if (MODE === 'join'){
+      h = '<p class="gt-lead">학번과 이름을 직접 적고 PIN을 정해 가입을 신청해요. <b>담임 선생님이 승인하면</b> 로그인할 수 있어요.</p>' +
+        field('gtSid', '학번', 'text', '예) 10203', 6) + field('gtName', '이름', 'text', '예) 김서준', 10) +
+        field('gtP1', '새 PIN 6자리', 'password', '숫자 6자리', 6) + field('gtP2', '한 번 더', 'password', '숫자 6자리', 6) +
+        (JOIN && JOIN.needJoin ? field('gtJoin', '가입암호 (담임 선생님이 알려 주신 암호)', 'text', '', 30) : '') +
+        '<p class="gt-rule">000000 · 123456처럼 같거나 이어진 숫자는 쓸 수 없어요. PIN은 친구에게 알려 주지 마세요.</p>' +
+        '<button type="button" class="gt-go" data-g="join">가입 신청</button><div class="gt-note" id="gtNote"></div>' +
+        '<div class="gt-links"><button type="button" data-gm="login">이미 가입했어요 · 로그인</button></div>';
+    } else if (MODE === 'change'){
+      h = field('gtSid', '학번', 'text', '예) 10203', 6) + field('gtOld', '지금 PIN', 'password', '', 6) +
+        field('gtP1', '새 PIN 6자리', 'password', '숫자 6자리', 6) + field('gtP2', '한 번 더', 'password', '숫자 6자리', 6) +
+        '<button type="button" class="gt-go" data-g="change">PIN 바꾸기</button><div class="gt-note" id="gtNote"></div>' +
+        '<div class="gt-links"><button type="button" data-gm="login">로그인으로</button></div>';
+    } else if (MODE === 'upgrade'){
+      h = '<p class="gt-lead"><b>' + e2(OLD && OLD.name) + '</b> 학생, 보안이 강화되어 PIN이 <b>6자리</b>로 바뀌었어요. 새 PIN을 정하면 바로 들어가요.</p>' +
+        field('gtP1', '새 PIN 6자리', 'password', '숫자 6자리', 6) + field('gtP2', '한 번 더', 'password', '숫자 6자리', 6) +
+        '<button type="button" class="gt-go" data-g="upgrade">바꾸고 들어가기</button><div class="gt-note" id="gtNote"></div>';
+    } else if (MODE === 'teacher'){
+      h = field('gtPw', '관리자 비밀번호', 'password', '', 60) +
+        '<button type="button" class="gt-go" data-g="teacher">들어가기</button><div class="gt-note" id="gtNote"></div>' +
+        '<div class="gt-links"><button type="button" data-gm="login">학생 로그인으로</button></div>';
+    }
+    el('gtBody').innerHTML = h;
+    var f = el('gtBody').querySelector('input'); if (f) setTimeout(function(){ try { f.focus(); } catch (e) {} }, 60);
+  }
+  function done(r){
+    save(r); CHECKED = true;
+    el('gate').hidden = true;
+    var cb = CB; CB = null;
+    if (cb) cb(me());
+  }
+  function open(mode, cb, opt){
+    MODE = mode || 'login'; if (cb) CB = cb; OPT = opt || OPT || {};
+    el('gate').hidden = false; draw();
+    if (MODE === 'join' && !JOIN) run('apiJoinInfo').then(function(r){ JOIN = r; if (MODE === 'join') draw(); }).catch(function(){});
+  }
+  function busy(b){ var g = el('gtBody').querySelector('.gt-go'); if (g) g.disabled = b; }
+  function fail(e){ busy(false); note('err', String(e && e.message || '잠시 뒤 다시 해 주세요.').replace(/^LOGIN:\s{0,9}/, '')); }
+  el('gtX').onclick = function(){ el('gate').hidden = true; if (OPT.onClose) OPT.onClose(); };
+  el('gate').addEventListener('keydown', function(ev){ if (ev.key === 'Enter'){ var g = el('gtBody').querySelector('.gt-go'); if (g) g.click(); } });
+  el('gate').addEventListener('click', function(ev){
+    var m = ev.target.closest('[data-gm]');
+    if (m){ open(m.getAttribute('data-gm')); return; }
+    var b = ev.target.closest('[data-g]'); if (!b) return;
+    var a = b.getAttribute('data-g'), v = function(id){ var x = el(id); return x ? x.value.trim() : ''; };
+    if (a === 'login'){
+      var sid = v('gtSid'), pin = v('gtPin');
+      if (!/^\d{4,6}$/.test(sid)) return note('err', '학번을 숫자로 적어 주세요.');
+      if (!/^\d{4}$|^\d{6}$/.test(pin)) return note('err', 'PIN을 넣어 주세요.');
+      busy(true);
+      run('apiGateLogin', [sid, pin]).then(function(r){
+        busy(false);
+        if (r.needUpgrade){ OLD = {sid: sid, pin: pin, name: r.name}; open('upgrade'); return; }
+        done(r);
+      }).catch(fail);
+      return;
+    }
+    if (a === 'upgrade' || a === 'join' || a === 'change'){
+      var p1 = v('gtP1'), p2 = v('gtP2');
+      if (!/^\d{6}$/.test(p1)) return note('err', 'PIN은 숫자 6자리로 정해 주세요.');
+      if (p1 !== p2) return note('err', '두 번 넣은 PIN이 서로 달라요.');
+      if (weak(p1)) return note('err', '너무 쉬운 PIN이에요. 다른 숫자로 정해 주세요.');
+      busy(true);
+      if (a === 'upgrade') run('apiGateUpgrade', [OLD.sid, OLD.pin, p1]).then(done).catch(fail);
+      else if (a === 'change'){
+        if (!/^\d{4,6}$/.test(v('gtSid'))) return fail({message: '학번을 숫자로 적어 주세요.'});
+        run('apiChangePin', [v('gtSid'), v('gtOld'), p1]).then(done).catch(fail);
+      } else {
+        if (!/^\d{4,6}$/.test(v('gtSid'))) return fail({message: '학번을 숫자로 적어 주세요.'});
+        if (v('gtName').length < 2) return fail({message: '이름을 적어 주세요.'});
+        run('apiJoinRequest', [v('gtSid'), v('gtName'), p1, v('gtJoin')]).then(function(){
+          busy(false);
+          el('gtBody').innerHTML = '<p class="gt-lead" style="font-size:15px;color:var(--t-ink);margin-top:14px"><b>가입 신청을 보냈어요.</b></p>' +
+            '<p class="gt-lead">담임 선생님이 승인하면 학번과 방금 정한 PIN으로 로그인할 수 있어요.</p>' +
+            '<button type="button" class="gt-go" data-gm="login">로그인 화면으로</button>';
+        }).catch(fail);
+      }
+      return;
+    }
+    if (a === 'teacher' && OPT.teacher){
+      var pw = v('gtPw'); if (!pw) return note('err', '비밀번호를 넣어 주세요.');
+      busy(true);
+      Promise.resolve(OPT.teacher(pw)).then(function(){ el('gate').hidden = true; CB = null; }).catch(fail);
+    }
+  });
+  window.Gate = {
+    me: me,
+    open: open,
+    /* 로그인되어 있으면 바로 cb, 아니면 로그인 창 */
+    ensure: function(cb, opt){
+      OPT = opt || {};
+      var m = me();
+      /* 담임 선생님이 이미 다른 탭에서 들어와 있으면 비밀번호를 다시 묻지 않습니다 */
+      var at = window.AdmTok && AdmTok.get();
+      if (!m && at && OPT.teacher){
+        var o2 = OPT;
+        Promise.resolve(o2.teacher(at)).catch(function(){ try { localStorage.removeItem('gjd_atok'); } catch (e) {} open('login', cb, o2); });
+        return;
+      }
+      if (!m){ open('login', cb, OPT); return; }
+      /* 표가 있으면 바로 들어갑니다. 표가 무효이면 서버가 'LOGIN' 오류를 돌려주고, 그때 로그인 창이 뜹니다. (확인용 호출 한 번 절약) */
+      CHECKED = true; cb(m);
+    },
+    /* 서버가 '다시 로그인'을 알려 오면 */
+    fail: function(e, cb){
+      if (String(e && e.message || '').indexOf('LOGIN') === 0){ clear(); open('login', cb); note('err', '다시 로그인해 주세요.'); return true; }
+      return false;
+    },
+    logout: function(){ var v = load(); if (v) run('apiGateLogout', [v.tok]).catch(function(){}); clear(); }
+  };
+})();
+</script>

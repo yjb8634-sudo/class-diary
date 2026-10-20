@@ -1,0 +1,818 @@
+<!-- 문제 해결 프로젝트 화면 · 학급 다이어리의 한 화면입니다. Index 화면이 ?go=pbl 로 열릴 때만 끼워 넣습니다.
+     이 파일 안에는 템플릿 표시(물음표 꺾쇠)를 쓰지 않습니다. -->
+<!-- ===== ② 문제 해결 프로젝트 ===== -->
+<div id="app-pbl" hidden>
+<nav>
+  <button class="on" data-p="board">전체 현황판</button>
+  <button data-p="my">우리 모둠</button>
+  <button data-p="eval">★ 자기평가</button>
+  <button data-p="admin">담임</button>
+  <button class="backbtn" onclick="goHome()">↩ 활동 바꾸기</button>
+</nav>
+
+<!-- 현황판 -->
+<section id="pb-board">
+  <div class="stats" id="pStats"></div>
+  <div class="legend" id="pLegend"></div>
+  <div class="card">
+    <div id="pBoard" class="loading">불러오는 중…</div>
+    <div class="hint" style="text-align:center;margin-top:14px">
+      모둠 이름을 누르면 진행 상황이 열려요 · 작성 내용은 모둠원과 담임 선생님만 볼 수 있습니다
+    </div>
+  </div>
+  <div class="card" id="pNotJoinedCard" hidden>
+    <h2>아직 참여하지 않은 친구</h2>
+    <div id="pNotJoined" class="chips"></div>
+  </div>
+</section>
+
+<!-- 우리 모둠 -->
+<section id="pb-my" hidden>
+  <div class="viewas" hidden><b>점검 보기</b><select class="vsel"></select><span class="vnote">고른 학생이 보는 화면을 읽기 전용으로 봅니다. 아무것도 저장되지 않아요.</span></div>
+  <div class="card" id="pLoginCard">
+    <h2>내 번호로 들어가기</h2>
+    <p class="desc">21일 프로젝트와 <b>같은 번호·같은 PIN</b>을 사용합니다. 처음이라면 지금 입력한 4자리가 내 PIN으로 등록돼요.</p>
+    <div class="row2">
+      <div>
+        <label>번호 · 이름</label>
+        <select id="pLgNo"></select>
+      </div>
+      <div>
+        <label>PIN <span>숫자 4자리</span></label>
+        <input id="pLgPin" type="tel" inputmode="numeric" maxlength="4" placeholder="0000" autocomplete="off">
+      </div>
+    </div>
+    <button class="act" id="pBtnLogin">들어가기</button>
+    <div class="msg" id="pLgMsg"></div>
+  </div>
+
+  <!-- 팀 없음 -->
+  <div id="pTeamPick" hidden>
+    <div class="card">
+      <h2>어떻게 참여할까요?</h2>
+      <p class="desc">모둠으로 함께 해도 되고, 혼자 해도 됩니다. 한 번 정하면 <b>나가기</b>를 눌러야 바꿀 수 있어요.</p>
+      <div class="joinrow">
+        <button class="joinbtn" id="btnMakeTeam"><b>새 모둠 만들기</b><span>팀명을 정하고 친구들을 초대해요</span></button>
+        <button class="joinbtn" id="btnSolo"><b>혼자 참여하기</b><span>개인 활동으로 진행해요</span></button>
+      </div>
+      <div id="makeTeamBox" hidden style="margin-top:14px">
+        <label>모둠 이름(팀명) <span>20자 이내</span></label>
+        <input id="newTeamName" maxlength="20" placeholder="예) 복도지킴이">
+        <label style="margin-top:10px">우리 모둠이 다룰 문제 <span>한 줄로 · 120자 이내 · 조원들이 이걸 보고 신청해요</span></label>
+        <input id="newTeamTopic" maxlength="120" placeholder="예) 급식실에 잔반이 너무 많이 남아요">
+        <button class="act green" id="btnMakeGo">이 내용으로 모둠 만들기</button>
+      </div>
+      <div class="msg" id="pTeamMsg"></div>
+    </div>
+    <div class="card">
+      <h2>모집 중인 모둠에 신청하기</h2>
+      <p class="desc">조장이 올린 문제를 보고 마음에 드는 모둠에 <b>신청</b>하세요. 조장이 수락하면 정식 팀원이 됩니다.</p>
+      <div id="pMyPending" hidden class="notice" style="margin-bottom:12px">
+        <div class="ic">⏳</div>
+        <div>
+          <div class="t" id="pMyPendingText"></div>
+          <button class="act ghost" id="btnCancelApply" style="margin-top:8px">신청 취소하기</button>
+        </div>
+      </div>
+      <div id="openTeams"></div>
+    </div>
+  </div>
+
+  <!-- 팀 있음 -->
+  <div id="pWork" hidden>
+    <div class="card">
+      <div class="teamhead">
+        <div>
+          <h2 id="pTeamName"></h2>
+          <div class="hint" id="pTeamMembers" style="margin-top:4px"></div>
+        </div>
+        <div class="pillbox" id="pTeamBadges"></div>
+      </div>
+      <div class="stepline" id="pStepLine"></div>
+      <div class="notice" style="margin-top:14px">
+        
+        <div>
+          <div class="t">우리가 쓴 내용은 다른 모둠에 공개되지 않습니다.</div>
+          <div class="s">현황판에는 <b>모둠 이름 · 문제 주제 · 진행 단계</b>만 보여요.
+          작성한 내용과 올린 파일은 <b>우리 모둠원과 담임 선생님만</b> 볼 수 있습니다.</div>
+        </div>
+      </div>
+      <div class="hint" id="pTeamInfo" style="text-align:center;margin-top:12px"></div>
+    </div>
+
+    <div class="card" id="pApplyCard" hidden>
+      <h2>신청자 관리 <span id="pRecruitBadge" class="pill" style="margin-left:6px"></span></h2>
+      <p class="desc">우리 모둠에 들어오고 싶어하는 친구들이에요. <b>수락</b>하면 바로 정식 팀원이 됩니다.</p>
+      <div id="pApplyList"></div>
+      <button class="act ghost" id="btnToggleRecruit" style="margin-top:12px"></button>
+    </div>
+
+    <div id="pSteps"></div>
+
+    <div class="card" id="pCommentCard" hidden>
+      <h2>선생님 코멘트</h2>
+      <div class="tcomment" id="pComment"></div>
+    </div>
+
+    <div class="card">
+      <button class="act ghost" id="pBtnLeave">모둠 나가기 / 다른 번호로 바꾸기</button>
+      <div class="hint">나가면 우리 모둠에서 빠집니다. 마지막 한 명이 나가면 활동지도 함께 삭제돼요.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 자기평가 -->
+<section id="pb-eval" hidden>
+  <div class="viewas" hidden><b>점검 보기</b><select class="vsel"></select><span class="vnote">고른 학생이 보는 화면을 읽기 전용으로 봅니다. 아무것도 저장되지 않아요.</span></div>
+  <div class="card">
+    <h2>★ 스스로 평가해 보기</h2>
+    <p class="desc">각 항목마다 1~5점 중에서 골라 주세요. <b>STEP 5까지 모두 완성</b>해야 평가할 수 있습니다. 평가는 모둠원 각자 따로 합니다.</p>
+    <div id="pEvalGate" class="msg err" style="display:block">
+      먼저 <b>[우리 모둠]</b> 탭에서 번호와 PIN으로 들어와 주세요.
+    </div>
+    <div id="pEvalForm" hidden>
+      <div id="pEvalItems"></div>
+      <button class="act green" id="pBtnEval">자기평가 저장</button>
+      <div class="msg" id="pEvalMsg"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 담임 -->
+<section id="pb-admin" hidden>
+  <div class="card" id="pAdmLogin">
+    <h2>담임 전용</h2>
+    <p class="desc">[설정] 시트에 적어 둔 관리자 비밀번호를 입력하세요.</p>
+    <input id="pAdmPw" type="password" placeholder="관리자 비밀번호" autocomplete="off">
+    <button class="act" id="pBtnAdm">확인</button>
+    <div class="msg" id="pAdmMsg"></div>
+  </div>
+  <div id="pAdmArea" hidden></div>
+</section>
+</div><!-- /app-pbl -->
+
+<script>
+var FILE_VER = '2026-11-01a';   /* 파일 버전 (점검용) */
+document.querySelectorAll('#app-pbl nav button[data-p]').forEach(function(b){
+  b.onclick=function(){
+    document.querySelectorAll('#app-pbl nav button').forEach(function(x){x.classList.remove('on');});
+    b.classList.add('on');
+    ['board','my','eval','admin'].forEach(function(t){ $('pb-'+t).hidden = (t!==b.dataset.p); });
+    if(b.dataset.p==='board') loadPBoard();
+    if(b.dataset.p==='eval') renderEval();
+    if(b.dataset.p==='admin') pAdmAuto();
+  };
+});
+/* 담임 선생님으로 들어와 있으면 담임 탭에서 비밀번호를 다시 묻지 않습니다 */
+function pAdmAuto(){
+  if (PADMPW) return;
+  var tp = (typeof G !== 'undefined' && G && G.teacher && G.pin) ? String(G.pin).slice(3) : '';
+  if (!tp) return;
+  PADMPW = tp; $('pAdmLogin').hidden = true; $('pAdmArea').hidden = false; loadPAdmin();
+}
+
+
+/*═══════════════════════════════════════════
+ *  ② 문제 해결 프로젝트
+ *═══════════════════════════════════════════*/
+var PME=null, PMINE=null, PADMPW='', PBOARD=null, PICKED_STEP={};
+var STEPCOL=['','#FFC24A','#7FD8C4','#8FB4FF','#C89BE0','#FFE927'];   /* 문제 해결 5단계 색 */
+var METHODS=['설문조사','면담(인터뷰)','문헌·책 조사','현장 관찰','통계·공공데이터','인터넷·기사 검색','기타'];
+
+var QTEXT={
+  s1a:['①','우리가 발견한 문제는 무엇인가요?','한 문장으로 적어 주세요'],
+  s1b:['②','이 문제를 어떻게 알게 되었나요?','직접 겪은 일 / 관찰 / 뉴스·기사 / 친구의 이야기 등'],
+  s1c:['③','이 문제로 어려움을 겪는 사람은 누구인가요? 왜 중요한 문제라고 생각하나요?',''],
+  s2m:['①','어떤 방법으로 조사했나요?','해당하는 것에 모두 표시하세요'],
+  s2b:['②','자료를 종합해 보니 알게 된 점은 무엇인가요?','문제의 원인, 규모, 다른 학교·지역 사례 등'],
+  s3a:['①','우리가 생각한 해결 방안은 무엇인가요?','구체적으로 적어 주세요'],
+  s3b:['②','이 제안을 누구에게, 어떤 방법으로 전달할 계획인가요?','담임 선생님, 학생회, 관련 기관, 건의문, 발표, 캠페인, SNS 등'],
+  s3c:['③','제안이 받아들여지려면 어떤 점을 더 준비해야 할까요?','예상되는 어려움·반대 의견 포함'],
+  s4a:['①','제안에 대해 어떤 반응이 있었나요?','찬성한 점 / 우려하거나 반대한 점'],
+  s4b:['②','우리와 다른 의견은 무엇이었고, 왜 그렇게 생각했을까요?',''],
+  s4c:['③','여러 의견을 조정해서 최종적으로 합의한 내용은 무엇인가요?',''],
+  s4d:['④','조정 과정에서 내가 배우거나 느낀 점은 무엇인가요?','양보한 점, 설득한 점 등'],
+  s5a:['①','최종안을 실행한 결과, 실제로 달라진 점은 무엇인가요?','수치, 반응, 변화한 모습 등 구체적으로'],
+  s5b:['②','이번 활동에서 특히 잘했다고 생각하는 점은 무엇인가요?',''],
+  s5c:['③','아쉬웠던 점, 다음에 보완하고 싶은 점은 무엇인가요?',''],
+  s5d:['④','이 활동으로 배운 점을 앞으로 어떻게 활용하고 싶나요?','']
+};
+
+/* ---------- 현황판 ---------- */
+function loadPBoard(silent){
+  if(!silent) $('pBoard').innerHTML='<div class="loading">불러오는 중…</div>';
+  google.script.run.withSuccessHandler(function(d){
+    PBOARD=d; renderPBoard(d);
+    $('pLoginCard').hidden = true;
+  }).withFailureHandler(function(e){
+    $('pBoard').className='';
+    $('pBoard').innerHTML='<div class="msg err" style="display:block">'+esc(e.message)+'</div>';
+  }).apiPblBoard(G.no, G.pin);
+}
+
+function renderPBoard(d){
+  $('pBoard').className='';
+  var s=d.stat;
+  $('pStats').innerHTML=
+    '<div class="stat"><b>'+s.teams+'</b><span>참여 팀</span></div>'+
+    '<div class="stat"><b>'+s.joined+'<small style="font-size:13px;color:var(--t-ink-3)">/'+s.totalStudents+'</small></b><span>참여 인원</span></div>'+
+    '<div class="stat g"><b>'+s.groups+'<small style="font-size:13px;color:var(--t-ink-3)">·'+s.solo+'</small></b><span>모둠 · 개인</span></div>'+
+    '<div class="stat o"><b>'+s.completed+'</b><span>5단계 완주 ★</span></div>';
+
+  $('pLegend').innerHTML = CFG.pbl.steps.map(function(st){
+    return '<span><i style="background:'+STEPCOL[st.n]+'"></i>STEP '+st.n+' '+esc(st.title)+'</span>';
+  }).join('');
+
+  if(!d.list.length){
+    $('pBoard').innerHTML='<div class="loading">아직 만들어진 모둠이 없어요.<br>'+
+      '<b>[우리 모둠]</b> 탭에서 첫 모둠을 만들어 보세요!</div>';
+  }else{
+    var h='';
+    d.list.forEach(function(t){
+      var cells='';
+      for(var i=1;i<=5;i++) cells+='<div class="pc'+(i<=t.done?' f'+i:'')+'"></div>';
+      var bd=(t.type==='개인'?'<span class="badge solo">개인</span>':'<span class="badge grp">'+t.size+'명</span>')
+           +(t.confirmed?'<span class="badge cfm">확인</span>':'');
+      h+='<div class="prw'+(t.completed?' done':'')+'" data-id="'+t.id+'">'+
+          '<div><div class="tn">'+esc(t.name)+bd+'</div>'+
+          '<div class="tsub">'+(t.topic?esc(t.topic):'아직 문제 주제 미정')+'</div></div>'+
+          '<div class="pbar5">'+cells+'</div>'+
+          '<div class="pn">'+t.done+'<small>/5</small></div>'+
+         '</div><div id="pdt'+t.id+'"></div>';
+    });
+    $('pBoard').innerHTML=h;
+    document.querySelectorAll('.prw').forEach(function(r){
+      r.onclick=function(){ togglePDetail(r.dataset.id); };
+    });
+  }
+
+  if(d.notJoined.length){
+    $('pNotJoinedCard').hidden=false;
+    $('pNotJoined').innerHTML=d.notJoined.map(function(x){
+      return '<span class="chip">'+x.no+'. '+esc(x.name)+'</span>'; }).join('');
+  }else{ $('pNotJoinedCard').hidden=true; }
+}
+
+function togglePDetail(id){
+  var box=$('pdt'+id);
+  if(box.innerHTML){ box.innerHTML=''; return; }
+  var t=null;
+  PBOARD.list.forEach(function(x){ if(x.id===id) t=x; });
+  if(!t) return;
+  var h='<div class="detail">';
+  h+='<b>'+esc(t.name)+'</b> · '+(t.type==='개인'?'개인 활동':'모둠 '+t.size+'명');
+  h+='<br><b>구성원</b> : '+esc(t.members);
+  h+='<br><b>문제 주제</b> : '+(t.topic?esc(t.topic):'<span style="color:var(--t-ink-3)">아직 STEP 1 미작성</span>');
+  h+='<br><b>진행</b> : '+t.done+'/5 단계 ('+t.pct+'%)';
+  if(t.done>0 && t.done<5) h+=' — 지금 <b>STEP '+(t.done+1)+' '+esc(CFG.pbl.steps[t.done].title)+'</b> 하는 중';
+  if(t.completed) h+=' ★ <b style="color:#FFC24A">5단계 완주!</b>';
+  if(t.confirmed) h+='<br><span class="pill ok">담임 최종 확인 완료</span>';
+  if(t.evalCount) h+='<br><b>자기평가</b> : '+t.evalCount+'명 완료';
+  h+='<div class="chips">';
+  CFG.pbl.steps.forEach(function(st){
+    var on = st.n<=t.done;
+    h+='<span class="chip" style="'+(on?'background:'+STEPCOL[st.n]+';color:var(--t-surface-2);border-color:transparent;font-weight:700':'')+'">'
+      +'STEP '+st.n+' '+esc(st.title)+(on?' ✓':'')+'</span>';
+  });
+  h+='</div><div style="margin-top:8px;font-size:11.5px;color:var(--t-ink-3)">작성한 내용은 이 모둠과 담임 선생님만 볼 수 있습니다.</div>';
+  h+='</div>';
+  box.innerHTML=h;
+}
+
+function fillPSelect(){
+  var sel=$('pLgNo');
+  if(sel.options.length) return;
+  google.script.run.withSuccessHandler(function(d){
+    d.list.forEach(function(b){
+      var o=document.createElement('option');
+      o.value=b.no; o.textContent=b.no+'번 · '+b.name;
+      sel.appendChild(o);
+    });
+  }).apiBoard(G.no, G.pin);
+}
+
+function pblLogin(){
+  google.script.run.withSuccessHandler(function(m){
+    PME={no:m.no,pin:G.pin}; $('pLoginCard').hidden=true; applyMine(m);
+  }).withFailureHandler(function(e){
+    if (Gate.fail(e, function(mm){ G = mm; pblLogin(); })) return;
+    say($('pLgMsg'),'err',esc(e.message));
+  }).apiPblMine(G.no, G.pin);
+}
+/* ---------- 로그인 ---------- */
+$('pBtnLogin').onclick=function(){
+  var no=$('pLgNo').value, pin=$('pLgPin').value.trim();
+  if(!/^\d{4}$/.test(pin)){ say($('pLgMsg'),'err','PIN은 숫자 4자리로 입력해 주세요.'); return; }
+  var btn=this; btn.disabled=true; btn.textContent='확인 중…';
+  google.script.run.withSuccessHandler(function(m){
+    btn.disabled=false; btn.textContent='들어가기'; clear($('pLgMsg'));
+    PME={no:m.no,pin:pin};
+    $('pLoginCard').hidden=true;
+    applyMine(m);
+  }).withFailureHandler(function(e){
+    btn.disabled=false; btn.textContent='들어가기'; say($('pLgMsg'),'err',esc(e.message));
+  }).apiPblMine(no,pin);
+};
+
+function applyMine(m){
+  PMINE=m;
+  if(!m.team){
+    $('pTeamPick').hidden=false; $('pWork').hidden=true;
+    renderMyPending(m.myPending);
+    renderOpenTeams(m.openTeams, m.maxMembers);
+  }else{
+    $('pTeamPick').hidden=true; $('pWork').hidden=false;
+    renderTeam(m);
+  }
+  renderEval();
+}
+
+function renderMyPending(p){
+  if(!p){ $('pMyPending').hidden=true; return; }
+  $('pMyPending').hidden=false;
+  $('pMyPendingText').innerHTML='<b>'+esc(p.name)+'</b> 모둠에 신청했어요. 조장의 승인을 기다리는 중입니다.';
+  $('btnCancelApply').onclick=function(){
+    if(!confirm('신청을 취소할까요?')) return;
+    google.script.run.withSuccessHandler(function(r){
+      applyMine(r.mine); loadPBoard(true);
+    }).withFailureHandler(function(e){ alert(e.message); }).apiPblCancelApply(PME.no,PME.pin,p.id);
+  };
+}
+
+function renderOpenTeams(list,max){
+  if(!list.length){
+    $('openTeams').innerHTML='<div class="hint">아직 만들어진 모둠이 없어요. 위에서 첫 모둠을 만들어 보세요!</div>';
+    return;
+  }
+  $('openTeams').innerHTML=list.map(function(t){
+    var stateBtn;
+    if(t.applied) stateBtn='<button disabled style="opacity:.6">신청 완료 · 대기중</button>';
+    else if(t.closed) stateBtn='<button disabled style="opacity:.5">모집 마감</button>';
+    else if(t.full) stateBtn='<button disabled style="opacity:.5">정원 마감</button>';
+    else stateBtn='<button onclick="applyTeam(\''+t.id+'\')">신청하기</button>';
+    return '<div class="teamrow"><div class="ti"><b>'+esc(t.name)+'</b>'+
+      '<span>'+esc(t.topic||'문제 주제 미정')+'</span>'+
+      '<span>'+esc(t.members)+' · '+t.size+'/'+max+'명'+(t.pendingCount?' · 신청 대기 '+t.pendingCount+'명':'')+'</span></div>'+
+      stateBtn+'</div>';
+  }).join('');
+}
+
+/* ---------- 팀 만들기 / 신청 / 나가기 ---------- */
+$('btnMakeTeam').onclick=function(){ $('makeTeamBox').hidden=!$('makeTeamBox').hidden; $('newTeamName').focus(); };
+$('btnSolo').onclick=function(){
+  if(!confirm('혼자(개인)로 참여할까요?\n나중에 [나가기]를 누르면 모둠으로 바꿀 수 있어요.')) return;
+  createTeam('개인','','');
+};
+$('btnMakeGo').onclick=function(){
+  var nm=$('newTeamName').value.trim(), tp=$('newTeamTopic').value.trim();
+  clear($('pTeamMsg'));
+  if(!nm){ say($('pTeamMsg'),'err','모둠 이름을 적어 주세요.'); return; }
+  if(!tp){ say($('pTeamMsg'),'err','우리 모둠이 다룰 문제를 한 줄로 적어 주세요. 조원들이 이걸 보고 신청해요.'); return; }
+  createTeam('모둠',nm,tp);
+};
+
+function createTeam(type,name,topic){
+  if(!PME) return;
+  clear($('pTeamMsg'));
+  google.script.run.withSuccessHandler(function(r){
+    applyMine(r.mine); loadPBoard(true);
+  }).withFailureHandler(function(e){ say($('pTeamMsg'),'err',esc(e.message)); })
+   .apiPblCreateTeam(PME.no,PME.pin,type,name,topic);
+}
+function applyTeam(id){
+  if(!PME) return;
+  google.script.run.withSuccessHandler(function(r){
+    applyMine(r.mine); loadPBoard(true);
+  }).withFailureHandler(function(e){ say($('pTeamMsg'),'err',esc(e.message)); })
+   .apiPblApply(PME.no,PME.pin,id);
+}
+$('pBtnLeave').onclick=function(){
+  if(!PME) return;
+  if(!confirm('정말 나갈까요?\n마지막 한 명이 나가면 활동지도 함께 삭제됩니다.')) return;
+  google.script.run.withSuccessHandler(function(r){
+    applyMine(r.mine); loadPBoard(true);
+  }).withFailureHandler(function(e){ alert(e.message); }).apiPblLeaveTeam(PME.no,PME.pin);
+};
+
+/* ---------- 우리 모둠 화면 ---------- */
+function renderTeam(m){
+  var t=m.team;
+  $('pTeamName').textContent=t.name;
+  $('pTeamMembers').textContent='구성원 · '+t.members;
+  $('pTeamBadges').innerHTML=
+    (t.type==='개인'?'<span class="pill wait">개인 활동</span>':'<span class="pill ok">모둠 '+t.memberNos.length+'명</span>')+
+    (t.type==='모둠'?(t.recruitClosed?' <span class="pill wait">모집 마감</span>':' <span class="pill ok">모집중</span>'):'')+
+    (t.confirmed?' <span class="pill ok">담임 최종 확인</span>':'');
+
+  var sl='';
+  CFG.pbl.steps.forEach(function(st){
+    var f = st.n<=m.done ? ' f'+st.n : '';
+    var now = (st.n===m.done+1 && m.done<5) ? ' now' : '';
+    sl+='<div class="sl'+f+now+'"><b>'+st.n+'</b>'+esc(st.title)+'</div>';
+  });
+  $('pStepLine').innerHTML=sl;
+
+  $('pTeamInfo').innerHTML = m.done>=5
+    ? '★ <b>5단계를 모두 완성했어요!</b> 이제 [★ 자기평가] 탭에서 스스로 평가해 보세요.'
+    : '지금은 <b>STEP '+(m.done+1)+' '+esc(CFG.pbl.steps[m.done].title)+'</b> 차례예요.'
+      + (CFG.pbl.period?' · 활동 기간 '+esc(CFG.pbl.period):'');
+
+  if(t.comment){ $('pCommentCard').hidden=false; $('pComment').textContent=t.comment; }
+  else $('pCommentCard').hidden=true;
+
+  renderApplyCard(m);
+  renderSteps(m);
+}
+
+/* 조장 전용 — 신청자 수락/거절 · 모집 마감 토글 */
+function renderApplyCard(m){
+  var t=m.team;
+  if(!m.isLeader || t.type!=='모둠'){ $('pApplyCard').hidden=true; return; }
+  $('pApplyCard').hidden=false;
+
+  $('pRecruitBadge').className='pill '+(t.recruitClosed?'wait':'ok');
+  $('pRecruitBadge').textContent=t.recruitClosed?'모집 마감':'모집중 · '+t.memberNos.length+'/'+m.maxMembers+'명';
+
+  var pend=t.pending||[];
+  if(!pend.length){
+    $('pApplyList').innerHTML='<div class="hint">아직 신청한 친구가 없어요.</div>';
+  }else{
+    $('pApplyList').innerHTML=pend.map(function(p){
+      return '<div class="teamrow"><div class="ti"><b>'+p.no+'번 '+esc(p.name)+'</b>'+
+        '<span>신청 대기중</span></div>'+
+        '<div style="display:flex;gap:6px">'+
+        '<button onclick="approveApply('+p.no+')" style="background:#16A34A">수락</button>'+
+        '<button onclick="rejectApply('+p.no+')" style="background:var(--t-ink-3)">거절</button>'+
+        '</div></div>';
+    }).join('');
+  }
+
+  $('btnToggleRecruit').textContent = t.recruitClosed ? '다시 모집 열기' : '모집 마감하기';
+  $('btnToggleRecruit').onclick=function(){
+    google.script.run.withSuccessHandler(function(r){
+      applyMine(r.mine); loadPBoard(true);
+    }).withFailureHandler(function(e){ alert(e.message); })
+     .apiPblSetRecruit(PME.no,PME.pin,t.id,!t.recruitClosed);
+  };
+}
+
+function approveApply(no){
+  if(!PME || !PMINE || !PMINE.team) return;
+  google.script.run.withSuccessHandler(function(r){
+    applyMine(r.mine); loadPBoard(true);
+  }).withFailureHandler(function(e){ alert(e.message); })
+   .apiPblApprove(PME.no,PME.pin,PMINE.team.id,no);
+}
+function rejectApply(no){
+  if(!PME || !PMINE || !PMINE.team) return;
+  if(!confirm('이 신청을 거절할까요?')) return;
+  google.script.run.withSuccessHandler(function(r){
+    applyMine(r.mine); loadPBoard(true);
+  }).withFailureHandler(function(e){ alert(e.message); })
+   .apiPblReject(PME.no,PME.pin,PMINE.team.id,no);
+}
+
+function renderSteps(m){
+  var h='';
+  CFG.pbl.steps.forEach(function(st){
+    var filled = st.n<=m.done;
+    var open = st.n<=m.canEditUpTo;
+    var locked = !open;
+    var status = filled ? '<span class="sst ok">완료 ✓</span>'
+               : (open ? '<span class="sst now">작성 중</span>' : '<span class="sst lock">잠김</span>');
+    h+='<div class="stepcard c'+st.n+(locked?' locked':'')+'" id="sc'+st.n+'">'+
+       '<div class="sh" onclick="toggleStep('+st.n+')">'+
+         '<div class="sn">'+st.n+'</div>'+
+         '<div class="stx"><b>STEP '+st.n+'. '+esc(st.title)+'</b><span>'+esc(st.desc)+'</span></div>'+
+         status+
+       '</div>'+
+       '<div class="sb" id="sb'+st.n+'" hidden>'+ stepBody(st,m,locked) +'</div>'+
+       '</div>';
+  });
+  $('pSteps').innerHTML=h;
+  var cur = Math.min(m.done+1,5);
+  toggleStep(cur);
+}
+
+function stepBody(st,m,locked){
+  if(locked){
+    return '<div class="hint" style="margin-top:14px">앞 단계를 먼저 완성해야 열립니다. '+
+      '<b>STEP '+m.canEditUpTo+'</b>부터 차례로 진행해 주세요.</div>';
+  }
+  var w=m.work, h='';
+  st.fields.forEach(function(f){
+    var q=QTEXT[f];
+    h+='<div class="qz"><i>'+q[0]+'</i>'+esc(q[1])+(q[2]?'<em>'+esc(q[2])+'</em>':'')+'</div>';
+    if(f==='s2m'){
+      var sel=String(w.s2m||'').split(',').map(function(x){return x.trim();});
+      h+='<div class="methods">';
+      METHODS.forEach(function(mm,i){
+        var on=sel.indexOf(mm)>-1;
+        h+='<label class="mchk'+(on?' on':'')+'" id="mk'+i+'">'+
+           '<input type="checkbox" '+(on?'checked':'')+' data-m="'+esc(mm)+'" onchange="tickMethod(this,'+i+')">'+
+           esc(mm)+'</label>';
+      });
+      h+='</div>';
+    }else{
+      h+='<textarea id="fld_'+f+'" placeholder="여기에 적어 주세요">'+esc(w[f]||'')+'</textarea>';
+    }
+  });
+  if(CFG.allowUpload){
+    h+='<label style="margin-top:16px">자료 첨부 <span>선택 · 사진, 설문 결과, 한글·워드 파일 등</span></label>'+
+       '<div class="file-pick" id="pPick'+st.n+'" onclick="document.getElementById(\'pFile'+st.n+'\').click()">'+
+       '파일 선택 (최대 '+CFG.maxMB+'MB)</div>'+
+       '<input id="pFile'+st.n+'" type="file" hidden accept="image/\u002a,.hwp,.hwpx,.doc,.docx,.pdf,.ppt,.pptx,.xls,.xlsx,.txt" '+
+       'onchange="pickStepFile(this,'+st.n+')">';
+  }
+  var fs=(m.files||[]).filter(function(x){ return x.step===st.n; });
+  if(fs.length){
+    h+='<div class="filelist">'+fs.map(function(x){
+      return '<a href="'+x.fileUrl+'" target="_blank">'+esc(x.fileName)+' <span style="color:var(--t-ink-3);font-weight:500">('+esc(x.by)+')</span></a>';
+    }).join('')+'</div>';
+  }
+  h+='<button class="act green" onclick="saveStep('+st.n+',this)">STEP '+st.n+' 저장하기</button>'+
+     '<div class="msg" id="smsg'+st.n+'"></div>';
+  return h;
+}
+
+function toggleStep(n){
+  for(var i=1;i<=5;i++){ if($('sb'+i)) $('sb'+i).hidden = (i!==n); }
+}
+
+function tickMethod(el,i){
+  $('mk'+i).className = 'mchk' + (el.checked?' on':'');
+}
+
+function pickStepFile(el,n){
+  var f=el.files[0];
+  if(!f){ PICKED_STEP[n]=null; return; }
+  if(f.size > CFG.maxMB*1024*1024){
+    alert('파일이 너무 큽니다. '+CFG.maxMB+'MB 이하로 올려 주세요.');
+    el.value=''; PICKED_STEP[n]=null; return;
+  }
+  PICKED_STEP[n]=f;
+  $('pPick'+n).className='file-pick has';
+  $('pPick'+n).textContent='✓ '+f.name+' ('+Math.round(f.size/1024)+'KB) — 저장하면 함께 올라갑니다';
+}
+
+function saveStep(n,btn){
+  if(!PME) return;
+  var st=CFG.pbl.steps[n-1];
+  var fields={};
+  var missing=false;
+  st.fields.forEach(function(f){
+    if(f==='s2m'){
+      var arr=[];
+      document.querySelectorAll('#sb'+n+' .mchk input:checked').forEach(function(c){ arr.push(c.dataset.m); });
+      fields.s2m=arr.join(', ');
+      if(!arr.length) missing=true;
+    }else{
+      var el=$('fld_'+f);
+      fields[f]= el ? el.value.trim() : '';
+      if(!fields[f]) missing=true;
+    }
+  });
+  if(missing){
+    say($('smsg'+n),'err','아직 비어 있는 칸이 있어요. 모두 채워야 이 단계가 완료됩니다. (지금 저장해도 내용은 보관돼요)');
+  }else{ clear($('smsg'+n)); }
+
+  btn.disabled=true; btn.textContent='저장 중…';
+  var payload={no:PME.no,pin:PME.pin,step:n,fields:fields,file:null};
+
+  function send(){
+    google.script.run.withSuccessHandler(function(r){
+      btn.disabled=false; btn.textContent='STEP '+n+' 저장하기';
+      PICKED_STEP[n]=null;
+      applyMine(r.mine); loadPBoard(true);
+      var box=$('smsg'+n);
+      if(box){
+        if(r.justCompleted) say(box,'ok','★ <b>5단계를 모두 완성했습니다!</b> 이제 자기평가를 해 주세요.');
+        else if(r.stepDone) say(box,'ok','<b>STEP '+n+' 완료!</b> 다음 단계가 열렸어요.');
+        else say(box,'ok','저장했습니다. 빈 칸을 모두 채우면 다음 단계가 열려요.');
+      }
+    }).withFailureHandler(function(e){
+      btn.disabled=false; btn.textContent='STEP '+n+' 저장하기';
+      say($('smsg'+n),'err',esc(e.message));
+    }).apiPblSaveStep(payload);
+  }
+
+  var pf=PICKED_STEP[n];
+  if(pf){
+    btn.textContent='파일 올리는 중…';
+    var rd=new FileReader();
+    rd.onload=function(){
+      payload.file={name:pf.name,mime:pf.type||'application/octet-stream',data:rd.result.split(',')[1]};
+      send();
+    };
+    rd.onerror=function(){ btn.disabled=false; btn.textContent='STEP '+n+' 저장하기';
+      say($('smsg'+n),'err','파일을 읽지 못했습니다.'); };
+    rd.readAsDataURL(pf);
+  } else send();
+}
+
+/* ---------- 자기평가 ---------- */
+var EVSCORES=[0,0,0,0,0];
+function renderEval(){
+  if(!PME || !PMINE || !PMINE.team){
+    $('pEvalGate').style.display='block'; $('pEvalForm').hidden=true;
+    $('pEvalGate').innerHTML='먼저 <b>[우리 모둠]</b> 탭에서 번호와 PIN으로 들어와 주세요.';
+    return;
+  }
+  if(!PMINE.evalOpen){
+    $('pEvalGate').style.display='block'; $('pEvalForm').hidden=true;
+    $('pEvalGate').innerHTML='STEP 5까지 모두 완성해야 자기평가를 할 수 있어요. '+
+      '지금은 <b>'+PMINE.done+'/5 단계</b>입니다.';
+    return;
+  }
+  $('pEvalGate').style.display='none'; $('pEvalForm').hidden=false;
+  if(PMINE.myEval) EVSCORES=PMINE.myEval.slice();
+  var h='';
+  CFG.pbl.evalItems.forEach(function(q,i){
+    h+='<div class="evrow"><div class="eq">'+(i+1)+'. '+esc(q)+'</div><div class="stars">';
+    for(var v=1;v<=5;v++){
+      h+='<button class="star'+(EVSCORES[i]===v?' on':'')+'" id="st'+i+'_'+v+'" onclick="setStar('+i+','+v+')">'+
+         (EVSCORES[i]>=v?'★':'☆')+'<div style="font-size:10px;font-weight:600;margin-top:2px">'+v+'</div></button>';
+    }
+    h+='</div></div>';
+  });
+  $('pEvalItems').innerHTML=h;
+}
+function setStar(i,v){
+  EVSCORES[i]=v;
+  for(var k=1;k<=5;k++){
+    var b=$('st'+i+'_'+k);
+    b.className='star'+(v===k?' on':'');
+    b.innerHTML=(v>=k?'★':'☆')+'<div style="font-size:10px;font-weight:600;margin-top:2px">'+k+'</div>';
+  }
+}
+$('pBtnEval').onclick=function(){
+  if(!PME) return;
+  if(EVSCORES.some(function(x){ return !x; })){ say($('pEvalMsg'),'err','5개 항목을 모두 선택해 주세요.'); return; }
+  var btn=this; btn.disabled=true; btn.textContent='저장 중…';
+  google.script.run.withSuccessHandler(function(r){
+    btn.disabled=false; btn.textContent='자기평가 저장';
+    say($('pEvalMsg'),'ok','자기평가를 저장했습니다. 수고했어요!');
+    PMINE=r.mine; loadPBoard(true);
+  }).withFailureHandler(function(e){
+    btn.disabled=false; btn.textContent='자기평가 저장'; say($('pEvalMsg'),'err',esc(e.message));
+  }).apiPblSaveEval(PME.no,PME.pin,EVSCORES);
+};
+
+/* ---------- 담임 ---------- */
+$('pBtnAdm').onclick=function(){
+  var pw=$('pAdmPw').value;
+  var btn=this; btn.disabled=true; btn.textContent='확인 중…';
+  google.script.run.withSuccessHandler(function(r){
+    btn.disabled=false; btn.textContent='확인';
+    PADMPW=(r&&r.admTok)||pw; if (window.AdmTok) AdmTok.set(PADMPW);
+    $('pAdmLogin').hidden=true; $('pAdmArea').hidden=false; loadPAdmin();
+  }).withFailureHandler(function(e){
+    btn.disabled=false; btn.textContent='확인'; say($('pAdmMsg'),'err',esc(e.message));
+  }).apiAdminLogin(pw);
+};
+
+function loadPAdmin(){
+  $('pAdmArea').innerHTML='<div class="loading">불러오는 중…</div>';
+  google.script.run.withSuccessHandler(renderPAdmin)
+    .withFailureHandler(function(e){
+      if (/로그인 시간|비밀번호/.test(e.message)){ PADMPW=''; $('pAdmArea').hidden=true; $('pAdmLogin').hidden=false; say($('pAdmMsg'),'err',esc(e.message)); return; }
+      $('pAdmArea').innerHTML='<div class="msg err" style="display:block">'+esc(e.message)+'</div>'; })
+    .apiPblAdminData(PADMPW);
+}
+
+function renderPAdmin(d){
+  var h='';
+  h+=hubLink();
+  h+='<div class="card"><h2>생활기록부 정리용 내보내기</h2>'+
+     '<p class="desc">모둠 요약 · 활동지 전문 · 자기평가 · <b>학생별 정리</b> 4장으로 구성된 엑셀입니다.'+
+     ' 학생별 정리 시트에는 각 학생의 활동 내용이 단계순으로 한 칸에 이어져 있어 생기부 문장 쓸 때 바로 씁니다.</p>'+
+     '<button class="act" onclick="pblXlsx(this)">엑셀(.xlsx)로 내려받기</button>'+
+     '<div class="msg" id="pXlMsg"></div></div>';
+
+  h+='<div class="card"><h2>모둠별 활동지 <span style="font-size:12px;color:var(--t-ink-3)">('+d.teams.length+'팀)</span></h2>';
+  if(!d.teams.length) h+='<div class="hint">아직 만들어진 모둠이 없습니다.</div>';
+  d.teams.forEach(function(t,ti){
+    h+='<div class="teamrow" style="margin-top:10px"><div class="ti">'+
+       '<b>'+esc(t.name)+'</b>'+
+       (t.type==='개인'?'<span class="badge solo">개인</span>':'<span class="badge grp">'+t.memberNos.length+'명</span>')+
+       (t.confirmed?'<span class="badge cfm">확인</span>':'')+
+       (t.pendingCount?'<span class="badge wait">신청대기 '+t.pendingCount+'</span>':'')+
+       '<span>'+esc(t.members)+' · '+t.done+'/5 단계 · '+esc(t.topic||'주제 미정')+'</span></div>'+
+       '<button onclick="togglePAdmTeam('+ti+')">활동지 보기</button></div>'+
+       '<div id="pat'+ti+'"></div>';
+  });
+  h+='</div>';
+
+  h+='<div class="card"><h2>자기평가 현황 <span style="font-size:12px;color:var(--t-ink-3)">('+d.evals.length+'명 제출)</span></h2>'+
+     '<div class="tbl-wrap"><table><tr><th>번호</th><th>이름</th><th>팀명</th>'+
+     d.evalItems.map(function(q,i){ return '<th title="'+esc(q)+'">★'+(i+1)+'</th>'; }).join('')+
+     '<th>평균</th></tr>';
+  d.evals.forEach(function(e){
+    h+='<tr><td>'+e.no+'</td><td>'+esc(e.name)+'</td><td>'+esc(e.teamName)+'</td>'+
+       e.scores.map(function(s){ return '<td><b>'+s+'</b></td>'; }).join('')+
+       '<td><b>'+e.avg+'</b></td></tr>';
+  });
+  h+='</table></div>'+
+     '<div class="hint">★1~★5는 활동지의 자기평가 5개 항목 순서와 같습니다.</div></div>';
+
+  if(d.files.length){
+    h+='<div class="card"><h2>제출된 자료 <span style="font-size:12px;color:var(--t-ink-3)">('+d.files.length+'건)</span></h2>'+
+       '<div class="tbl-wrap"><table><tr><th>팀명</th><th>단계</th><th>올린사람</th><th>파일</th><th>시각</th></tr>';
+    d.files.slice().sort(function(a,b){ return a.at<b.at?1:-1; }).forEach(function(f){
+      h+='<tr><td>'+esc(f.teamName)+'</td><td>STEP '+f.step+'</td><td>'+esc(f.by)+'</td>'+
+         '<td><a href="'+f.fileUrl+'" target="_blank">'+esc(f.fileName)+'</a></td><td>'+esc(f.at)+'</td></tr>';
+    });
+    h+='</table></div></div>';
+  }
+
+  h+='<div class="card"><h2>설정</h2>'+
+     '<label>활동 기간 <span>예) 2026-09-15 ~ 2026-11-14</span></label>'+
+     '<input id="pcfg_문제해결_활동기간" value="'+esc(d.cfg['문제해결_활동기간']||'')+'">'+
+     '<label>모둠 최대 인원</label>'+
+     '<input id="pcfg_문제해결_모둠최대인원" value="'+esc(d.cfg['문제해결_모둠최대인원']||'6')+'">'+
+     '<label>문제해결 프로젝트 사용 <span>아니오로 두면 첫 화면에서 이 활동이 숨겨집니다</span></label>'+
+     '<select id="pcfg_문제해결_사용"><option'+((d.cfg['문제해결_사용']!=='아니오')?' selected':'')+'>예</option>'+
+     '<option'+((d.cfg['문제해결_사용']==='아니오')?' selected':'')+'>아니오</option></select>'+
+     '<button class="act" onclick="savePCfg()">설정 저장</button>'+
+     '<div class="msg" id="pCfgMsg"></div></div>';
+
+  $('pAdmArea').innerHTML=h;
+  window.PADM=d;
+}
+
+function togglePAdmTeam(ti){
+  var box=$('pat'+ti);
+  if(box.innerHTML){ box.innerHTML=''; return; }
+  var t=PADM.teams[ti], w=t.work;
+  var h='<div class="detail" style="white-space:normal">';
+  PADM.steps.forEach(function(st){
+    h+='<div style="margin-top:10px"><b style="color:'+STEPCOL[st.n]+'">STEP '+st.n+'. '+esc(st.title)+'</b>';
+    st.fields.forEach(function(f){
+      var q=QTEXT[f];
+      h+='<div style="margin-top:5px"><span style="color:var(--t-ink-3)">'+q[0]+' '+esc(q[1])+'</span><br>'+
+         (w[f]?esc(w[f]):'<span style="color:#D1D5DB">— 미작성 —</span>')+'</div>';
+    });
+    h+='</div>';
+  });
+  h+='<div style="margin-top:14px"><b>선생님 코멘트</b>'+
+     '<textarea id="pcm'+ti+'" style="margin-top:6px" placeholder="학생들이 활동지 화면에서 바로 볼 수 있습니다">'+esc(t.comment||'')+'</textarea>'+
+     '<label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px">'+
+     '<input type="checkbox" id="pcf'+ti+'" '+(t.confirmed?'checked':'')+' style="width:auto">'+
+     '최종 확인 완료로 표시 (체크하면 학생은 더 이상 수정할 수 없습니다)</label>'+
+     '<button class="act" style="margin-top:10px" onclick="savePComment('+ti+',this)">코멘트 저장</button>'+
+     '<button class="act ghost" onclick="delPTeam('+ti+')" style="color:#FF9B9B">이 모둠 삭제</button>'+
+     '</div></div>';
+  box.innerHTML=h;
+}
+
+function savePComment(ti,btn){
+  var t=PADM.teams[ti];
+  btn.disabled=true; btn.textContent='저장 중…';
+  google.script.run.withSuccessHandler(function(){
+    btn.disabled=false; btn.textContent='코멘트 저장';
+    loadPAdmin(); loadPBoard(true);
+  }).withFailureHandler(function(e){
+    btn.disabled=false; btn.textContent='코멘트 저장'; alert(e.message);
+  }).apiPblAdminComment(PADMPW,t.id,$('pcm'+ti).value,$('pcf'+ti).checked);
+}
+
+function delPTeam(ti){
+  var t=PADM.teams[ti];
+  if(!confirm('"'+t.name+'" 모둠을 삭제할까요?\n활동지·자기평가·첨부 기록이 모두 지워집니다.')) return;
+  google.script.run.withSuccessHandler(function(){ loadPAdmin(); loadPBoard(true); })
+    .withFailureHandler(function(e){ alert(e.message); }).apiPblAdminDeleteTeam(PADMPW,t.id);
+}
+
+function savePCfg(){
+  var keys=['문제해결_활동기간','문제해결_모둠최대인원','문제해결_사용'];
+  var left=keys.length, err='';
+  keys.forEach(function(k){
+    google.script.run.withSuccessHandler(function(){
+      if(--left===0) say($('pCfgMsg'),'ok','저장했습니다. 새로고침하면 반영됩니다.');
+    }).withFailureHandler(function(e){
+      err=e.message; if(--left===0) say($('pCfgMsg'),'err',esc(err));
+    }).apiAdminSetConfig(PADMPW,k,$('pcfg_'+k).value);
+  });
+}
+
+function pblXlsx(btn){
+  var old=btn.textContent;
+  btn.disabled=true; btn.textContent='엑셀 파일 만드는 중… (10초쯤 걸려요)';
+  clear($('pXlMsg'));
+  google.script.run.withSuccessHandler(function(r){
+    btn.disabled=false; btn.textContent=old;
+    try{
+      var bin=atob(r.data), arr=new Uint8Array(bin.length);
+      for(var i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+      var blob=new Blob([arr],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement('a'); a.href=url; a.download=r.name;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); },4000);
+      say($('pXlMsg'),'ok','<b>'+esc(r.name)+'</b> 내려받기를 시작했습니다.');
+    }catch(e){ say($('pXlMsg'),'err','파일을 저장하지 못했습니다: '+esc(e.message)); }
+  }).withFailureHandler(function(e){
+    btn.disabled=false; btn.textContent=old; say($('pXlMsg'),'err',esc(e.message));
+  }).apiPblXlsx(PADMPW);
+}
+</script>

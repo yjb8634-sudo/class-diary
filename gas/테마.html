@@ -1,0 +1,210 @@
+<!-- 학급 다이어리 공용 디자인 (칠판과 분필) · 2026-10-21a
+     각 화면 맨 끝에 끼워 넣어, 화면마다 다르던 색 · 글꼴 이름을 한 가지 토큰으로 다시 묶습니다. -->
+<script>var FILE_VER = '2026-10-26b'; var THEME_VER = '2026-10-21a';</script>
+<style>
+
+/* ── 글꼴: 학교안심 분필 (KERIS) ──
+   글꼴 파일은 GitHub Pages(class-diary/fonts/)에서 내려받습니다. 자주 쓰는 한글 2,350자와 화면에 쓰인 글자만 담은 가벼운 woff2(약 210KB)를 먼저 쓰고,
+   드문 글자(예: 똠, 뷁)는 다른 글꼴로 대신 나옵니다. 주소가 바뀌면 아래 줄만 고치세요.
+   굵기가 한 가지뿐이라 모든 굵기에 같은 파일을 씁니다(억지로 굵게 만들면 분필 글씨가 뭉개져서). 제목은 크기로 구분합니다. */
+@font-face{font-family:'Bunpil';font-style:normal;font-weight:100 900;font-display:swap;
+  src:url('https://yjb8634-sudo.github.io/class-diary/fonts/Bunpil-R.woff2') format('woff2'),url('https://yjb8634-sudo.github.io/class-diary/fonts/Bunpil-R.woff') format('woff')}
+
+:root{
+  /* ── 색 (칠판과 분필) ──
+     칠판 바탕 · 분필 글씨 · 노란 분필 강조. 색을 바꾸려면 이 묶음만 고치면 모든 화면이 함께 바뀝니다. */
+  --t-surface:#22392E;               /* 칠판 */
+  --t-surface-2:#29443A;             /* 카드 (칠판보다 살짝 밝게) */
+  --t-surface-3:#315044;             /* 입력칸 · 눌린 곳 */
+  --t-ink:#F4F1E8;                   /* 흰 분필 */
+  --t-ink-2:rgba(244,241,232,.86);
+  --t-ink-3:rgba(244,241,232,.64);
+  --t-line:rgba(244,241,232,.18);    /* 분필 선 */
+  --t-line-2:rgba(244,241,232,.34);
+  --t-blue:#2F5D8A;                  /* 파란 분필 (흰 글씨가 잘 읽히는 진한 쪽) */
+  --t-yellow:#FFE27A;                /* 노란 분필 */
+  --t-red:#B8452F;                   /* 빨간 분필 */
+  --t-red-h:#E07058;
+  --t-purple:#6A4C8C;
+  --t-purple-h:#8063A3;
+  --t-wood:#7A5A3A;                  /* 분필받이 나무 */
+
+  /* ── 글꼴: 모든 글자를 한 글꼴로 ── */
+  --t-font:'Bunpil','Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+  --t-display:var(--t-font); --t-serif:var(--t-font); --t-mono:var(--t-font); --t-sans:var(--t-font);
+
+  /* ── 간격 · 모양 · 움직임 ── */
+  --t-1:18px; --t-2:33.75px; --t-3:48px; --t-4:96px;
+  --t-r:6px;
+  --t-shape:10px 4px 12px 6px;                 /* 손으로 그린 듯 모서리마다 조금씩 다르게 */
+  --t-dur:.65s; --t-ease:cubic-bezier(.33,1,.68,1);
+}
+
+/* ════════ 화면별 색 이름 다시 묶기 ════════ */
+/* 첫 화면 · 21일 · 문제 해결 */
+:root{
+  --bg:var(--t-surface); --card:var(--t-surface-2); --ink:var(--t-ink); --sub:var(--t-ink-3); --line:var(--t-line);
+  --w1:var(--t-blue); --w1b:var(--t-blue); --w2:var(--t-purple); --w2b:var(--t-purple-h);
+  --w3:var(--t-red); --w3b:var(--t-red-h); --gold:var(--t-yellow); --goldb:var(--t-yellow);
+}
+/* 교실 화면 */
+:root{
+  --card2:var(--t-surface-3); --chalk:var(--t-ink); --chalk2:var(--t-ink-2); --chalk3:var(--t-ink-3);
+  --yellow:var(--t-yellow); --yellow-ink:var(--t-surface); --mint:#7FD8C4; --pink:#F2A7A0; --sky:#8FB4FF;
+}
+/* 상담 신청판 */
+:root{
+  --surface:var(--t-surface-2); --surface-2:var(--t-surface-3); --ink-2:var(--t-ink-2); --ink-3:var(--t-ink-3);
+  --line-2:var(--t-line-2); --teal:var(--t-yellow); --teal-ink:var(--t-yellow); --teal-soft:rgba(255,226,122,.14);
+  --amber:#FFC24A; --amber-soft:rgba(255,194,74,.14); --danger:#FF6B6B; --danger-soft:rgba(215,30,30,.18);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 32px -18px rgba(0,0,0,.7);
+  --font-display:var(--t-display); --font-body:var(--t-sans);
+}
+/* 담임 기록실 */
+:root{
+  --paper:var(--t-surface); --sheet:var(--t-surface-2); --ink2:var(--t-ink-2); --ink3:var(--t-ink-3);
+  --rule:var(--t-line); --rule2:var(--t-line-2); --hover:var(--t-surface-3);
+  --accent:var(--t-yellow); --accent-s:rgba(255,226,122,.12);
+  --pos:#7FD8C4; --pos-s:rgba(127,216,196,.14); --neg:#FF6B6B; --neg-s:rgba(215,30,30,.18);
+  --a-자율:#8FB4FF; --a-진로:#FFC24A; --a-행특:#C89BE0; --a-기타:var(--t-ink-3);
+  --margin:rgba(255,107,107,.5); --serif:var(--t-serif); --sans:var(--t-sans);
+}
+
+/* ════════ 바탕 ════════ */
+html,body{background:var(--t-surface);color:var(--t-ink);font-family:var(--t-sans);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{letter-spacing:-.005em}
+::selection{background:var(--t-yellow);color:var(--t-surface)}
+/* 칠판에 남은 분필 가루 (아주 옅게) */
+body{background-image:radial-gradient(60% 40% at 18% 8%,rgba(244,241,232,.05),transparent 70%),radial-gradient(50% 35% at 85% 70%,rgba(244,241,232,.035),transparent 70%)}
+
+/* ── 제목: 컨덴스드 ── */
+h1,h2,h3,.pt,.inq-h .t b{font-family:var(--t-display);font-weight:600;letter-spacing:-.01em}
+h1{letter-spacing:0}
+/* ── 라벨 · 메타: 모노 ── */
+.lbl,.small.muted,.hint,.cap,.pk,.ist,.chip,.tg,.pill,.src,.mono,.cnt small,.who,.date .hl,.dust{
+  font-family:var(--t-mono);letter-spacing:.01em}
+
+/* ── 입력 ── */
+input,select,textarea,.in,.field{
+  background:var(--t-surface-3);color:var(--t-ink);border:1px solid var(--t-line);
+  border-radius:var(--t-r);font-family:var(--t-sans)}
+input:focus,select:focus,textarea:focus,.in:focus,.field:focus{
+  outline:none;border-color:var(--t-yellow);box-shadow:0 1px 0 0 var(--t-yellow)}
+input::placeholder,textarea::placeholder{color:var(--t-ink-3)}
+input[type=date],input[type=file]{color-scheme:dark}
+label{color:var(--t-ink-2)}
+
+/* ── 단추 ── */
+button,.btn,.act,.go,.jpill,.gt-go,.joinbtn,.homebtn,.sh-x,.gt-x{
+  font-family:var(--t-sans);border-radius:var(--t-shape);
+  transition:background var(--t-dur) var(--t-ease),color var(--t-dur) var(--t-ease),opacity var(--t-dur) var(--t-ease)}
+.act,.go,.gt-go,.btn.pri,.btn.primary,.joinbtn{background:var(--t-blue);color:var(--t-ink);border:0;font-weight:600}
+.act:hover,.go:hover,.gt-go:hover,.btn.pri:hover,.joinbtn:hover{background:var(--t-blue);opacity:.86}
+.act.green{background:var(--t-blue)}
+.act.newround,.act.gold{background:var(--t-yellow);color:var(--t-surface)}
+.btn.neg,.neg{color:var(--t-red-h)}
+
+/* ── 카드 · 상자: 파일 탭 모양 ── */
+.card,.box,.sheetbox,.gt-box,.pick,.inq-s,.it,.rw{
+  background:var(--t-surface-2);border:1.5px solid var(--t-line);
+  border-radius:var(--t-shape);box-shadow:none}
+.card,.box{color:var(--t-ink)}
+hr,.hr,.divider{background:var(--t-line);border-color:var(--t-line)}
+table,th,td{border-color:var(--t-line)!important;color:var(--t-ink)}
+th{color:var(--t-ink-2);font-family:var(--t-mono);font-weight:500}
+a{color:var(--t-ink)}
+a:hover{color:var(--t-yellow)}
+
+/* ── 알림 ── */
+.msg.ok,.note.ok,.gt-note.ok{background:rgba(127,216,196,.14);color:#9FE6D6}
+.msg.err,.note.err,.gt-note.err{background:rgba(215,30,30,.2);color:#FF9B9B}
+
+
+/* ════════ 모든 글자에 한 글꼴 ════════
+   화면마다 따로 적힌 글꼴 이름(Pretendard · Oswald · 명조 등)을 모두 이 글꼴로 덮습니다.
+   손글씨체는 글자 사이를 조이면 겹쳐 보이므로 자간도 0으로 맞춥니다. */
+html body,html body *{font-family:var(--t-font)!important;letter-spacing:0!important;font-weight:400!important}
+/* 제목만 굵게: 화면 제목 · 카드 제목 · 시계 · 지금 수업 · 큰 목록 · 명언 · 시작 화면 문구 */
+html body :is(b,strong,h1,h2,h3,h4,.pt,.ti .tnm,.hm,.big,.num,.quote .q,.brand b,.iw,.gt-head b,.inq-h .t b,.cpl .ttl){font-weight:700!important}
+
+/* ════════ 화면별 손질 ════════ */
+/* 탭 · 표 · 숫자 */
+nav button.on{background:var(--t-yellow)!important;color:var(--t-surface)!important}
+th{background:var(--t-surface-3)!important;color:var(--t-ink-2)!important}
+tr:hover td{background:var(--t-surface-3)}
+.num{background:none!important;-webkit-text-fill-color:var(--t-yellow);color:var(--t-yellow)!important;font-family:var(--t-display)}
+.num.gold{-webkit-text-fill-color:var(--t-yellow)}
+.prw .pc{background:var(--t-surface-3)}
+.prw:hover{border-color:var(--t-line-2)}
+.prw.done{border-color:rgba(255,226,122,.5)}
+.cell{background:var(--t-surface-3)}
+.homebtn,.wlink,.tlink{color:var(--t-ink-2)}
+/* 첫 화면 */
+.ti .tnm{background:none;-webkit-text-fill-color:currentColor;color:var(--t-ink);font-family:var(--t-display)}
+.ti .tcur{color:var(--t-yellow)}
+.ti .tno{font-family:var(--t-mono)}
+.jpill{background:transparent;border:1.5px dashed var(--t-line-2);color:var(--t-ink)}
+.jpill:hover{background:var(--t-blue);border-color:var(--t-blue)}
+#intro,#splash{background:var(--t-surface)}
+#intro .iw{background:none;-webkit-text-fill-color:currentColor;color:var(--t-ink);font-family:var(--t-display)}
+/* 교실 화면: 칠판 톤으로 */
+/* 교실 화면 아래 단추(상담 신청 · 건의사항 · 조사 참여 · 결과 보기): 파란 면을 없애고 배경과 같은 색에 테두리만 */
+.board .act{background:var(--t-surface);color:var(--t-ink);border:1px solid var(--t-line-2);
+  border-radius:var(--t-shape);box-shadow:none;opacity:1;
+  transition:background var(--t-dur) var(--t-ease),border-color var(--t-dur) var(--t-ease)}
+.board .act:hover,.board .act:focus-visible{background:var(--t-surface-3);border-color:var(--t-ink-3);opacity:1}
+.board .act:active{background:var(--t-surface-3)}
+.board .act .ic{background:transparent;border:1px solid var(--t-line-2);color:var(--t-ink)}
+
+.board .card,.board .now{background:var(--t-surface-2);border-color:var(--t-line);border-radius:var(--t-shape)}
+.clock .hm,.now .big{font-family:var(--t-display)}
+.quote .q{font-family:var(--t-serif)}
+/* 상담 · 담임: 밝은 잔재 */
+.cal .slot,.seg,.seg2,.tagpick button,.tabs{background:var(--t-surface-3)}
+.seg button[aria-pressed=true],.seg2 button.on{background:var(--t-yellow);color:var(--t-surface)}
+.box h2,.card h2{color:var(--t-ink)}
+details summary{color:var(--t-ink-2)}
+/* 탐구 노트 */
+.inq-s{background:var(--t-surface-2)}
+.inq-s.done{background:rgba(127,216,196,.08);border-color:rgba(127,216,196,.35)}
+.inq-s.open{border-color:var(--t-yellow)}
+.inq-h .n{color:var(--t-yellow);font-family:var(--t-display)}
+.inq-h .t small{background:var(--t-surface-3);color:var(--t-ink-3)}
+.inq .chk{background:rgba(255,226,122,.08)}
+.inq-from{background:var(--t-surface-3);border-color:var(--t-line)}
+
+
+/* ════════ 인쇄할 때만: 흰 바탕 · 검은 글씨 ════════
+   화면에서는 칠판 톤, 종이에는 잉크를 아끼는 흰 바탕으로 바꿉니다.
+   모든 색이 --t-* 토큰을 거치므로 토큰만 뒤집으면 다섯 화면이 한꺼번에 바뀝니다. */
+@media print{
+  :root{
+    --t-surface:#fff; --t-surface-2:#fff; --t-surface-3:#F3F3F0;
+    --t-ink:#111; --t-ink-2:#333; --t-ink-3:#666;
+    --t-line:rgba(0,0,0,.2); --t-line-2:rgba(0,0,0,.35);
+    --t-blue:#111; --t-yellow:#111; --t-wood:#999; --t-red:#A4261D; --t-red-h:#A4261D; --t-purple:#444; --t-purple-h:#444;
+    --mint:#1B6B4A; --pink:#A4432B; --sky:#3B5B86;
+    --pos:#1B6B4A; --pos-s:#E6F0EA; --neg:#A4432B; --neg-s:#F6E7E2;
+    --a-자율:#3B5B86; --a-진로:#8A6326; --a-행특:#6E3F63; --a-기타:#666;
+    --accent:#111; --accent-s:#EEE; --margin:#E7B9AE;
+    --amber:#8A5A00; --danger:#A4432B; --teal:#111; --teal-ink:#111; --teal-soft:#EEE;
+  }
+  html,body{background:#fff!important;background-image:none!important;color:#111!important;-webkit-print-color-adjust:economy;print-color-adjust:economy}
+  *{box-shadow:none!important;text-shadow:none!important;animation:none!important;transition:none!important}
+  /* 화면 전용 장치는 종이에 내보내지 않음 */
+  #busy,#intro,#splash,.gt,#toast,.homebtn,.joinrow,.hb-top,.hb-foot .links,.cpline{display:none!important}
+  /* 그라데이션 글씨는 종이에서 사라지므로 단색으로 */
+  .num,.ti .tnm,#intro .iw{background:none!important;-webkit-text-fill-color:#111!important;color:#111!important}
+  /* 입력 · 카드는 선만 */
+  input,select,textarea,.in,.field{background:#fff!important;color:#111!important;border-color:rgba(0,0,0,.3)!important}
+  .card,.box,.it,.rw,.inq-s,.pick{background:#fff!important;border-color:rgba(0,0,0,.2)!important}
+  th{background:#F3F3F0!important;color:#111!important}
+  a{color:#111!important;text-decoration:underline}
+  /* 저작권 문구는 맨 아래에 작게 남김 */
+  body::after{content:'© 2026 강릉제일고 교사 유준배 · 무단 복제 · 배포 금지';display:block;margin-top:24px;padding-top:8px;
+    border-top:1px solid rgba(0,0,0,.2);font-size:10px;line-height:1.4;color:#666;text-align:center}
+}
+
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
