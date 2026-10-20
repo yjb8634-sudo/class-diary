@@ -10,7 +10,7 @@ var BOARD = { NOTICE: '교실공지', SURVEY: '교실조사', RESP: '교실응�
 /* 화면 파일을 바꿔 배포할 때마다 이 값을 바꾸면, 켜져 있던 교실 TV에 '새로 불러오기' 안내가 뜹니다. */
 var BOARD_VER = '2026-10-31a';
 var BOARD_ETC = '기타 (목록에 없음 · 직접 쓰기)';
-var FILEVER_교실 = '2026-10-31c';
+var FILEVER_교실 = '2026-11-02a';
 var BOARD_PERIODS = [
   { n: '1', s: '08:50', e: '09:40' }, { n: '2', s: '09:50', e: '10:40' }, { n: '3', s: '10:50', e: '11:40' },
   { n: '4', s: '11:50', e: '12:40' }, { n: '5', s: '13:40', e: '14:30' }, { n: '6', s: '14:40', e: '15:30' },
@@ -98,7 +98,7 @@ function boardCfg_() {
     suggestOn: (c['교실_건의'] || '예') !== '아니오',
     links: boardJson_(c['교실_링크'], []),
     viewKey: c['교실_보기키'] || '',
-    phoneJoin: c['교실_휴대폰참여'] === '예',
+    phoneJoin: c['교실_휴대폰참여'] === '예' && !solo_(),   /* 단독판은 학생 PIN이 없어 휴대폰 참여를 쓰지 않음 */
     appUrl: c['앱주소'] || '',
     teachers: boardJson_(c['교실_교사'], {}),
     specials: boardJson_(c['교실_특별'], []),
@@ -269,7 +269,7 @@ function boardFileReport_() {
   var lines = count(txt, '\n') + 1;
 
   /* 구글이 파일을 읽을 때 주석을 지우므로, 표식은 모두 '코드'로 넣었습니다. */
-  var NEED = '2026-10-31a';   /* 이 날짜이거나 더 최신이면 정상 */
+  var NEED = '2026-11-02a';   /* 이 날짜이거나 더 최신이면 정상 */
   var vm = txt.match(/BOARD_FILE_VER = '([^']+)'/);
   var L = [];
   L.push('파일 버전: ' + (vm ? vm[1] : '없음 ❌ — 예전 파일입니다. 최신 교실화면.html을 다시 받아 주세요.'));
@@ -813,8 +813,10 @@ function boardSlowParts_(c) {
           who: boardMask_(r.name, c.counselMode) });
       });
   } catch (e) {}
-  try { var b = board21Data_(); out.stat21 = { done: b.stat.todayDone, total: b.stat.students }; } catch (e) {}
-  try { var p = pblBoardData_(); out.pbl = { teams: p.stat.teams, completed: p.stat.completed }; } catch (e) {}
+  if (!solo_()) {   /* 단독판에는 21일 · 문제해결이 없습니다 */
+    try { var b = board21Data_(); out.stat21 = { done: b.stat.todayDone, total: b.stat.students }; } catch (e) {}
+    try { var p = pblBoardData_(); out.pbl = { teams: p.stat.teams, completed: p.stat.completed }; } catch (e) {}
+  }
   try { CacheService.getScriptCache().put('bslow_' + BOARD_VER, JSON.stringify(out), 90); } catch (e) {}
   return out;
 }

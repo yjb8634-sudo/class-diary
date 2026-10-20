@@ -13,7 +13,7 @@
  *            Index.html(자율) / 상담.html / 담임.html
  *******************************************************/
 
-var FILEVER_공통 = '2026-10-24a';
+var FILEVER_공통 = '2026-11-02a';
 var RELEASE = '2026-10-27a';
 
 /* ---------- 파일 버전 한눈에 보기 ----------
@@ -23,21 +23,21 @@ var RELEASE = '2026-10-27a';
  * 새 파일이 생기거나 버전이 바뀌면 이 표만 고치면 됩니다. */
 var FILE_EXPECT = [
   ['code.gs (21일 · 문제해결)', 'gs', 'FILEVER_자율', '2026-11-01a'],
-  ['공통.gs', 'gs', 'FILEVER_공통', '2026-10-24a'],
-  ['담임.gs', 'gs', 'FILEVER_담임', '2026-11-01a'],
+  ['공통.gs', 'gs', 'FILEVER_공통', '2026-11-02a'],
+  ['담임.gs', 'gs', 'FILEVER_담임', '2026-11-02a'],
   ['상담.gs', 'gs', 'FILEVER_상담', '2026-11-01a'],
-  ['교실.gs', 'gs', 'FILEVER_교실', '2026-10-31c'],
+  ['교실.gs', 'gs', 'FILEVER_교실', '2026-11-02a'],
   ['알림장.gs (새 파일)', 'gs', 'FILEVER_알림장', '2026-10-07a'],
   ['앱.gs', 'gs', 'FILEVER_앱', '2026-10-24a'],
   ['활동.gs (새 파일)', 'gs', 'FILEVER_활동', '2026-10-24a'],
   ['보안.gs', 'gs', 'FILEVER_보안', '2026-10-30a'],
-  ['연결.gs (새 파일 · 학생 앱 연결 통로)', 'gs', 'FILEVER_연결', '2026-11-01a'],
+  ['연결.gs (새 파일 · 학생 앱 연결 통로)', 'gs', 'FILEVER_연결', '2026-11-02a'],
   ['Index.html', 'html', 'Index', '2026-11-01a'],
   ['프로젝트21.html (새 파일 · 21일 화면)', 'html', '프로젝트21', '2026-11-01a'],
   ['문제해결.html (새 파일 · 문제 해결 화면)', 'html', '문제해결', '2026-11-01a'],
-  ['담임화면.html', 'html', '담임화면', '2026-11-01a'],
+  ['담임화면.html', 'html', '담임화면', '2026-11-02a'],
   ['상담화면.html', 'html', '상담화면', '2026-11-01a'],
-  ['교실화면.html', 'html', '교실화면', '2026-10-31e'],
+  ['교실화면.html', 'html', '교실화면', '2026-11-02a'],
   ['활동화면.html (새 파일)', 'html', '활동화면', '2026-10-25a'],
   ['게이트.html (새 파일 · 공용 로그인 창)', 'html', '게이트', '2026-11-01a'],
   ['테마.html (새 파일 · 공용 디자인)', 'html', '테마', '2026-10-26b']
@@ -134,8 +134,16 @@ function 새학년도준비() {
 /* 화면 파일 안에 다른 HTML 파일(공용 로그인 창 등)을 끼워 넣을 때 씁니다. */
 function include_(name) { return HtmlService.createHtmlOutputFromFile(name).getContent(); }
 
+/* '교실 화면 단독판'(다른 선생님들이 사본을 만들어 쓰는 판)인지 — 단독판 사본에만 있는 단독판.gs 파일이 SOLO_EDITION = true 를 정합니다 */
+function solo_() { return typeof SOLO_EDITION !== 'undefined' && SOLO_EDITION === true; }
+
 function doGet(e) {
   var p = (e && e.parameter) || {};
+  if (solo_()) {
+    if (p.p === 'board') return 교실페이지_(e);
+    if (p.key || p.p === 'counsel') return 상담페이지_(e);
+    return 담임페이지_();   /* 단독판은 첫 화면이 곧 '교실 화면 관리' */
+  }
   if (p.p === 'board') return 교실페이지_(e);
   if (p.p === 'act') return 활동페이지_(e);
   if (p.key || p.p === 'counsel') return 상담페이지_(e);
@@ -161,6 +169,15 @@ function onEdit(e) {
 }
 
 function onOpen() {
+  if (solo_()) {
+    SpreadsheetApp.getUi()
+      .createMenu('교실 화면')
+      .addItem('① 처음 설정 (사본을 만든 뒤 한 번)', '교실화면_처음설정')
+      .addItem('웹앱 주소 보기', '통합주소보기')
+      .addItem('파일 버전 한눈에 보기', '파일버전점검')
+      .addToUi();
+    return;
+  }
   SpreadsheetApp.getUi()
     .createMenu('학급 운영')
     .addItem('통합 설치 / 시트 만들기', '통합설치')
@@ -194,6 +211,11 @@ function 통합주소보기() {
   var url = ScriptApp.getService().getUrl();
   var ui = SpreadsheetApp.getUi();
   if (!url) { ui.alert('아직 배포되지 않았습니다.'); return; }
+  if (solo_()) {
+    ui.alert('웹앱 주소', '교실 화면 관리 (선생님만 · 학생에게 알려 주지 마세요)\n' + url +
+      '\n\n교실 TV 주소는 관리 화면 → [설정 · 시간표] 탭에서 복사하세요.', ui.ButtonSet.OK);
+    return;
+  }
   ui.alert('웹앱 주소',
     '학생 활동 선택\n' + url + '\n\n' +
     '상담 신청판 바로 가기\n' + url + '?p=counsel\n\n' +
@@ -335,4 +357,61 @@ function 외부기록받기_(e) {
   } finally {
     lock.releaseLock();
   }
+}
+
+
+/* ================= 교실 화면 단독판: 사본을 만든 선생님이 처음 한 번 실행 =================
+ * 학년 · 반 · 관리자 비밀번호를 정하고, 시트를 만들고, 이 사본만의 새 주소 키를 만듭니다.
+ * (원본 템플릿에서 따라온 값은 모두 새로 만듭니다) */
+function 교실화면_처음설정() {
+  var ui = SpreadsheetApp.getUi();
+  if (!solo_()) { ui.alert('이 메뉴는 교실 화면 단독판에서만 씁니다.'); return; }
+  var ask = function (title, msg, check) {
+    for (;;) {
+      var r = ui.prompt(title, msg, ui.ButtonSet.OK_CANCEL);
+      if (r.getSelectedButton() !== ui.Button.OK) throw new Error('처음 설정을 멈췄어요. 메뉴에서 다시 실행하면 됩니다.');
+      var v = String(r.getResponseText() || '').trim(), bad = check(v);
+      if (!bad) return v;
+      ui.alert(bad);
+    }
+  };
+  var grade = ask('처음 설정 1/3 · 학년', '몇 학년인가요? 숫자만 적어 주세요. (예: 1)', function (v) { return /^[1-3]$/.test(v) ? '' : '1 · 2 · 3 중 하나를 적어 주세요.'; });
+  var klass = ask('처음 설정 2/3 · 반', '몇 반인가요? 숫자만 적어 주세요. (예: 2)', function (v) { return /^\d{1,2}$/.test(v) ? '' : '반을 숫자로 적어 주세요.'; });
+  var pw = ask('처음 설정 3/3 · 관리자 비밀번호',
+    '교실 화면 관리에 들어갈 때 쓰는 비밀번호를 정해 주세요. (6자 이상, 학생에게 알려 주지 마세요)',
+    function (v) { return v.length >= 6 ? '' : '6자 이상으로 정해 주세요.'; });
+
+  /* 원본에서 따라온 스크립트 속성(화면 배치 · 알림 기록 등)을 비웁니다 */
+  try { PropertiesService.getScriptProperties().deleteAllProperties(); } catch (e) {}
+  try { CacheService.getScriptCache().removeAll(['cfg_v1', 'cs_pub_v1', 'cs_ready_v1', 'b21v2', 'bpv2']); } catch (e) {}
+
+  setup(); 준비(true); 담임준비_(); board준비_();
+  var put = function (k, v) { setConfigValue_(k, v); };
+  put('학년', grade); put('반', klass); put('관리자비밀번호', pw);
+  put('부제', grade + '-' + klass + ' 교실 화면');
+  put('교실_키', Utilities.getUuid().replace(/-/g, '').slice(0, 10));
+  put('교실_보기키', 'v' + Utilities.getUuid().replace(/-/g, '').slice(0, 11));
+  put('PIN솔트', Utilities.getUuid());
+  put('앱주소', '');
+  put('교실_호출', '');
+  put('교실_휴대폰참여', '아니오');
+  /* 학교: 강릉제일고등학교 (다른 학교면 관리 화면 → 설정 · 시간표 → 급식 · 나이스에서 바꾸면 됩니다) */
+  put('NEIS_교육청', 'K10'); put('NEIS_학교코드', '7801097'); put('NEIS_학교명', '강릉제일고등학교');
+  /* 첨부 폴더는 이 선생님 드라이브에 새로 */
+  put('교실_첨부폴더ID', '');
+  /* 처음 만든 빈 시트(시트1)는 지웁니다 */
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  ss.getSheets().forEach(function (sh) {
+    if (/^(시트|Sheet)\d+$/.test(sh.getName()) && sh.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(sh);
+  });
+  cfgBust_();
+  ui.alert('처음 설정을 마쳤어요',
+    grade + '학년 ' + klass + '반 교실 화면을 준비했습니다.\n\n' +
+    '이어서 할 일\n' +
+    '1) 확장 프로그램 → Apps Script → 오른쪽 위 [배포] → [새 배포]\n' +
+    '   · 유형: 웹 앱   · 실행: 나   · 액세스 권한: 모든 사용자  → [배포]\n' +
+    '2) 나온 웹앱 주소를 열고 방금 정한 비밀번호로 들어갑니다. (즐겨찾기 해 두세요)\n' +
+    '3) [명단 · 설정]에 학생 번호 · 이름을 붙여 넣고 저장합니다.\n' +
+    '4) [교실 화면 → 설정 · 시간표]에서 교실 TV 주소를 복사해 TV에서 엽니다.',
+    ui.ButtonSet.OK);
 }

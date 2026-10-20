@@ -183,7 +183,7 @@ button:active:not(:disabled),.go:active,.slot:active,.opt:active,.nm:active,.chi
 .dd.bd b{color:var(--pink);margin:0 .25rem}
 .dd.bd.today{background:var(--yellow);color:var(--yellow-ink);border-color:var(--yellow);font-weight:800}
 .dd.bd.today b{color:var(--yellow-ink)}
-.act.sg{flex:none;padding:.9rem 1.3rem}
+.act.sg{flex:none;min-width:auto;padding:.9rem 1.3rem}
 .act.sg .ic{background:var(--card2);color:var(--chalk);width:2.8rem;height:2.8rem}
 .act.sg .tx b{font-size:1.35rem}
 .fv{margin-top:1rem;border:1px solid var(--line);border-radius:1rem;overflow:hidden;background:#fff}
@@ -222,14 +222,29 @@ button:active:not(:disabled),.go:active,.slot:active,.opt:active,.nm:active,.chi
 .nm.nopin::after{content:'PIN 없음';position:absolute;top:.35rem;right:.5rem;font-size:.85rem;color:var(--chalk3);font-weight:800}
 
 /* 아래 버튼 */
-.actions{display:flex;gap:1rem;align-items:stretch}
-.act{all:unset;cursor:pointer;flex:1;min-height:5.2rem;border-radius:1.1rem;padding:.9rem 1.4rem;display:flex;align-items:center;gap:1rem;
+.actions{display:flex;gap:1rem;align-items:stretch;min-width:0}
+.board{grid-template-columns:minmax(0,1fr)}
+.board > *{min-width:0}   /* 아래 버튼이 많아도 화면 폭을 넘지 않게 */
+/* 버튼이 많아지면: 6~8개는 두 줄 격자로 작게, 9개 넘으면 7개 + [더 보기] (화면 밖으로 밀려나지 않게) */
+.actions.two{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.7rem}
+.actions.two .act{min-height:4.2rem;padding:.6rem 1rem;gap:.7rem}
+.actions.two .act .ic{width:2.6rem;height:2.6rem}
+.actions.two .act .ic svg{width:1.5rem;height:1.5rem}
+.actions.two .act .tx b{font-size:1.3rem}
+.actions.two .act .tx span{font-size:.95rem}
+.actions.two .act.sg{padding:.6rem 1rem}
+.act.more{border-style:dashed}
+.act.more .ic{background:var(--card2);color:var(--chalk)}
+.actall{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.actall .act{min-height:5.6rem}
+@media (orientation:portrait){.actions.two{grid-template-columns:repeat(2,minmax(0,1fr))}.actall{grid-template-columns:1fr}}
+.act{all:unset;cursor:pointer;flex:1 1 0;min-width:0;min-height:5.2rem;border-radius:1.1rem;padding:.9rem 1.4rem;display:flex;align-items:center;gap:1rem;
   background:var(--card);border:2px solid var(--line);box-sizing:border-box}
 .act:active{transform:scale(.99)}
 .act .ic{width:3.2rem;height:3.2rem;border-radius:.8rem;display:grid;place-items:center;flex:none}
 .act .ic svg{width:1.8rem;height:1.8rem}
 .act .tx{display:flex;flex-direction:column;min-width:0}
-.act .tx b{font-size:1.6rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.act .tx b{font-size:1.6rem;font-weight:800;overflow:hidden;line-height:1.2;word-break:keep-all;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}   /* 긴 제목은 두 줄까지 */
 .act .tx span{font-size:1.1rem;color:var(--chalk2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .act.sv{border-color:rgba(244,211,94,.55)}
 .act.sv .ic{background:var(--yellow);color:var(--yellow-ink)}
@@ -448,7 +463,7 @@ html,body{background:var(--bg);color:var(--chalk)}
 <div id="ov" class="ov" hidden></div>
 <div id="toast" role="status"></div>
 <script>
-var FILE_VER = '2026-10-31e';
+var FILE_VER = '2026-11-02a';
 /* 글꼴은 화면을 막지 않도록 스크립트로 불러옵니다. */
 (function(){
   var urls = [];   /* 외부 글꼴(Pretendard · 구글 폰트)은 더 이상 받지 않습니다 */
@@ -458,8 +473,8 @@ var FILE_VER = '2026-10-31e';
 })();
 /* ---- 화면이 멈추면 이유를 보여 주는 감시꾼 ----
  * 본 코드가 보낸 파일 그대로인지(글자 수 · 지문)도 함께 확인해서, 붙여넣기 문제인지 바로 알 수 있게 합니다. */
-var BOARD_FILE_VER = '2026-10-31e';   /* 파일 버전 (점검용) */
-var EXPECT = {"len": 87924, "h": 142507839}; /*EXPECT*/
+var BOARD_FILE_VER = '2026-11-02a';   /* 파일 버전 (점검용) */
+var EXPECT = {"len": 88924, "h": 3640802212}; /*EXPECT*/
 window.__boardCheck = function(){
   var m = 'BOARD_MARK_', ss = document.getElementsByTagName('script'), found = 0, t = '';
   for (var i = 0; i < ss.length; i++){ var x = ss[i].text || ''; if (x.indexOf(m + 'START = 1') >= 0){ found++; t = x; } }
@@ -514,6 +529,7 @@ function call(fn, ...args){
 }
 const DOW = ['일','월','화','수','목','금','토'];
 const ICON = {
+  more: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/></svg>',
   home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/></svg>',
   share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8l7.4-4.3M8.3 13.2l7.4 4.3"/></svg>',
   sun: '<svg viewBox="0 0 24 24" fill="none" stroke="#F4D35E" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>',
@@ -537,7 +553,7 @@ const ICON = {
 };
 
 let D = null, offset = 0, lastLoad = 0, dateKey = '';
-let OV = null, idleT = null, scrollT = null;
+let OV = null, idleT = null, scrollT = null, ACT_ALL = '';
 
 let toastT;
 function toast(msg, bad){
@@ -672,23 +688,34 @@ function paintData(){
   const sv = D.surveys || [];
   const canJoin = !D.phone || D.phoneJoin;
   let a = '';
+  const items = [];   /* 조사 · 결과 · 링크 (많아질 수 있는 것) */
   sv.filter(s => s.open && canJoin).forEach(s => {
-    a += `<button class="act sv" data-sv="${esc(s.id)}"><span class="ic">${ICON.check}</span><span class="tx">
-      <b>${esc(s.q)}</b><span>${s.kind === '체크' ? '체크하기' : '조사 참여하기'} · ${s.count} / ${s.total}명${s.file ? ' · 첨부 있음' : ''}</span></span></button>`;
+    items.push(`<button class="act sv" data-sv="${esc(s.id)}"><span class="ic">${ICON.check}</span><span class="tx">
+      <b>${esc(s.q)}</b><span>${s.kind === '체크' ? '체크하기' : '조사 참여하기'} · ${s.count} / ${s.total}명${s.file ? ' · 첨부 있음' : ''}</span></span></button>`);
   });
   sv.filter(s => !s.open && s.pub).slice(0, 1).forEach(s => {
-    a += `<button class="act rs" data-rs="${esc(s.id)}"><span class="ic">${ICON.chart}</span><span class="tx">
-      <b>${esc(s.q)}</b><span>조사 결과 보기</span></span></button>`;
+    items.push(`<button class="act rs" data-rs="${esc(s.id)}"><span class="ic">${ICON.chart}</span><span class="tx">
+      <b>${esc(s.q)}</b><span>조사 결과 보기</span></span></button>`);
   });
   (D.links || []).filter(() => canJoin).forEach(l => {
-    a += `<button class="act lk" data-lk="${esc(l.id)}"><span class="ic">${ICON.link}</span><span class="tx">
-      <b>${esc(l.title)}</b><span>${D.phone ? '눌러서 참여하기' : '휴대폰으로 QR 찍어 참여'}</span></span></button>`;
+    items.push(`<button class="act lk" data-lk="${esc(l.id)}"><span class="ic">${ICON.link}</span><span class="tx">
+      <b>${esc(l.title)}</b><span>${D.phone ? '눌러서 참여하기' : '휴대폰으로 QR 찍어 참여'}</span></span></button>`);
   });
   if (D.counselOn && canJoin) a += `<button class="act cn" id="btnCounsel"><span class="ic">${ICON.chat}</span><span class="tx">
       <b>상담 신청하기</b><span>점심시간 · 방과후 20분</span></span></button>`;
   if (D.suggestOn && canJoin) a += `<button class="act sg" id="btnSuggest"><span class="ic">${ICON.pen}</span><span class="tx"><b>건의사항</b></span></button>`;
-  $('acts').innerHTML = a;
-  $('acts').hidden = !a;
+  /* a = 늘 보이는 상담 · 건의 버튼. 전체 칸 수에 맞춰 한 줄 / 두 줄 / 더 보기를 정합니다 */
+  const fixedN = (a.match(/class="act /g) || []).length, total = items.length + fixedN;
+  ACT_ALL = items.join('');
+  let show = items;
+  if (total > 8){
+    show = items.slice(0, 7 - fixedN);
+    show.push(`<button class="act more" data-acts="all"><span class="ic">${ICON.more}</span><span class="tx">
+      <b>더 보기</b><span>조사 · 링크 ${items.length}개 모두</span></span></button>`);
+  }
+  $('acts').className = 'actions' + (total > 5 ? ' two' : '');
+  $('acts').innerHTML = show.join('') + a;
+  $('acts').hidden = !(show.length + fixedN);
   paintTime(true);
 }
 let quoteKey = '';
@@ -1118,6 +1145,10 @@ function drawOv(){
       ${filesOf(n).length ? filesView(filesOf(n), '62vh', o.fi || 0) : ''}</div>`;
     return;
   }
+  if (o.kind === 'acts'){
+    el.innerHTML = head('조사 · 링크 모두') + `<div class="ovb"><div class="actall">${ACT_ALL}</div></div>`;
+    return;
+  }
   if (o.kind === 'link'){
     const l = (D.links || []).find(x => x.id === o.id);
     if (!l){ closeOv(); return; }
@@ -1529,6 +1560,7 @@ document.addEventListener('click', ev => {
     OV.fi = b.dataset.fpg ? Number(b.dataset.fpg) : (OV.fi || 0) + Number(b.dataset.fp);
     OV.fi = Math.max(0, Math.min(n - 1, OV.fi)); drawOv(); return;
   }
+  if (b.dataset.acts){ openOv({kind: 'acts'}); return; }
   if (b.dataset.lk){
     const l = (D.links || []).find(x => x.id === b.dataset.lk);
     if (!l) return;
