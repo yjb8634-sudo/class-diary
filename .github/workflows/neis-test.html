@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>나이스 자료 확인</title>
+<meta name="robots" content="noindex">
+<style>
+:root{--bg:#F4F4F1;--card:#fff;--ink:#1d2320;--ink2:#5b625e;--line:#dcdcd6;--ok:#2E6B4E;--bad:#A4432B;--hi:#F4D35E}
+@media (prefers-color-scheme:dark){:root{--bg:#1b211e;--card:#24302a;--ink:#ECEDE6;--ink2:#a9b0aa;--line:#3a4741;--ok:#8FD3C1;--bad:#FF9A8A}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;line-height:1.55}
+main{max-width:880px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:21px;margin:0 0 4px}
+.sub{color:var(--ink2);font-size:13.5px;margin:0 0 16px}
+.st{padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card);font-size:14px;margin-bottom:14px}
+.st.ok{border-left:4px solid var(--ok)}.st.bad{border-left:4px solid var(--bad)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+h2{font-size:15px;margin:0 0 8px}
+.d{font-size:12.5px;font-weight:700;color:var(--ink2);margin-top:8px}
+.d.today{color:var(--ink);background:var(--hi);display:inline-block;padding:0 6px;border-radius:4px;color:#2a2a00}
+ul{margin:4px 0 0;padding-left:18px}li{font-size:14px}
+.muted{color:var(--ink2);font-size:13px}
+</style>
+</head>
+<body>
+<main>
+  <h1>나이스 자료 확인 (시험판)</h1>
+  <p class="sub">GitHub Actions가 나이스에서 받아 저장한 <b>data/neis.json</b>을 보여 줍니다. 지금 쓰는 앱과는 따로 돌아가요.</p>
+  <div id="st" class="st">불러오는 중…</div>
+  <div class="grid" id="out"></div>
+</main>
+<script>
+(function(){
+  var esc = function(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+  var DOW = '일월화수목금토';
+  var kst = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+  var lab = function(d){ var t = new Date(d + 'T00:00:00Z'); return (+d.slice(5, 7)) + '/' + (+d.slice(8, 10)) + ' (' + DOW[t.getUTCDay()] + ')'; };
+  /* 학생 앱이 저장해 둔 옛 파일이 보이지 않게, GitHub 원본에서 바로 읽고 안 되면 이 사이트에서 읽습니다 */
+  var RAW = 'https://raw.githubusercontent.com/yjb8634-sudo/class-diary/main/data/neis.json';
+  var get = function(u){ return fetch(u + '?t=' + Date.now(), {cache: 'no-store'}).then(function(r){ if (!r.ok) throw new Error('아직 파일이 없어요 (' + r.status + ')'); return r.json(); }); };
+  get(RAW).catch(function(){ return get('data/neis.json'); }).then(function(j){
+    var st = document.getElementById('st');
+    st.className = 'st ' + (j.notes && j.notes.length ? 'bad' : 'ok');
+    st.innerHTML = '<b>' + esc(j.school.name) + ' ' + esc(j.school.grade) + '학년 ' + esc(j.school.cls) + '반</b> · 마지막으로 받은 때 ' + esc(j.updated) +
+      ' · 인증키 ' + (j.keyUsed ? '사용' : '<b>없음</b> (7교시가 잘릴 수 있어요)') +
+      (j.notes && j.notes.length ? '<br>알림: ' + esc(j.notes.join(' / ')) : '');
+    var meals = Object.keys(j.meals || {}).sort().filter(function(d){ return d >= kst; }).slice(0, 6).map(function(d){
+      return '<div class="d' + (d === kst ? ' today' : '') + '">' + lab(d) + '</div>' + j.meals[d].map(function(m){
+        return '<div class="muted">' + esc(m.kind) + ' · ' + esc(m.cal) + '</div><ul>' + m.dishes.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'; }).join('');
+    }).join('') || '<p class="muted">받은 급식이 없어요 (방학 · 주말이면 정상).</p>';
+    var tt = Object.keys(j.timetable || {}).sort().filter(function(d){ return d >= kst; }).slice(0, 5).map(function(d){
+      return '<div class="d' + (d === kst ? ' today' : '') + '">' + lab(d) + '</div><ul>' + j.timetable[d].map(function(p){ return '<li>' + p.period + '교시 ' + esc(p.subject) + '</li>'; }).join('') + '</ul>';
+    }).join('') || '<p class="muted">받은 시간표가 없어요.</p>';
+    var ev = (j.events || []).filter(function(e){ return e.date >= kst; }).slice(0, 12).map(function(e){ return '<li>' + lab(e.date) + ' ' + esc(e.name) + '</li>'; }).join('');
+    document.getElementById('out').innerHTML = '<section><h2>급식</h2>' + meals + '</section><section><h2>우리 반 시간표</h2>' + tt + '</section>' +
+      '<section><h2>학사일정</h2>' + (ev ? '<ul>' + ev + '</ul>' : '<p class="muted">앞으로의 일정이 없어요.</p>') + '</section>';
+  }).catch(function(e){
+    var st = document.getElementById('st'); st.className = 'st bad';
+    st.textContent = e.message + ' — 저장소의 [Actions] 탭에서 "나이스 자료 받기"를 한 번 실행해 주세요.';
+  });
+})();
+</script>
+</body>
+</html>
