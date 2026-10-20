@@ -1,0 +1,114 @@
+{
+ "release": "2026-11-01a",
+ "note": "Apps Script 자동 배포용 목록. 여기 있는 파일만 바꿉니다. (new: true 는 없으면 새로 만듦)",
+ "files": [
+  {
+   "name": "Index",
+   "type": "HTML",
+   "path": "Index.html"
+  },
+  {
+   "name": "code",
+   "type": "SERVER_JS",
+   "path": "code.gs",
+   "aliases": [
+    "Code",
+    "자율",
+    "코드",
+    "main",
+    "Main"
+   ]
+  },
+  {
+   "name": "게이트",
+   "type": "HTML",
+   "path": "게이트.html"
+  },
+  {
+   "name": "공통",
+   "type": "SERVER_JS",
+   "path": "공통.gs"
+  },
+  {
+   "name": "교실",
+   "type": "SERVER_JS",
+   "path": "교실.gs"
+  },
+  {
+   "name": "교실화면",
+   "type": "HTML",
+   "path": "교실화면.html"
+  },
+  {
+   "name": "내보내기",
+   "type": "SERVER_JS",
+   "path": "내보내기.gs",
+   "new": true
+  },
+  {
+   "name": "담임",
+   "type": "SERVER_JS",
+   "path": "담임.gs"
+  },
+  {
+   "name": "담임화면",
+   "type": "HTML",
+   "path": "담임화면.html"
+  },
+  {
+   "name": "문제해결",
+   "type": "HTML",
+   "path": "문제해결.html"
+  },
+  {
+   "name": "보안",
+   "type": "SERVER_JS",
+   "path": "보안.gs"
+  },
+  {
+   "name": "상담",
+   "type": "SERVER_JS",
+   "path": "상담.gs"
+  },
+  {
+   "name": "상담화면",
+   "type": "HTML",
+   "path": "상담화면.html"
+  },
+  {
+   "name": "알림장",
+   "type": "SERVER_JS",
+   "path": "알림장.gs"
+  },
+  {
+   "name": "앱",
+   "type": "SERVER_JS",
+   "path": "앱.gs"
+  },
+  {
+   "name": "연결",
+   "type": "SERVER_JS",
+   "path": "연결.gs"
+  },
+  {
+   "name": "테마",
+   "type": "HTML",
+   "path": "테마.html"
+  },
+  {
+   "name": "프로젝트21",
+   "type": "HTML",
+   "path": "프로젝트21.html"
+  },
+  {
+   "name": "활동",
+   "type": "SERVER_JS",
+   "path": "활동.gs"
+  },
+  {
+   "name": "활동화면",
+   "type": "HTML",
+   "path": "활동화면.html"
+  }
+ ]
+}
