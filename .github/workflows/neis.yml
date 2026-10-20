@@ -1,0 +1,153 @@
+# 나이스 급식 · 시간표 · 학사일정을 자동으로 받아 data/neis.json 에 저장합니다.
+# (Firebase 옮기기 1단계 시험판 — 지금 쓰는 앱에는 아무 영향이 없습니다)
+#
+# 언제 도나요?  매일 새벽 5시 10분, 낮 12시 10분 (한국 시각, 몇 분 늦을 수 있음)
+#               + 저장소의 [Actions] 탭에서 [Run workflow] 를 누르면 바로 돕니다.
+# 나이스 인증키: 저장소 Settings → Secrets and variables → Actions → New repository secret
+#               이름 NEIS_KEY, 값에 인증키. (없어도 돌지만, 있어야 7교시까지 · 여러 날을 한 번에 받습니다)
+
+name: 나이스 자료 받기
+
+on:
+  schedule:
+    - cron: '10 20 * * *'   # 매일 05:10 (한국)
+    - cron: '10 3 * * 1-5'  # 평일 12:10 (한국)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: neis
+  cancel-in-progress: false
+
+jobs:
+  neis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 나이스에서 받기
+        env:
+          NEIS_KEY: ${{ secrets.NEIS_KEY }}
+          SCHOOL_NAME: '강릉제일고등학교'
+          ATPT_CODE: ''        # 비워 두면 학교 이름으로 찾습니다 (예: K10)
+          SCHOOL_CODE: ''      # 비워 두면 학교 이름으로 찾습니다
+          GRADE: '1'
+          CLASS_NM: '2'
+        run: |
+          mkdir -p data
+          cat > /tmp/neis.mjs <<'JS'
+          const KEY = (process.env.NEIS_KEY || '').trim();
+          const NAME = process.env.SCHOOL_NAME, GRADE = process.env.GRADE, CLS = process.env.CLASS_NM;
+          let ATPT = (process.env.ATPT_CODE || '').trim(), CODE = (process.env.SCHOOL_CODE || '').trim();
+
+          /* 한국 시각 날짜 */
+          const kst = (d = new Date()) => new Date(d.getTime() + 9 * 3600e3);
+          const ymd8 = d => d.toISOString().slice(0, 10).replace(/-/g, '');
+          const addDays = (d, n) => new Date(d.getTime() + n * 86400e3);
+          const iso = s => s.slice(0, 4) + '-' + s.slice(4, 6) + '-' + s.slice(6, 8);
+          const today = kst();
+
+          const notes = [];
+          async function neis(svc, params, size) {
+            const q = new URLSearchParams({ Type: 'json', pIndex: '1', pSize: String(KEY ? (size || 100) : 5), ...params });
+            if (KEY) q.set('KEY', KEY);
+            const url = 'https://open.neis.go.kr/hub/' + svc + '?' + q;
+            for (let t = 0; t < 3; t++) {
+              try {
+                const r = await fetch(url, { signal: AbortSignal.timeout(15000) });
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                const j = await r.json();
+                if (j[svc] && j[svc][1] && j[svc][1].row) return j[svc][1].row;
+                const code = (j.RESULT && j.RESULT.CODE) || '';
+                if (code === 'INFO-200') return [];        /* 자료 없음 (방학 · 주말 등) */
+                throw new Error(code + ' ' + ((j.RESULT && j.RESULT.MESSAGE) || ''));
+              } catch (e) {
+                if (t === 2) { notes.push(svc + ': ' + e.message); return null; }
+                await new Promise(ok => setTimeout(ok, 1500 * (t + 1)));
+              }
+            }
+          }
+          /* 키가 없으면 한 번에 5줄만 오므로 하루씩 나눠 받습니다 */
+          async function byRange(svc, fromKey, toKey, from, to, extra) {
+            if (KEY) return neis(svc, { ...extra, [fromKey]: ymd8(from), [toKey]: ymd8(to) }, 1000);
+            const all = [];
+            for (let d = from; d <= to; d = addDays(d, 1)) {
+              const dow = d.getUTCDay();
+              if (svc !== 'SchoolSchedule' && (dow === 0 || dow === 6)) continue;
+              const rows = await neis(svc, { ...extra, [fromKey]: ymd8(d), [toKey]: ymd8(d) });
+              if (rows) all.push(...rows);
+            }
+            return all;
+          }
+
+          if (!ATPT || !CODE) {
+            const s = await neis('schoolInfo', { SCHUL_NM: NAME });
+            const hit = (s || []).find(x => x.SCHUL_NM === NAME) || (s || [])[0];
+            if (!hit) { console.error('학교를 찾지 못했어요: ' + NAME + ' / ' + notes.join(' | ')); process.exit(1); }
+            ATPT = hit.ATPT_OFCDC_SC_CODE; CODE = hit.SD_SCHUL_CODE;
+          }
+          const base = { ATPT_OFCDC_SC_CODE: ATPT, SD_SCHUL_CODE: CODE };
+
+          /* 급식: 오늘부터 2주 */
+          const mealRows = await byRange('mealServiceDietInfo', 'MLSV_FROM_YMD', 'MLSV_TO_YMD', today, addDays(today, 13), base);
+          const meals = {};
+          (mealRows || []).forEach(x => {
+            const d = iso(x.MLSV_YMD);
+            (meals[d] = meals[d] || []).push({
+              kind: x.MMEAL_SC_NM || '',
+              cal: x.CAL_INFO || '',
+              dishes: String(x.DDISH_NM || '').split(/<br\s*\/?>/i)
+                .map(s => s.replace(/\([0-9.\s]*\)/g, '').replace(/[0-9.]+$/, '').replace(/[*#]/g, '').trim()).filter(Boolean)
+            });
+          });
+
+          /* 시간표: 이번 주 월요일부터 2주 (우리 반만) */
+          const mon = addDays(today, -((today.getUTCDay() + 6) % 7));
+          const ttRows = await byRange('hisTimetable', 'TI_FROM_YMD', 'TI_TO_YMD', mon, addDays(mon, 11), { ...base, GRADE, CLASS_NM: CLS });
+          const timetable = {};
+          (ttRows || []).forEach(x => {
+            const d = iso(x.ALL_TI_YMD);
+            (timetable[d] = timetable[d] || []).push({ period: Number(x.PERIO), subject: String(x.ITRT_CNTNT || '').replace(/^-+/, '').trim() });
+          });
+          Object.values(timetable).forEach(a => a.sort((p, q) => p.period - q.period));
+
+          /* 학사일정: 지난 7일 ~ 앞으로 90일 */
+          const evRows = await byRange('SchoolSchedule', 'AA_FROM_YMD', 'AA_TO_YMD', addDays(today, -7), addDays(today, 90), base);
+          const events = (evRows || []).filter(x => x.EVENT_NM && x.EVENT_NM !== '토요휴업일')
+            .map(x => ({ date: iso(x.AA_YMD), name: x.EVENT_NM }))
+            .sort((a, b) => a.date.localeCompare(b.date));
+
+          const out = {
+            updated: kst().toISOString().slice(0, 16).replace('T', ' '),
+            school: { name: NAME, atpt: ATPT, code: CODE, grade: GRADE, cls: CLS },
+            keyUsed: !!KEY,
+            meals, timetable, events, notes
+          };
+          const fs = await import('node:fs');
+          /* 받아 온 것이 하나도 없으면(나이스 장애) 예전 파일을 그대로 둡니다 */
+          if (!mealRows && !ttRows && !evRows) { console.error('나이스에서 아무것도 받지 못했어요: ' + notes.join(' | ')); process.exit(1); }
+          fs.writeFileSync('data/neis.json', JSON.stringify(out, null, 1));
+          console.log('급식 ' + Object.keys(meals).length + '일 · 시간표 ' + Object.keys(timetable).length + '일 · 일정 ' + events.length + '개' + (notes.length ? ' · 알림: ' + notes.join(' | ') : ''));
+          JS
+          node /tmp/neis.mjs
+
+      - name: 바뀌었으면 저장
+        run: |
+          git config user.name 'neis-bot'
+          git config user.email 'neis-bot@users.noreply.github.com'
+          git add data/neis.json
+          # 'updated' 시각만 바뀐 경우는 저장하지 않습니다 (불필요한 기록 줄이기)
+          if git diff --cached --quiet; then echo '바뀐 것 없음'; exit 0; fi
+          # 단, 월요일에는 시각만 바뀌어도 저장합니다. (GitHub은 60일 동안 저장소에 변화가 없으면 자동 실행을 멈추기 때문)
+          if [ "$(TZ=Asia/Seoul date +%u)" != "1" ] && [ "$(git diff --cached -U0 data/neis.json | grep -E '^[+-][^+-]' | grep -vc '"updated"')" = "0" ]; then
+            echo '시각만 바뀜 — 저장 안 함'; git reset -q; exit 0
+          fi
+          git commit -q -m '나이스 자료 갱신'
+          git push
