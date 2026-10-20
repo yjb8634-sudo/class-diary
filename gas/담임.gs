@@ -7,7 +7,7 @@
  *
  *  모든 api 함수는 관리자 비밀번호를 확인한 뒤에만 자료를 내보냅니다.
  *******************************************************/
-var FILEVER_담임 = '2026-11-01a';
+var FILEVER_담임 = '2026-11-02a';
 
 var HUB = { OBS: '관찰기록', FINAL: '생기부', EXT: '외부기록' };
 var HUB_AREAS = ['자율', '진로', '행특'];
@@ -28,7 +28,7 @@ var HUB_CONF = [
 ];
 
 function 담임페이지_() { return 화면내보내기_(담임화면값_()); }
-function 담임화면값_() { return { template: '담임화면', vars: {}, title: '담임 기록실' }; }
+function 담임화면값_() { return { template: '담임화면', vars: {}, title: solo_() ? '교실 화면 관리' : '담임 기록실' }; }
 
 /* ---------- 시트 준비 ---------- */
 function 담임준비_() {
@@ -300,7 +300,8 @@ function apiHubInit(pw, dev, ua) {
       staleDays: Number(cfg['관찰_밀림일수'] || 14),
       subtitle: cfg['부제'] || '',
       linkKey: cfg['연동키'] || '',
-      autoBackup: (cfg['자동백업'] || '아니오') === '예'
+      autoBackup: (cfg['자동백업'] || '아니오') === '예',
+      solo: solo_()
     },
     students: students_().map(function (s) {
       return { no: s.no, name: s.name, sid: hub학번_(s.no), aliases: al[s.no] || [] };

@@ -296,7 +296,7 @@ dialog::backdrop{background:rgba(20,22,26,.35)}
 <dialog id="dlg"></dialog>
 <input type="file" id="fileIn" hidden>
 <script>
-var FILE_VER = '2026-11-01a';
+var FILE_VER = '2026-11-02a';
 /* 담임 로그인 표: 다른 탭(상담 신청판 · 21일 · 문제해결 담임 탭)에서도 비밀번호를 다시 묻지 않게 함께 씁니다.
  * 마지막으로 쓴 뒤 20분이 지나면 서버에서 저절로 없어지고, [나가기]를 누르면 바로 없어집니다. */
 const AdmTok = {
@@ -504,7 +504,7 @@ const draftFinal = (no, a) => S.finals[fk(no, a)] != null ? S.finals[fk(no, a)] 
 /* ---------- 시작 · 틀 ---------- */
 function vLogin(msg){
   $('app').innerHTML = `<form id="login" onsubmit="return false">
-    <h1>담임 기록실</h1>
+    <h1>${/교실 화면/.test(document.title) ? '교실 화면 관리' : '담임 기록실'}</h1>
     <p class="muted small" style="margin-bottom:16px">[설정] 시트의 관리자 비밀번호로 들어갑니다.</p>
     <input class="in" id="pw" type="password" style="width:100%" autocomplete="current-password" aria-label="관리자 비밀번호">
     <p class="small" style="color:var(--neg);min-height:22px;margin-top:6px">${esc(msg || '')}</p>
@@ -632,22 +632,27 @@ document.addEventListener('click', ev => {
   }
 });
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && AL.open) bellClose(); });
+/* 교실 화면 단독판(다른 선생님 사본)에서는 교실 화면 · 명단 · 파일 버전만 보입니다 */
+const isSolo = () => !!(S.D && S.D.cfg && S.D.cfg.solo);
+const SOLO_VIEWS = ['board', 'roster', 'data'];
 const VIEWS = [
   ['write','기록 입력'], ['journal','학생별 일지'], ['graph','교우관계도'], ['activity','자율 · 진로 모으기'],
   ['doc','생기부 정리'], ['essay','소감문'], ['meet','학급 회의'], ['board','교실 화면'], ['lens','성적 돋보기'], '|', ['roster','명단 · 설정'], ['data','데이터 · 백업']
 ];
 function render(){
   const D = S.D;
+  if (isSolo() && !SOLO_VIEWS.includes(S.view)) S.view = 'board';
+  const VV = isSolo() ? [['board', '교실 화면'], '|', ['roster', '명단 · 설정'], ['data', '파일 버전']] : VIEWS;
   const body = ({write: vWrite, journal: vJournal, graph: vGraph, activity: vActivity, doc: vDoc, roster: vRoster, data: vData, board: vBoard, essay: () => vAct('essay'), meet: () => vAct('meet'), act: () => vAct('essay'), lens: vLens}[S.view] || vWrite)();
   const [y, m, d] = D.today.split('-');
   $('app').innerHTML = `<div class="app">
     <aside class="side">
-      <div class="brand"><div class="cls">${esc(D.cfg.학년)}-${esc(D.cfg.반)} 학급 다이어리</div>
+      <div class="brand"><div class="cls">${esc(D.cfg.학년)}-${esc(D.cfg.반)} ${isSolo() ? '교실 화면' : '학급 다이어리'}</div>
         <div class="day">${+m}월 ${+d}일 ${dowOf(D.today)}요일 · ${D.students.length}명</div></div>
-      <nav class="nav" aria-label="메뉴">${VIEWS.map(v => v === '|' ? '<div class="sep"></div>'
+      <nav class="nav" aria-label="메뉴">${VV.map(v => v === '|' ? '<div class="sep"></div>'
         : `<button data-view="${v[0]}" ${S.view === v[0] ? 'aria-current="page"' : ''}>${v[1]}</button>`).join('')}</nav>
       <div class="foot">
-        <a href="${esc(D.urls.home)}">학생 화면</a><a href="${esc(D.urls.counsel)}">상담 신청판</a>
+        ${isSolo() ? '' : `<a href="${esc(D.urls.home)}">학생 화면</a>`}<a href="${esc(D.urls.counsel)}">상담 신청판</a>
         <button data-act="reload">새로고침</button><button data-act="logout">나가기</button></div>
     </aside>
     <main>${body}</main></div>`;
@@ -1421,7 +1426,26 @@ function vGateBox(){
         ${no.map(x => row(x, b('approve', x.no, '다시 승인') + b('reset', x.no, 'PIN 초기화'))).join('')}</ul>
       ${none.length ? `<p class="small muted" style="margin-top:6px">아직 가입 안 함: ${none.map(x => esc(x.sid + ' ' + x.name)).join(', ')}</p>` : ''}</details></section>`;
 }
+function vRosterSolo(){
+  const c = S.D.cfg;
+  return `<div class="head"><div><h1>명단 · 설정</h1><p>교실 화면의 조사 참여 · 상담 신청 · 알림장 제출 체크에 쓰는 명단입니다. 학생 비밀번호(PIN)는 쓰지 않습니다.</p></div></div>
+  <div class="cols"><div>
+    <section class="box"><h2>명단 넣기 · 바꾸기</h2>
+      <p class="small muted" style="margin-bottom:8px">한 줄에 한 명 · <b>1 김민수</b>, <b>1. 김민수</b>, <b>1,김민수</b> 모두 됩니다. 엑셀에서 번호 · 이름 두 열을 복사해 붙여도 됩니다.</p>
+      <textarea class="in" id="rosterTxt" rows="14" placeholder="1 김민수&#10;2 이서연&#10;3 박지훈">${esc(S.D.students.map(s => s.no + ' ' + s.name).join('\n'))}</textarea>
+      <div class="row end" style="margin-top:8px"><span class="small muted" style="margin-right:auto">지금 ${S.D.students.length}명</span><button class="btn pri" data-act="saveroster">명단 저장</button></div></section>
+  </div><aside>
+    <section class="box"><h2>학년 · 반</h2>
+      <div class="row" style="margin-top:8px"><input class="in" data-conf="학년" value="${esc(c.학년)}" style="width:60px">학년
+        <input class="in" data-conf="반" value="${esc(c.반)}" style="width:60px">반</div>
+      <p class="small muted" style="margin-top:8px">시간표(나이스)와 상담 신청 학번 확인에 씁니다. 학번 = 학년×10000 + 반×100 + 번호</p>
+      <div class="row end" style="margin-top:8px"><button class="btn pri sm" data-act="saveconf">저장</button></div></section>
+    <section class="box"><h2>생일</h2><p class="small muted">학생 생일은 [교실 화면 → 화면 꾸미기 → 학급 생일]에서 넣습니다.</p></section>
+    <section class="box"><h2>관리자 비밀번호 바꾸기</h2><p class="small muted">스프레드시트의 [설정] 시트에서 '관리자비밀번호' 줄을 고치면 됩니다.</p></section>
+  </aside></div>`;
+}
 function vRoster(){
+  if (isSolo()) return vRosterSolo();
   const c = S.D.cfg, u = S.D.urls;
   const sel = (k, v) => `<select class="in" data-conf="${k}">${AREAS.slice(0, 2).map(a => `<option ${v === a ? 'selected' : ''}>${a}</option>`).join('')}</select>`;
   return `<div class="head"><div><h1>명단 · 설정</h1><p>명단은 21일 프로젝트 · 문제해결 · 상담 신청과 함께 씁니다.</p></div></div>
@@ -1461,6 +1485,11 @@ function vRoster(){
 
 /* ---------- 데이터 · 백업 ---------- */
 function vData(){
+  if (isSolo()) return `<div class="head"><div><h1>파일 버전</h1><p>지금 배포되어 돌아가는 파일들이 이번 묶음과 맞는지 확인합니다.</p></div></div>
+    <section class="box" style="max-width:640px"><h2>파일 버전</h2>
+      <p class="small muted">❌가 있으면 그 파일이 예전 것입니다. 원본을 공유해 준 선생님께 새 파일을 받아 붙여넣고 새 버전으로 배포해 주세요.</p>
+      <button class="btn sm" data-act="fver" style="margin-top:8px">확인하기</button>
+      <div id="fverBox"></div></section>`;
   const D = S.D, obsN = obsAll().length, grpN = obsGroups().length;
   const extN = Object.keys(D.sources).reduce((n, k) => n + items(k).filter(i => i.extId).length, 0);
   return `<div class="head"><div><h1>데이터 · 백업</h1><p>기록은 선생님의 구글 스프레드시트에 저장됩니다. 백업 파일로 내려받아 두거나, 시크릿 다이어리에서 받은 백업을 불러올 수 있습니다.</p></div></div>
@@ -1634,7 +1663,7 @@ document.addEventListener('click', ev => {
     case 'saveconf': saveConf(); return;
     case 'savealias': { const map = {}; document.querySelectorAll('[data-alias]').forEach(el => map[el.dataset.alias] = el.value);
       call('apiHubSetAliases', S.pw, map).then(() => { toast('인식 이름을 저장했습니다.'); load(true); }).catch(fail); return; }
-    case 'saveroster': if (!confirm('명단을 저장할까요? 21일 프로젝트 · 문제해결 · 상담 신청 명단이 함께 바뀝니다.')) return;
+    case 'saveroster': if (!confirm(isSolo() ? '명단을 저장할까요?' : '명단을 저장할까요? 21일 프로젝트 · 문제해결 · 상담 신청 명단이 함께 바뀝니다.')) return;
       call('apiHubSetRoster', S.pw, $('rosterTxt').value).then(r => { toast(r.count + '명 저장했습니다.'); load(true); }).catch(fail); return;
     case 'regenkey': if (!confirm('새 키를 만들면 이전 키로 보내던 프로그램은 기록을 보낼 수 없습니다.')) return;
       call('apiHubRegenKey', S.pw).then(() => load(true)).catch(fail); return;
@@ -2336,6 +2365,10 @@ function vFlashBox(){
 }
 function vPhoneBox(){
   const B = S.B, c = B.cfg;
+  if (isSolo()) return `<section class="box"><h2>학부모 · 학생 휴대폰 보기 주소</h2>
+    <p class="small muted">이 주소로 공지 · 일정 · 급식 · 시간표를 <b>볼 수만</b> 있습니다. 이름은 가려져 보이고, 교실 TV 주소와 달라서 이 주소가 퍼져도 TV는 안전합니다.</p>
+    <div class="row" style="margin-top:6px"><input class="in grow" readonly value="${esc(B.phoneUrl || '')}" style="min-width:260px" aria-label="휴대폰 보기 주소">
+      <button class="btn sm" data-bact="copyphone">복사</button><button class="btn txt sm" data-bact="regenview">새 주소 만들기</button></div></section>`;
   return `<section class="box"><h2>학생 휴대폰 · 학생 앱</h2>
     <p class="small muted">학생 첫 화면의 <b>클래스보드</b> 카드와 학생 앱은 아래 <b>보기 전용 주소</b>를 씁니다. 교실 TV 주소와 달라서, 이 주소가 퍼져도 TV 주소는 안전합니다.</p>
     <div class="row" style="margin-top:6px"><input class="in grow" readonly value="${esc(B.phoneUrl || '')}" style="min-width:260px" aria-label="학생용 보기 주소">

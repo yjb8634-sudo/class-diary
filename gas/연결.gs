@@ -5,7 +5,7 @@
  *  · 화면에서 부를 수 있는 함수는 아래 목록(API_ALLOW_)에 있는 것뿐입니다.
  *    새 기능에서 서버 함수를 새로 부르면 이 목록에도 이름을 넣어 주세요.
  *******************************************************/
-var FILEVER_연결 = '2026-11-01a';
+var FILEVER_연결 = '2026-11-02a';
 
 var API_ALLOW_ = {
   /* 소감문 · 학급 회의 (활동.gs) */
@@ -56,6 +56,11 @@ function 화면내보내기_(r) {
 /* 주소(?p=…, ?go=…)에 맞는 화면 고르기 — doGet과 같은 규칙 */
 function 화면고르기_(q) {
   q = q || {};
+  if (typeof solo_ === 'function' && solo_()) {
+    if (q.p === 'board') return 교실화면값_(q);
+    if (q.p === 'counsel') return 상담화면값_(q);
+    return 담임화면값_();
+  }
   if (q.p === 'board') return 교실화면값_(q);
   if (q.p === 'act') return 활동화면값_(q);
   if (q.p === 'counsel') return 상담화면값_(q);

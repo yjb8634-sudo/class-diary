@@ -1,5 +1,5 @@
 {
- "release": "2026-11-01a",
+ "release": "2026-11-02a",
  "note": "Apps Script 자동 배포용 목록. 여기 있는 파일만 바꿉니다. (new: true 는 없으면 새로 만듦)",
  "files": [
   {
