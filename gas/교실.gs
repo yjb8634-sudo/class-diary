@@ -269,7 +269,7 @@ function boardFileReport_() {
   var lines = count(txt, '\n') + 1;
 
   /* 구글이 파일을 읽을 때 주석을 지우므로, 표식은 모두 '코드'로 넣었습니다. */
-  var NEED = '2026-10-31a';   /* 이 날짜이거나 더 최신이면 정상 */
+  var NEED = '2026-11-02a';   /* 이 날짜이거나 더 최신이면 정상 */
   var vm = txt.match(/BOARD_FILE_VER = '([^']+)'/);
   var L = [];
   L.push('파일 버전: ' + (vm ? vm[1] : '없음 ❌ — 예전 파일입니다. 최신 교실화면.html을 다시 받아 주세요.'));
