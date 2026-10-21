@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>교실 화면 관리</title>
+<link rel="icon" href="../icon-192.png">
+<style>
+:root{--bg:#f4f5f2;--card:#fff;--ink:#1c2420;--ink2:#4b5550;--ink3:#7b847f;--line:#dfe3de;--soft:#eef1ec;--pri:#1f6f54;--pri2:#e5f1eb;--bad:#b3261e;--warn:#9a6700;--hi:#fff4c2}
+*{box-sizing:border-box}
+html{font-size:16px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;line-height:1.55}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:980px;margin:0 auto;padding:18px 16px 80px}
+header.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+header.top h1{font-size:22px;margin:0;flex:1;min-width:200px}
+header.top .who{font-size:13.5px;color:var(--ink3)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px}
+.card h2{font-size:17px;margin:0 0 6px}
+.muted{color:var(--ink3)} .small{font-size:13.5px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.grow{flex:1;min-width:160px}
+.in{border:1px solid #c9cfca;border-radius:10px;padding:10px 12px;background:#fff;font-size:15.5px;min-width:0}
+.in:focus{outline:2px solid var(--pri);border-color:transparent}
+textarea.in{width:100%;resize:vertical}
+.btn{text-decoration:none;display:inline-block;border:1px solid #c9cfca;background:#fff;border-radius:10px;padding:9px 14px;font-weight:700;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--soft)}
+.btn.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn.bad{color:var(--bad)}
+.btn.sm{padding:6px 10px;font-size:13.5px;border-radius:8px}
+.btn.txt{border-color:transparent;background:transparent}
+.btn[disabled]{opacity:.5;cursor:default}
+.big{font-size:18px;padding:14px 22px;border-radius:12px}
+.tabs{display:flex;gap:8px;margin:4px 0 16px;flex-wrap:wrap}
+.tabs button{flex:1;min-width:120px;border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px;font-weight:800;font-size:15.5px;cursor:pointer}
+.tabs button.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.seg{display:inline-flex;border:1px solid #c9cfca;border-radius:10px;overflow:hidden}
+.seg button{border:0;background:#fff;padding:8px 14px;font-weight:700;cursor:pointer;border-right:1px solid #c9cfca}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--pri);color:#fff}
+.lvl1{color:#8a3b12;font-weight:800}.lvl2{color:var(--bad);font-weight:800}
+.list{list-style:none;margin:10px 0 0;padding:0}
+.list li{border-top:1px solid var(--line);padding:10px 2px;display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.list li .t{flex:1;min-width:200px}
+.list li .t .tx{white-space:pre-wrap}
+.tag{display:inline-block;font-size:12px;font-weight:800;border-radius:6px;padding:1px 7px;background:var(--soft);color:var(--ink2);margin-right:6px}
+.tag.on{background:var(--pri2);color:var(--pri)}
+.tvbox{background:var(--pri2);border-color:#b9dccb}
+.tvbox .in{background:#fff;font-size:14px}
+details.past{margin-top:10px;border:1px dashed var(--line);border-radius:10px;padding:8px 12px}
+details.past summary{cursor:pointer;font-size:14px;color:var(--ink2)}
+table.t{border-collapse:collapse;width:100%}
+table.t td,table.t th{padding:6px 4px;text-align:left;font-size:14px}
+table.t th{color:var(--ink3);font-weight:700}
+.center{max-width:460px;margin:9vh auto 0;text-align:center}
+.center .card{text-align:left}
+.logo{width:72px;height:72px;border-radius:18px;margin:0 auto 12px;display:block}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50;max-width:90vw;text-align:center}
+#toast.show{opacity:1} #toast.bad{background:var(--bad)}
+.loading{text-align:center;color:var(--ink3);padding:60px 0}
+.hint{background:var(--hi);border-radius:10px;padding:10px 12px;font-size:14px;margin-top:10px}
+@media (max-width:640px){.tabs button{min-width:0;font-size:14px;padding:10px 6px}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="loading">불러오는 중…</div></div>
+<div id="toast" role="status"></div>
+<script type="module">
+import { fb, OPERATOR, SCHOOL, DEFAULT_PERIODS, DEFAULT_SPECIALS, DEFAULT_LUNCH, rid, kstToday } from './fb.js';
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let tT = null;
+function toast(m, bad){ const t = $('toast'); t.textContent = m; t.className = 'show' + (bad ? ' bad' : ''); clearTimeout(tT); tT = setTimeout(() => t.className = '', 2600); }
+const fail = e => { console.error(e); toast(friendly(e), true); };
+function friendly(e){
+  const m = String(e && (e.code || e.message) || e);
+  if (/permission|insufficient/i.test(m)) return '권한이 없어요. 승인 상태를 확인하거나 다시 로그인해 주세요.';
+  if (/popup-closed|cancelled-popup/i.test(m)) return '로그인 창이 닫혔어요. 다시 눌러 주세요.';
+  if (/popup-blocked/i.test(m)) return '팝업이 막혔어요. 잠시 뒤 다른 방식으로 로그인합니다.';
+  if (/network|unavailable|offline/i.test(m)) return '인터넷 연결을 확인해 주세요.';
+  return m.replace(/^Firebase:\s*/, '');
+}
+const S = { fb: null, user: null, me: null, B: null, key: '', tab: localStorage.getItem('cr_tab') || 'daily', unsub: null, teachers: null, nf: { level: 0 }, editId: '' };
+
+/* ---------------- 시작 · 로그인 ---------------- */
+async function start(){
+  try {
+    S.fb = await fb();
+  } catch (e) {
+    $('app').innerHTML = `<div class="center"><div class="card"><h2>연결하지 못했어요</h2><p class="small">인터넷 연결을 확인하고 새로고침해 주세요. 학교 인터넷에서 막혀 있으면 휴대폰 데이터로 열어 보세요.</p></div></div>`;
+    return;
+  }
+  const { auth, A } = S.fb;
+  try { await A.getRedirectResult(auth); } catch (e) { if (!/no-auth-event/.test(String(e.code))) fail(e); }
+  A.onAuthStateChanged(auth, u => { S.user = u && !u.isAnonymous ? u : null; route(); });
+}
+async function login(){
+  const { auth, A } = S.fb;
+  const p = new A.GoogleAuthProvider();
+  p.setCustomParameters({ prompt: 'select_account' });
+  try { await A.signInWithPopup(auth, p); }
+  catch (e) {
+    if (/popup-blocked|operation-not-supported/i.test(String(e.code))) return A.signInWithRedirect(auth, p);
+    fail(e);
+  }
+}
+async function logout(){ if (S.unsub) S.unsub(); S.unsub = null; await S.fb.A.signOut(S.fb.auth); S.me = null; S.B = null; }
+const isOperator = () => !!(S.user && S.user.email === OPERATOR);
+
+async function route(){
+  if (S.unsub){ S.unsub(); S.unsub = null; }
+  if (!S.user) return vLogin();
+  $('app').innerHTML = '<div class="loading">확인하는 중…</div>';
+  const { db, F } = S.fb;
+  try {
+    const snap = await F.getDoc(F.doc(db, 'teachers', S.user.uid));
+    S.me = snap.exists() ? snap.data() : null;
+  } catch (e) { S.me = null; fail(e); }
+  if (!S.me) return isOperator() ? vOperatorOnly() : vJoin();
+  if (S.me.status === 'pending') return vWait();
+  if (S.me.status !== 'ok') return vStopped();
+  if (!S.me.boardKey) await makeBoard();
+  watchBoard();
+}
+
+function vLogin(){
+  $('app').innerHTML = `<div class="center">
+    <img class="logo" src="../icon-192.png" alt="">
+    <h1 style="font-size:26px;margin:0 0 6px">교실 화면</h1>
+    <p class="muted" style="margin:0 0 22px">${esc(SCHOOL.name)} 선생님용 · 우리 반 TV에 시계 · 시간표 · 급식 · 공지를 띄웁니다</p>
+    <button class="btn pri big" id="btnLogin" style="width:100%">구글 계정으로 시작하기</button>
+    <p class="small muted" style="margin-top:14px">처음이면 학년 · 반을 적어 가입을 신청하고, 승인되면 바로 쓸 수 있어요.</p></div>`;
+  $('btnLogin').onclick = login;
+}
+function vJoin(){
+  $('app').innerHTML = `<div class="center"><div class="card">
+    <h2>가입 신청</h2>
+    <p class="small muted">${esc(SCHOOL.name)} 담임 선생님만 쓸 수 있어요. 신청하면 운영자 선생님이 확인 후 승인합니다.</p>
+    <label class="small" style="display:block;margin-top:12px;font-weight:700">선생님 성함</label>
+    <input class="in" id="jName" style="width:100%" maxlength="20" value="${esc((S.user.displayName || '').slice(0, 20))}">
+    <div class="row" style="margin-top:12px">
+      <label class="small" style="font-weight:700">학년 <input class="in" id="jGrade" type="number" min="1" max="3" style="width:80px" placeholder="1"></label>
+      <label class="small" style="font-weight:700">반 <input class="in" id="jClass" type="number" min="1" max="20" style="width:80px" placeholder="2"></label>
+    </div>
+    <p class="small muted" style="margin-top:10px">로그인한 계정: ${esc(S.user.email)}</p>
+    <button class="btn pri big" id="btnJoin" style="width:100%;margin-top:6px">가입 신청하기</button>
+    <button class="btn txt sm" id="btnOut" style="margin-top:8px">다른 계정으로 로그인</button></div></div>`;
+  $('btnOut').onclick = logout;
+  $('btnJoin').onclick = async () => {
+    const name = $('jName').value.trim(), g = $('jGrade').value.trim(), k = $('jClass').value.trim();
+    if (name.length < 2) return toast('성함을 적어 주세요.', true);
+    if (!/^[1-3]$/.test(g)) return toast('학년은 1 · 2 · 3 중에서 적어 주세요.', true);
+    if (!/^\d{1,2}$/.test(k) || +k < 1) return toast('반을 숫자로 적어 주세요.', true);
+    const { db, F } = S.fb;
+    try {
+      await F.setDoc(F.doc(db, 'teachers', S.user.uid), { email: S.user.email, name, grade: g, klass: String(+k), status: 'pending', at: F.serverTimestamp() });
+      toast('가입 신청을 보냈어요.'); route();
+    } catch (e) { fail(e); }
+  };
+}
+function vWait(){
+  $('app').innerHTML = `<div class="center"><div class="card">
+    <h2>승인을 기다리고 있어요</h2>
+    <p class="small">${esc(S.me.name)} 선생님 · ${esc(S.me.grade)}학년 ${esc(S.me.klass)}반</p>
+    <p class="small muted">운영자 선생님이 승인하면 바로 쓸 수 있어요. 승인 뒤 이 화면에서 [다시 확인]을 눌러 주세요.</p>
+    <div class="row" style="margin-top:10px"><button class="btn pri" id="btnRe">다시 확인</button><button class="btn txt" id="btnOut">로그아웃</button></div></div></div>`;
+  $('btnRe').onclick = route; $('btnOut').onclick = logout;
+}
+function vStopped(){
+  $('app').innerHTML = `<div class="center"><div class="card"><h2>사용할 수 없는 계정이에요</h2>
+    <p class="small muted">가입이 승인되지 않았거나 사용이 멈춰 있어요. 운영자 선생님께 문의해 주세요.</p>
+    <button class="btn txt" id="btnOut">로그아웃</button></div></div>`;
+  $('btnOut').onclick = logout;
+}
+function vOperatorOnly(){
+  S.tab = 'op';
+  $('app').innerHTML = `<header class="top"><h1>교실 화면 · 운영자</h1><span class="who">${esc(S.user.email)}</span><button class="btn sm" id="btnOut">로그아웃</button></header>
+    <div class="hint">운영자 계정이에요. 다른 선생님들의 가입 신청을 여기서 승인합니다. 운영자도 자기 반 교실 화면을 쓰려면 아래 [내 반도 쓰기]를 누르세요.</div>
+    <div class="row" style="margin:10px 0"><button class="btn" id="btnSelf">내 반도 쓰기 (가입 신청 화면으로)</button></div>
+    <div id="opBox"></div>`;
+  $('btnOut').onclick = logout;
+  $('btnSelf').onclick = vJoin;
+  loadTeachers();
+}
+
+/* ---------------- 우리 반 화면 자료 (boards/{TV키}) ---------------- */
+function boardDefaults(){
+  return {
+    owner: S.user.uid, grade: String(S.me.grade), klass: String(S.me.klass), teacherName: S.me.name,
+    notices: [], ddays: [], links: [], flash: null, layout: {},
+    quote: { on: true, mode: 'day', list: [] },
+    periods: DEFAULT_PERIODS, specials: DEFAULT_SPECIALS, lunch: DEFAULT_LUNCH,
+    weatherOn: true, ver: 1
+  };
+}
+async function makeBoard(data){
+  const { db, F } = S.fb;
+  const key = rid(24);
+  const d = Object.assign(boardDefaults(), data || {}, { owner: S.user.uid, updatedAt: F.serverTimestamp() });
+  await F.setDoc(F.doc(db, 'boards', key), d);
+  await F.updateDoc(F.doc(db, 'teachers', S.user.uid), { boardKey: key });
+  S.me.boardKey = key;
+  return key;
+}
+function watchBoard(){
+  const { db, F } = S.fb;
+  S.key = S.me.boardKey;
+  if (S.unsub) S.unsub();
+  S.unsub = F.onSnapshot(F.doc(db, 'boards', S.key), snap => {
+    if (!snap.exists()){ S.B = null; makeBoard().then(watchBoard).catch(fail); return; }
+    S.B = snap.data();
+    render();
+  }, fail);
+}
+async function save(patch, msg){
+  const { db, F } = S.fb;
+  try {
+    await F.updateDoc(F.doc(db, 'boards', S.key), Object.assign({}, patch, { updatedAt: F.serverTimestamp() }));
+    if (msg) toast(msg);
+  } catch (e) { fail(e); }
+}
+const tvUrl = () => new URL('tv.html?k=' + S.key, location.href).href;
+
+/* ---------------- 그리기 ---------------- */
+function render(){
+  const B = S.B; if (!B) return;
+  const keep = captureDrafts();
+  const T = [['daily', '매일 쓰기'], ['look', '화면 꾸미기'], ['setup', '설정 · 시간표']];
+  if (isOperator()) T.push(['op', '운영자']);
+  if (!T.some(t => t[0] === S.tab)) S.tab = 'daily';
+  $('app').innerHTML = `<header class="top"><h1>${esc(B.grade)}학년 ${esc(B.klass)}반 교실 화면</h1>
+      <span class="who">${esc(S.me.name)} 선생님 · ${esc(S.user.email)}</span><button class="btn sm" id="btnOut">로그아웃</button></header>
+    <section class="card tvbox"><div class="row"><h2 style="margin:0;flex:1">교실 TV 주소</h2>
+      <a class="btn pri" href="${esc(tvUrl())}" target="_blank" rel="noopener">TV 화면 열기</a><button class="btn" data-a="copytv">주소 복사</button></div>
+      <input class="in" readonly value="${esc(tvUrl())}" style="width:100%;margin-top:8px" id="tvUrlIn">
+      <p class="small muted" style="margin:6px 0 0">교실 TV(전자칠판) 브라우저에서 이 주소를 열고 즐겨찾기 · 전체 화면으로 두세요. 여기서 고치면 TV에 몇 초 안에 바로 바뀝니다. 학생 단톡방 등에는 올리지 마세요.</p></section>
+    <nav class="tabs">${T.map(([v, l]) => `<button data-tab="${v}" class="${S.tab === v ? 'on' : ''}">${l}</button>`).join('')}</nav>
+    <div id="body">${S.tab === 'daily' ? vDaily() : S.tab === 'look' ? vLook() : S.tab === 'setup' ? vSetup() : '<div id="opBox"></div>'}</div>`;
+  $('btnOut').onclick = logout;
+  restoreDrafts(keep);
+  if (S.tab === 'op') loadTeachers();
+}
+/* 다시 그릴 때 쓰던 글이 사라지지 않게 */
+function captureDrafts(){ const o = {}; document.querySelectorAll('[data-keep]').forEach(el => { o[el.id] = el.value; }); return o; }
+function restoreDrafts(o){ Object.keys(o).forEach(id => { const el = $(id); if (el && o[id]) el.value = o[id]; }); }
+
+const LV = [[0, '보통'], [1, '중요'], [2, '긴급']];
+function vDaily(){
+  const B = S.B, today = kstToday();
+  const F = B.flash && B.flash.until && B.flash.until > Date.now() ? B.flash : null;
+  const ns = (B.notices || []).slice().sort((a, b) => (b.level || 0) - (a.level || 0) || String(b.at || '').localeCompare(String(a.at || '')));
+  const past = n => n.end && n.end < today;
+  const item = n => `<li><div class="t"><span class="tag ${n.start && n.start > today ? '' : 'on'}">${n.start && n.start > today ? '예정' : (past(n) ? '지남' : 'TV에 보임')}</span>
+      <span class="tx ${n.level === 2 ? 'lvl2' : n.level === 1 ? 'lvl1' : ''}">${n.level === 2 ? '[긴급] ' : n.level === 1 ? '[중요] ' : ''}${esc(n.text)}</span>
+      <div class="small muted">${n.start || '오늘부터'} ~ ${n.end || '계속'}</div></div>
+    <div class="row"><div class="seg">${LV.map(([v, l]) => `<button data-a="nlv" data-id="${esc(n.id)}" data-v="${v}" class="${(n.level || 0) === v ? 'on' : ''}">${l}</button>`).join('')}</div>
+      <button class="btn sm" data-a="nedit" data-id="${esc(n.id)}">수정</button><button class="btn sm bad" data-a="ndel" data-id="${esc(n.id)}">지우기</button></div>
+    ${S.editId === n.id ? `<div style="width:100%"><textarea class="in" id="eText" rows="3">${esc(n.text)}</textarea>
+      <div class="row" style="margin-top:6px"><span class="small">보이는 기간</span><input class="in" type="date" id="eStart" value="${esc(n.start || '')}">~<input class="in" type="date" id="eEnd" value="${esc(n.end || '')}">
+      <span class="grow"></span><button class="btn sm" data-a="ncancel">취소</button><button class="btn pri sm" data-a="nsave" data-id="${esc(n.id)}">저장</button></div></div>` : ''}</li>`;
+  const live = ns.filter(n => !past(n)), old = ns.filter(past);
+  return `<section class="card"><h2>긴급 호출 · 쪽지</h2>
+    <p class="small muted" style="margin:0 0 8px">TV 화면 한가운데 크게 띄웁니다. 정한 시간이 지나면 저절로 사라져요.</p>
+    ${F ? `<div class="hint">지금 TV에 띄우는 중: <b>${esc(F.who || '')}</b> ${esc(F.text || '')} <button class="btn sm bad" data-a="flashoff">지금 끄기</button></div>` : ''}
+    <div class="row" style="margin-top:8px"><input class="in" id="fWho" data-keep placeholder="부를 사람 (예: 반장)" style="width:170px"><input class="in grow" id="fText" data-keep placeholder="할 말 (예: 교무실로 와 주세요)">
+      <select class="in" id="fMin">${[3, 5, 10, 20, 30].map(m => `<option value="${m}" ${m === 5 ? 'selected' : ''}>${m}분</option>`).join('')}</select>
+      <label class="small row" style="gap:4px"><input type="checkbox" id="fUrg"> 긴급</label>
+      <button class="btn pri" data-a="flash">TV에 띄우기</button></div></section>
+  <section class="card"><h2>공지</h2>
+    <textarea class="in" id="nText" data-keep rows="3" placeholder="예) 내일 3교시 체육관 집합&#10;수행평가 마감은 금요일 (한 줄씩 따로 올라가요)"></textarea>
+    <div class="row" style="margin-top:8px"><span class="small">중요도</span><div class="seg">${LV.map(([v, l]) => `<button data-a="nflv" data-v="${v}" class="${S.nf.level === v ? 'on' : ''}">${l}</button>`).join('')}</div>
+      <span class="small" style="margin-left:6px">보이는 기간</span><input class="in" type="date" id="nStart" value="${kstToday()}">~<input class="in" type="date" id="nEnd">
+      <span class="grow"></span><button class="btn pri" data-a="nadd">올리기</button></div>
+    <p class="small muted" style="margin:6px 0 0">중요 · 긴급 공지는 TV 공지 칸 맨 위에 고정됩니다. 끝 날짜를 비우면 지울 때까지 보여요.</p>
+    ${live.length ? `<ul class="list">${live.map(item).join('')}</ul>` : '<p class="small muted" style="margin-top:10px">지금 TV에 보이는 공지가 없어요.</p>'}
+    ${old.length ? `<details class="past" ${old.some(n => n.id === S.editId) ? 'open' : ''}><summary>기간이 지난 공지 ${old.length}개 (TV에는 안 보여요)</summary><ul class="list">${old.map(item).join('')}</ul></details>` : ''}
+  </section>`;
+}
+function vLook(){
+  const B = S.B, Q = B.quote || { on: true, mode: 'day', list: [] };
+  const dd = (B.ddays || []).concat([{}, {}, {}]).slice(0, 3);
+  return `<section class="card"><h2>맨 윗줄 한마디</h2>
+    <p class="small muted" style="margin:0 0 8px">한 줄에 하나씩, <b>문구 — 말한 사람</b>. TV 맨 위에 크게 나옵니다.</p>
+    <textarea class="in" id="qText" data-keep rows="7">${esc((Q.list || []).map(q => q.t + (q.by ? ' — ' + q.by : '')).join('\n'))}</textarea>
+    <div class="row" style="margin-top:8px"><select class="in" id="qMode">${[['day', '하루에 하나씩 (날마다 바뀜)'], ['min', '5분마다 돌아가며'], ['fix', '첫 줄만 고정']].map(([v, l]) => `<option value="${v}" ${Q.mode === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      <label class="small row" style="gap:4px"><input type="checkbox" id="qOn" ${Q.on !== false ? 'checked' : ''}> TV에 보이기</label>
+      <span class="grow"></span><button class="btn" data-a="qsample">철학 한 줄 60개 넣기</button><button class="btn pri" data-a="qsave">저장</button></div></section>
+  <section class="card"><h2>D-day (3개까지)</h2>
+    ${dd.map((d, i) => `<div class="row" style="margin-top:6px"><input class="in" id="dL${i}" placeholder="예: 기말고사" value="${esc(d.label || '')}" style="width:200px"><input class="in" type="date" id="dD${i}" value="${esc(d.date || '')}"></div>`).join('')}
+    <div class="row" style="margin-top:10px;justify-content:flex-end"><button class="btn pri" data-a="ddsave">저장</button></div></section>
+  <section class="card"><h2>설문 · 링크 버튼</h2>
+    <p class="small muted" style="margin:0 0 8px">구글 설문 같은 주소를 넣으면 TV 아래쪽에 버튼이 생기고, 누르면 큰 QR 코드가 떠서 학생들이 휴대폰으로 찍어 참여합니다. (6개까지)</p>
+    <div class="row"><input class="in" id="lTitle" data-keep placeholder="버튼 이름 (예: 수학여행 희망 조사)" style="flex:1;min-width:180px"><input class="in" id="lUrl" data-keep placeholder="https://forms.gle/…" style="flex:2;min-width:200px"><button class="btn pri" data-a="ladd">버튼 만들기</button></div>
+    ${(B.links || []).length ? `<ul class="list">${B.links.map(l => `<li><div class="t"><span class="tag ${l.on === false ? '' : 'on'}">${l.on === false ? '숨김' : '보이는 중'}</span><b>${esc(l.title)}</b><div class="small muted" style="word-break:break-all">${esc(l.url)}</div></div>
+      <div class="row"><button class="btn sm" data-a="ltog" data-id="${esc(l.id)}">${l.on === false ? '다시 보이기' : '숨기기'}</button><button class="btn sm bad" data-a="ldel" data-id="${esc(l.id)}">지우기</button></div></li>`).join('')}</ul>` : ''}
+  </section>
+  <section class="card"><h2>날씨 · 미세먼지</h2>
+    <label class="row small"><input type="checkbox" id="wOn" ${B.weatherOn !== false ? 'checked' : ''} data-a="wtog"> 시계 아래에 강릉 날씨 · 미세먼지 보이기</label></section>`;
+}
+function vSetup(){
+  const B = S.B;
+  const P = B.periods || DEFAULT_PERIODS, SP = B.specials || [];
+  return `<section class="card"><h2>학년 · 반 · 성함</h2>
+    <div class="row"><label class="small">학년 <input class="in" id="sGrade" type="number" min="1" max="3" value="${esc(B.grade)}" style="width:80px"></label>
+      <label class="small">반 <input class="in" id="sClass" type="number" min="1" max="20" value="${esc(B.klass)}" style="width:80px"></label>
+      <label class="small">성함 <input class="in" id="sName" value="${esc(S.me.name)}" style="width:150px"></label>
+      <span class="grow"></span><button class="btn pri" data-a="classsave">저장</button></div>
+    <p class="small muted" style="margin:6px 0 0">시간표는 나이스에서 이 학년 · 반 것을 자동으로 가져옵니다 (매일 새벽 · 점심 무렵 갱신).</p></section>
+  <section class="card"><h2>교시 시각</h2>
+    <p class="small muted" style="margin:0 0 8px">TV가 '지금 몇 교시'인지 계산하는 데 씁니다. 과목은 나이스에서 자동으로 들어와요.</p>
+    <table class="t"><tr><th>교시</th><th>시작</th><th>끝</th><th></th></tr>
+    ${P.map((p, i) => `<tr><td><input class="in" data-pn="${i}" value="${esc(p.n)}" style="width:60px"></td><td><input class="in" type="time" data-ps="${i}" value="${esc(p.s)}"></td><td><input class="in" type="time" data-pe="${i}" value="${esc(p.e)}"></td>
+      <td><button class="btn sm bad" data-a="pdel" data-i="${i}">빼기</button></td></tr>`).join('')}</table>
+    <div class="row" style="margin-top:8px"><button class="btn sm" data-a="padd">교시 추가</button>
+      <span class="small" style="margin-left:10px">점심시간</span><input class="in" id="sLunch" value="${esc(B.lunch || '')}" placeholder="12:30~13:30" style="width:140px"></div>
+    <h3 style="font-size:15px;margin:16px 0 6px">특별 시간 <span class="small muted" style="font-weight:400">— 조회 · 청소 · 종례처럼 교시가 아닌 시간</span></h3>
+    ${SP.map((x, i) => `<div class="row" style="margin-top:6px"><input class="in" data-xn="${i}" value="${esc(x.name)}" style="width:150px"><input class="in" type="time" data-xs="${i}" value="${esc(x.s)}">~<input class="in" type="time" data-xe="${i}" value="${esc(x.e)}"><button class="btn sm bad" data-a="xdel" data-i="${i}">빼기</button></div>`).join('')}
+    <div class="row" style="margin-top:10px"><button class="btn sm" data-a="xadd">특별 시간 추가</button><span class="grow"></span><button class="btn sm" data-a="pdef">강릉제일고 기본값으로</button><button class="btn pri" data-a="psave">시각 저장</button></div></section>
+  <section class="card"><h2>TV 주소 바꾸기</h2>
+    <p class="small muted" style="margin:0 0 8px">TV 주소가 학생들에게 퍼졌을 때 새 주소로 바꿉니다. 예전 주소는 바로 막히고, 공지 등 내용은 그대로 옮겨집니다.</p>
+    <button class="btn bad" data-a="rekey">새 TV 주소 만들기</button></section>`;
+}
+
+/* ---------------- 운영자: 가입 승인 ---------------- */
+async function loadTeachers(){
+  const box = $('opBox'); if (!box) return;
+  box.innerHTML = '<div class="loading">선생님 목록을 불러오는 중…</div>';
+  const { db, F } = S.fb;
+  try {
+    const qs = await F.getDocs(F.collection(db, 'teachers'));
+    S.teachers = qs.docs.map(d => Object.assign({ uid: d.id }, d.data()));
+  } catch (e) { box.innerHTML = '<p class="small" style="color:var(--bad)">목록을 불러오지 못했어요: ' + esc(friendly(e)) + '</p>'; return; }
+  const L = S.teachers.slice().sort((a, b) => (a.status === 'pending' ? 0 : 1) - (b.status === 'pending' ? 0 : 1) || (+a.grade - +b.grade) || (+a.klass - +b.klass));
+  const st = { pending: '승인 대기', ok: '사용 중', stop: '멈춤' };
+  const pend = L.filter(t => t.status === 'pending').length;
+  box.innerHTML = `<section class="card"><div class="row"><h2 style="margin:0;flex:1">선생님 가입 승인 ${pend ? `<span class="tag" style="background:#fde2e1;color:var(--bad)">대기 ${pend}</span>` : ''}</h2><button class="btn sm" data-a="opreload">새로고침</button></div>
+    <p class="small muted" style="margin:4px 0 8px">학급 자료(공지 · 명단 등)는 각 선생님만 볼 수 있고, 여기에는 이름 · 메일 · 학년 · 반만 보입니다.</p>
+    ${L.length ? `<table class="t"><tr><th>상태</th><th>선생님</th><th>학년 · 반</th><th>메일</th><th></th></tr>
+      ${L.map(t => `<tr><td><span class="tag ${t.status === 'ok' ? 'on' : ''}">${st[t.status] || t.status}</span></td><td>${esc(t.name)}</td><td>${esc(t.grade)}-${esc(t.klass)}</td><td class="small">${esc(t.email)}</td>
+        <td class="row">${t.status !== 'ok' ? `<button class="btn pri sm" data-a="opok" data-uid="${esc(t.uid)}">승인</button>` : ''}
+          ${t.status === 'ok' ? `<button class="btn sm" data-a="opstop" data-uid="${esc(t.uid)}">사용 멈춤</button>` : ''}
+          ${t.status === 'pending' ? `<button class="btn sm bad" data-a="opdel" data-uid="${esc(t.uid)}">거절</button>` : ''}</td></tr>`).join('')}</table>` : '<p class="small muted">아직 가입 신청이 없어요.</p>'}
+    <p class="small muted" style="margin:10px 0 0">다른 선생님께는 이 주소를 알려 주세요: <b>${esc(location.href.split('#')[0].split('?')[0])}</b></p></section>`;
+}
+
+/* ---------------- 동작 ---------------- */
+const parseQuotes = text => String(text || '').split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+  const m = l.match(/^(.*\S)\s+(?:—|–|--|-|\|)\s+(\S[^—–|]{0,29})$/);
+  return m ? { t: m[1].trim(), by: m[2].trim() } : { t: l, by: '' };
+});
+function collectPeriods(){
+  const B = S.B, P = (B.periods || DEFAULT_PERIODS).map(p => Object.assign({}, p)), SP = (B.specials || []).map(x => Object.assign({}, x));
+  document.querySelectorAll('[data-pn]').forEach(el => { const i = +el.dataset.pn; P[i].n = el.value.trim(); });
+  document.querySelectorAll('[data-ps]').forEach(el => { P[+el.dataset.ps].s = el.value; });
+  document.querySelectorAll('[data-pe]').forEach(el => { P[+el.dataset.pe].e = el.value; });
+  document.querySelectorAll('[data-xn]').forEach(el => { SP[+el.dataset.xn].name = el.value.trim(); });
+  document.querySelectorAll('[data-xs]').forEach(el => { SP[+el.dataset.xs].s = el.value; });
+  document.querySelectorAll('[data-xe]').forEach(el => { SP[+el.dataset.xe].e = el.value; });
+  return { P, SP, lunch: ($('sLunch') || {}).value || '' };
+}
+document.addEventListener('click', async ev => {
+  const tb = ev.target.closest('[data-tab]');
+  if (tb){ S.tab = tb.dataset.tab; try { localStorage.setItem('cr_tab', S.tab); } catch (e) {} S.editId = ''; render(); return; }
+  const t = ev.target.closest('[data-a]'); if (!t) return;
+  const a = t.dataset.a, id = t.dataset.id, B = S.B;
+  const { db, F } = S.fb;
+  switch (a){
+    case 'copytv': { const i = $('tvUrlIn'); i.select(); try { await navigator.clipboard.writeText(i.value); toast('TV 주소를 복사했어요.'); } catch (e) { document.execCommand('copy'); toast('TV 주소를 복사했어요.'); } return; }
+    case 'flash': {
+      const who = $('fWho').value.trim().slice(0, 40), text = $('fText').value.trim().slice(0, 120);
+      if (!who && !text) return toast('부를 사람이나 할 말을 적어 주세요.', true);
+      const min = +$('fMin').value || 5;
+      await save({ flash: { id: rid(8), who, text, level: $('fUrg').checked ? '긴급' : '알림', until: Date.now() + min * 60000 } }, 'TV에 띄웠어요.');
+      $('fWho').value = ''; $('fText').value = ''; return;
+    }
+    case 'flashoff': return save({ flash: null }, '껐어요.');
+    case 'nflv': S.nf.level = +t.dataset.v; render(); return;
+    case 'nadd': {
+      const raw = $('nText').value.trim();
+      if (!raw) return toast('공지 내용을 적어 주세요.', true);
+      const start = $('nStart').value, end = $('nEnd').value;
+      if (end && start && end < start) return toast('끝 날짜가 시작보다 앞이에요.', true);
+      const at = new Date().toISOString();
+      const add = raw.split('\n').map(x => x.trim()).filter(Boolean).slice(0, 20).map(text => ({ id: rid(8), text: text.slice(0, 300), level: S.nf.level, start, end, at }));
+      const list = (B.notices || []).concat(add);
+      if (list.length > 60) return toast('공지가 너무 많아요. 지난 공지를 조금 지워 주세요. (60개까지)', true);
+      $('nText').value = '';
+      return save({ notices: list }, add.length + '개 올렸어요.');
+    }
+    case 'nlv': return save({ notices: (B.notices || []).map(n => n.id === id ? Object.assign({}, n, { level: +t.dataset.v }) : n) });
+    case 'ndel': if (!confirm('이 공지를 지울까요?')) return; return save({ notices: (B.notices || []).filter(n => n.id !== id) }, '지웠어요.');
+    case 'nedit': S.editId = id; render(); return;
+    case 'ncancel': S.editId = ''; render(); return;
+    case 'nsave': {
+      const text = $('eText').value.trim(); if (!text) return toast('내용을 적어 주세요.', true);
+      S.editId = '';
+      return save({ notices: (B.notices || []).map(n => n.id === id ? Object.assign({}, n, { text: text.slice(0, 300), start: $('eStart').value, end: $('eEnd').value }) : n) }, '고쳤어요.');
+    }
+    case 'qsample': { let QUOTES = []; try { QUOTES = await (await fetch('quotes.json')).json(); } catch (e) { return toast('예시를 불러오지 못했어요.', true); } const ta = $('qText'), have = ta.value.split('\n').map(x => x.trim()); ta.value = [ta.value.trim()].concat(QUOTES.filter(q => !have.includes(q))).filter(Boolean).join('\n'); toast('넣었어요. [저장]을 눌러 주세요.'); return; }
+    case 'qsave': return save({ quote: { on: $('qOn').checked, mode: $('qMode').value, list: parseQuotes($('qText').value).slice(0, 200) } }, '맨 윗줄 한마디를 저장했어요.');
+    case 'ddsave': {
+      const L = [0, 1, 2].map(i => ({ label: $('dL' + i).value.trim().slice(0, 20), date: $('dD' + i).value })).filter(d => d.label && d.date);
+      return save({ ddays: L }, 'D-day를 저장했어요.');
+    }
+    case 'ladd': {
+      const title = $('lTitle').value.trim().slice(0, 40), url = $('lUrl').value.trim();
+      if (!title) return toast('버튼 이름을 적어 주세요.', true);
+      if (!/^https:\/\/\S+$/.test(url)) return toast('https:// 로 시작하는 주소를 넣어 주세요.', true);
+      if ((B.links || []).length >= 6) return toast('버튼은 6개까지 만들 수 있어요.', true);
+      $('lTitle').value = ''; $('lUrl').value = '';
+      return save({ links: (B.links || []).concat([{ id: rid(8), title, url, on: true }]) }, '버튼을 만들었어요.');
+    }
+    case 'ltog': return save({ links: (B.links || []).map(l => l.id === id ? Object.assign({}, l, { on: l.on === false }) : l) });
+    case 'ldel': if (!confirm('이 버튼을 지울까요?')) return; return save({ links: (B.links || []).filter(l => l.id !== id) }, '지웠어요.');
+    case 'wtog': return save({ weatherOn: t.checked }, t.checked ? '날씨를 보여요.' : '날씨를 숨겼어요.');
+    case 'classsave': {
+      const g = $('sGrade').value.trim(), k = $('sClass').value.trim(), name = $('sName').value.trim();
+      if (!/^[1-3]$/.test(g) || !/^\d{1,2}$/.test(k) || +k < 1) return toast('학년 · 반을 숫자로 적어 주세요.', true);
+      if (name.length < 2) return toast('성함을 적어 주세요.', true);
+      try {
+        await F.updateDoc(F.doc(db, 'teachers', S.user.uid), { name, grade: g, klass: String(+k) });
+        S.me.name = name; S.me.grade = g; S.me.klass = String(+k);
+        await save({ grade: g, klass: String(+k), teacherName: name }, '저장했어요.');
+      } catch (e) { fail(e); }
+      return;
+    }
+    case 'padd': { const c = collectPeriods(); c.P.push({ n: String(c.P.length + 1), s: '', e: '' }); return save({ periods: c.P, specials: c.SP, lunch: c.lunch }); }
+    case 'pdel': { const c = collectPeriods(); c.P.splice(+t.dataset.i, 1); return save({ periods: c.P, specials: c.SP, lunch: c.lunch }); }
+    case 'xadd': { const c = collectPeriods(); c.SP.push({ name: '', s: '', e: '' }); return save({ periods: c.P, specials: c.SP, lunch: c.lunch }); }
+    case 'xdel': { const c = collectPeriods(); c.SP.splice(+t.dataset.i, 1); return save({ periods: c.P, specials: c.SP, lunch: c.lunch }); }
+    case 'pdef': if (!confirm('교시 시각을 강릉제일고 기본값으로 되돌릴까요?')) return; return save({ periods: DEFAULT_PERIODS, specials: DEFAULT_SPECIALS, lunch: DEFAULT_LUNCH }, '기본값으로 바꿨어요.');
+    case 'psave': {
+      const c = collectPeriods();
+      const bad = c.P.some(p => !p.s || !p.e || p.e <= p.s);
+      if (bad) return toast('시작 · 끝 시각을 확인해 주세요. (끝이 시작보다 뒤여야 해요)', true);
+      return save({ periods: c.P, specials: c.SP.filter(x => x.name && x.s && x.e), lunch: c.lunch.trim() }, '교시 시각을 저장했어요.');
+    }
+    case 'rekey': {
+      if (!confirm('새 TV 주소를 만들까요? 예전 주소로 열어 둔 TV는 더 이상 보이지 않으니, TV에서 새 주소로 다시 열어야 해요.')) return;
+      try {
+        const old = S.key, data = Object.assign({}, B); delete data.updatedAt;
+        if (S.unsub){ S.unsub(); S.unsub = null; }
+        await makeBoard(data);
+        await F.deleteDoc(F.doc(db, 'boards', old));
+        toast('새 TV 주소를 만들었어요.'); watchBoard();
+      } catch (e) { fail(e); }
+      return;
+    }
+    case 'opreload': return loadTeachers();
+    case 'opok': try { await F.updateDoc(F.doc(db, 'teachers', t.dataset.uid), { status: 'ok' }); toast('승인했어요.'); loadTeachers(); } catch (e) { fail(e); } return;
+    case 'opstop': if (!confirm('이 선생님의 사용을 멈출까요? (자료는 지우지 않아요)')) return;
+      try { await F.updateDoc(F.doc(db, 'teachers', t.dataset.uid), { status: 'stop' }); toast('멈췄어요.'); loadTeachers(); } catch (e) { fail(e); } return;
+    case 'opdel': if (!confirm('이 가입 신청을 거절할까요?')) return;
+      try { await F.deleteDoc(F.doc(db, 'teachers', t.dataset.uid)); toast('거절했어요.'); loadTeachers(); } catch (e) { fail(e); } return;
+  }
+});
+start();
+</script>
+</body>
+</html>
