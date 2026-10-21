@@ -1,6 +1,6 @@
 {
-  "name": "강릉제일고 1-2 학급 다이어리",
-  "short_name": "1-2 다이어리",
+  "name": "강릉제일고 학급 다이어리",
+  "short_name": "제일고 다이어리",
   "lang": "ko",
   "start_url": "app.html",
   "scope": "./",
