@@ -120,6 +120,9 @@ async function route(){
     S.me = snap.exists() ? snap.data() : null;
   } catch (e) { S.me = null; fail(e); }
   if (!S.me) return isOperator() ? vOperatorOnly() : vJoin();
+  if (S.me.status !== 'ok' && isOperator()){   /* 운영자 본인 신청은 바로 승인 */
+    try { await F.updateDoc(F.doc(db, 'teachers', S.user.uid), { status: 'ok' }); S.me.status = 'ok'; } catch (e) { fail(e); }
+  }
   if (S.me.status === 'pending') return vWait();
   if (S.me.status !== 'ok') return vStopped();
   if (!S.me.boardKey) await makeBoard();
