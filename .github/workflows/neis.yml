@@ -135,6 +135,46 @@ jobs:
           if (!mealRows && !ttRows && !evRows) { console.error('나이스에서 아무것도 받지 못했어요: ' + notes.join(' | ')); process.exit(1); }
           fs.writeFileSync('data/neis.json', JSON.stringify(out, null, 1));
           console.log('급식 ' + Object.keys(meals).length + '일 · 시간표 ' + Object.keys(timetable).length + '일 · 일정 ' + events.length + '개' + (notes.length ? ' · 알림: ' + notes.join(' | ') : ''));
+
+          /* ---- 학교 전체(모든 학년 · 반) 시간표 → data/school.json : '교실 화면' 공용판이 씁니다 ---- */
+          if (KEY) {
+            async function allPages(svc, params) {
+              const all = [];
+              for (let pi = 1; pi <= 10; pi++) {
+                const q = new URLSearchParams({ Type: 'json', pIndex: String(pi), pSize: '1000', KEY, ...params });
+                let rows = null;
+                for (let t = 0; t < 3 && rows === null; t++) {
+                  try {
+                    const r = await fetch('https://open.neis.go.kr/hub/' + svc + '?' + q, { signal: AbortSignal.timeout(20000) });
+                    const j = await r.json();
+                    rows = (j[svc] && j[svc][1] && j[svc][1].row) || [];
+                  } catch (e) { await new Promise(ok => setTimeout(ok, 1500)); }
+                }
+                if (!rows) { notes.push(svc + ' ' + pi + '쪽 실패'); break; }
+                all.push(...rows);
+                if (rows.length < 1000) break;
+              }
+              return all;
+            }
+            const sch = {};
+            let ttCount = 0;
+            for (const g of ['1', '2', '3']) {
+              const rows = await allPages('hisTimetable', { ...base, GRADE: g, TI_FROM_YMD: ymd8(mon), TI_TO_YMD: ymd8(addDays(mon, 11)) });
+              rows.forEach(x => {
+                const k = g + '-' + String(Number(x.CLASS_NM)), d = iso(x.ALL_TI_YMD);
+                const c = (sch[k] = sch[k] || {});
+                (c[d] = c[d] || []).push({ p: Number(x.PERIO), s: String(x.ITRT_CNTNT || '').replace(/^-+/, '').trim() });
+                ttCount++;
+              });
+            }
+            Object.values(sch).forEach(c => Object.values(c).forEach(a => a.sort((x, y) => x.p - y.p)));
+            const evG = (evRows || []).filter(x => x.EVENT_NM && x.EVENT_NM !== '토요휴업일')
+              .map(x => ({ date: iso(x.AA_YMD), name: x.EVENT_NM, g: ['1', '2', '3'].filter(g => String(x[{ 1: 'ONE', 2: 'TW', 3: 'THREE' }[g] + '_GRADE_EVENT_YN'] || '') !== 'N').join('') }))
+              .sort((a, b) => a.date.localeCompare(b.date));
+            const school = { updated: out.updated, school: out.school, meals, events: evG, timetable: sch };
+            if (ttCount || Object.keys(meals).length) fs.writeFileSync('data/school.json', JSON.stringify(school, null, 1));
+            console.log('학교 전체 시간표: 반 ' + Object.keys(sch).length + '개 · ' + ttCount + '줄');
+          }
           JS
           node /tmp/neis.mjs
 
@@ -142,11 +182,11 @@ jobs:
         run: |
           git config user.name 'neis-bot'
           git config user.email 'neis-bot@users.noreply.github.com'
-          git add data/neis.json
+          git add data/neis.json data/school.json 2>/dev/null || git add data/neis.json
           # 'updated' 시각만 바뀐 경우는 저장하지 않습니다 (불필요한 기록 줄이기)
           if git diff --cached --quiet; then echo '바뀐 것 없음'; exit 0; fi
           # 단, 월요일에는 시각만 바뀌어도 저장합니다. (GitHub은 60일 동안 저장소에 변화가 없으면 자동 실행을 멈추기 때문)
-          if [ "$(TZ=Asia/Seoul date +%u)" != "1" ] && [ "$(git diff --cached -U0 data/neis.json | grep -E '^[+-][^+-]' | grep -vc '"updated"')" = "0" ]; then
+          if [ "$(TZ=Asia/Seoul date +%u)" != "1" ] && [ "$(git diff --cached -U0 | grep -E '^[+-][^+-]' | grep -vc '"updated"')" = "0" ]; then
             echo '시각만 바뀜 — 저장 안 함'; git reset -q; exit 0
           fi
           git commit -q -m '나이스 자료 갱신'
