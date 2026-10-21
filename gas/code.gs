@@ -5,7 +5,7 @@
  * 구글 스프레드시트 + Apps Script 웹앱
  * 학생은 로그인 없이 링크만 열면 참여 가능 (번호 + 4자리 PIN)
  *******************************************************/
-var FILEVER_자율 = '2026-11-01a';
+var FILEVER_자율 = '2026-11-03a';
 
 const SHEETS = {
   CONFIG: '설정',
@@ -1163,9 +1163,10 @@ function apiAdminSetRoster(pw, text) {
   old.forEach(function (s) { oldMap[s.name.replace(/\s/g, '')] = s; });
 
   const rows = lines.map(function (line, i) {
-    const parts = line.split(/[\t,]/).map(function (x) { return x.trim(); });
-    const no = parts.length > 1 && /^\d+$/.test(parts[0]) ? Number(parts[0]) : i + 1;
-    const name = parts.length > 1 && /^\d+$/.test(parts[0]) ? parts.slice(1).join(' ') : line;
+    /* '1 김민수' · '1. 김민수' · '1,김민수' · '1<탭>김민수' · '김민수' 모두 됩니다 */
+    const m = line.match(/^(\d{1,3})\s*[.,)\t ]\s*(.+)$/);
+    const no = m ? Number(m[1]) : i + 1;
+    const name = (m ? m[2] : line).replace(/[\t,]+/g, ' ').trim();
     const prev = oldMap[name.replace(/\s/g, '')];
     return [no, name, prev ? prev.pinHash : '', prev ? prev.start : '', prev ? prev.done : '', prev ? prev.memo : ''];
   });

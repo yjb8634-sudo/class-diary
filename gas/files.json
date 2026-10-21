@@ -1,11 +1,12 @@
 {
- "release": "2026-11-02a",
- "note": "Apps Script 자동 배포용 목록. 여기 있는 파일만 바꿉니다. (new: true 는 없으면 새로 만듦)",
+ "release": "2026-11-03a",
+ "note": "Apps Script 자동 배포용 목록. 여기 있는 파일만 바꿉니다. (new: 없으면 새로 만듦 · noSolo: 교실 화면 단독판에는 넣지 않음)",
  "files": [
   {
    "name": "Index",
    "type": "HTML",
-   "path": "Index.html"
+   "path": "Index.html",
+   "noSolo": true
   },
   {
    "name": "code",
@@ -58,7 +59,8 @@
   {
    "name": "문제해결",
    "type": "HTML",
-   "path": "문제해결.html"
+   "path": "문제해결.html",
+   "noSolo": true
   },
   {
    "name": "보안",
@@ -98,7 +100,8 @@
   {
    "name": "프로젝트21",
    "type": "HTML",
-   "path": "프로젝트21.html"
+   "path": "프로젝트21.html",
+   "noSolo": true
   },
   {
    "name": "활동",
@@ -108,7 +111,14 @@
   {
    "name": "활동화면",
    "type": "HTML",
-   "path": "활동화면.html"
+   "path": "활동화면.html",
+   "noSolo": true
+  },
+  {
+   "name": "설치화면",
+   "type": "HTML",
+   "path": "설치화면.html",
+   "new": true
   }
  ]
 }

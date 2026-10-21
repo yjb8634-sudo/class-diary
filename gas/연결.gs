@@ -5,7 +5,7 @@
  *  · 화면에서 부를 수 있는 함수는 아래 목록(API_ALLOW_)에 있는 것뿐입니다.
  *    새 기능에서 서버 함수를 새로 부르면 이 목록에도 이름을 넣어 주세요.
  *******************************************************/
-var FILEVER_연결 = '2026-11-02a';
+var FILEVER_연결 = '2026-11-03a';
 
 var API_ALLOW_ = {
   /* 소감문 · 학급 회의 (활동.gs) */
@@ -40,7 +40,12 @@ function webBase_() {
   var a = '';
   try { a = String(getConfig_()['앱주소'] || '').trim(); } catch (e) {}
   if (/^https:\/\/[^\s"'<>?#]+$/.test(a)) return /\/$/.test(a) ? a : a + '/';
-  return ScriptApp.getService().getUrl() || '';
+  var u = ScriptApp.getService().getUrl() || '';
+  /* 교실 화면 단독판: 설치 창에서 붙여 넣은 웹앱 주소(…/exec)가 있으면 그것을 씁니다 */
+  if (!/\/exec$/.test(u)) {
+    try { var s = String(getConfig_()['단독판_주소'] || ''); if (/^https:\/\/script\.google\.com\/[^\s?#]*\/exec$/.test(s)) return s; } catch (e) {}
+  }
+  return u;
 }
 
 /* Apps Script 주소로 열 때: 화면 값으로 페이지를 만들어 보냅니다. */

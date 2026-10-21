@@ -5,7 +5,7 @@
  *  - 담임 기록실: 항목마다 제출 체크표
  *  - 구글 캘린더: 반 전체 항목의 마감일을 학급 캘린더에 자동으로 올림
  *******************************************************/
-var FILEVER_알림장 = '2026-10-07a';
+var FILEVER_알림장 = '2026-11-03a';
 
 var NOTE = { ITEM: '알림장', SUB: '알림장제출' };
 var NOTE_KINDS = ['가정통신문', '제출 서류', '준비물', '중요 일정'];
@@ -134,7 +134,8 @@ function noteCalSync_(it) {
       return '';
     }
     var title = '[' + it.kind + '] ' + it.title + (it.track ? ' (마감)' : '');
-    var desc = (it.text ? it.text + '\n\n' : '') + '1-2 학급 다이어리 알림장';
+    var cg = getConfig_();
+    var desc = (it.text ? it.text + '\n\n' : '') + (cg['학년'] || '') + '-' + (cg['반'] || '') + ' 알림장';
     var p = it.due.split('-');
     var day = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
     if (ev) { ev.setTitle(title); ev.setAllDayDate(day); ev.setDescription(desc); return ev.getId(); }

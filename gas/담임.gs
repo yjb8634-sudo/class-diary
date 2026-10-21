@@ -7,7 +7,7 @@
  *
  *  모든 api 함수는 관리자 비밀번호를 확인한 뒤에만 자료를 내보냅니다.
  *******************************************************/
-var FILEVER_담임 = '2026-11-02a';
+var FILEVER_담임 = '2026-11-03a';
 
 var HUB = { OBS: '관찰기록', FINAL: '생기부', EXT: '외부기록' };
 var HUB_AREAS = ['자율', '진로', '행특'];
@@ -278,12 +278,13 @@ function hubSourcesAll_() {
 function apiHubInit(pw, dev, ua) {
   isAdmin_(pw);
   if (dev && admTokOk_(pw) !== true) secAdminDevice_(dev, ua, '담임 기록실');
-  담임준비_();
+  var solo = solo_();   /* 단독판: 관찰 기록 · 생기부 · 21일 · 문제해결 자료는 만들지도 읽지도 않음 */
+  if (!solo) 담임준비_();
   try { 준비(); } catch (e) {}
   var cfg = getConfig_();
-  var al = hubAliases_();
+  var al = solo ? {} : hubAliases_();
   var base = webBase_();
-  var finals = hubFinals_();
+  var finals = solo ? {} : hubFinals_();
   var fOut = {};
   Object.keys(finals).forEach(function (k) { fOut[k] = { text: finals[k].text, at: finals[k].at }; });
 
@@ -306,7 +307,7 @@ function apiHubInit(pw, dev, ua) {
     students: students_().map(function (s) {
       return { no: s.no, name: s.name, sid: hub학번_(s.no), aliases: al[s.no] || [] };
     }),
-    sources: hubSourcesAll_(),
+    sources: solo ? {} : hubSourcesAll_(),
     finals: fOut,
     urls: { home: base, counsel: base ? base + '?p=counsel' : '', teacher: base ? base + '?p=teacher' : '' },
     admTok: admTokFor_(pw)
@@ -404,7 +405,7 @@ function apiHubSetAliases(pw, map) {
 /* 명단 바꾸기 (21일·문제해결과 같은 명단). 별칭은 이름을 기준으로 따라갑니다. */
 function apiHubSetRoster(pw, text) {
   isAdmin_(pw);
-  담임준비_();
+  if (!solo_()) 담임준비_();
   var old = hubAliases_(), byName = {}, bdByName = {};
   var sh = stuSheetW_();
   students_().forEach(function (s) {
@@ -413,6 +414,7 @@ function apiHubSetRoster(pw, text) {
     if (bd !== '' && bd != null) bdByName[hubNorm_(s.name)] = bd;
   });
   var r = apiAdminSetRoster(pw, text);
+  stuSheetW_();   /* 방금 쓴 명단을 다시 읽도록 기억해 둔 값 비우기 */
   if (sh.getLastRow() > 1) {
     sh.getRange(2, 7, sh.getLastRow() - 1, 1).clearContent();
     sh.getRange(2, 9, sh.getLastRow() - 1, 1).clearContent();
@@ -791,14 +793,14 @@ function apiHubAlerts(pw) {
   var step = function (label, fn) { try { fn(); } catch (e) { errs.push(label + ': ' + e.message); } };
 
   /* 1. 학급 가입 승인 대기 */
-  step('가입', function () {
+  if (!solo_()) step('가입', function () {
     var w = students_().filter(function (s) { return s.approval === '대기'; });
     if (w.length) add({ k: 'join', cat: '학급 가입', pend: true, n: w.length, go: 'roster',
       title: '가입 승인을 기다리는 학생 ' + w.length + '명', detail: w.map(function (s) { return s.no + '. ' + s.name; }).join(', ') });
   });
 
   /* 2. 21일 프로젝트: 계획서 승인 대기 · 새 인증 · 3일 넘게 멈춘 학생 */
-  step('21일', function () {
+  if (!solo_()) step('21일', function () {
     var cur = {};
     students_().forEach(function (s) { cur[s.no] = s.round || 1; });
     var sh = sheet_(SHEETS.PLANS), last = sh.getLastRow();
@@ -829,7 +831,7 @@ function apiHubAlerts(pw) {
   });
 
   /* 3. 문제해결 프로젝트: 새 팀 · 활동지 수정 · 파일 · 5단계 마치고 확인 대기 */
-  step('문제해결', function () {
+  if (!solo_()) step('문제해결', function () {
     var teams = pblTeams_();
     var tsh = sheet_(SHEETS.PBL_TEAM), tl = tsh.getLastRow();
     var tAt = {};
@@ -891,7 +893,7 @@ function apiHubAlerts(pw) {
   });
 
   /* 6. 소감문 제출 · 학급 회의 안건 제안 */
-  step('소감문', function () {
+  if (!solo_()) step('소감문', function () {
     var es = essays_(), subs = essaySubs_();
     es.forEach(function (e) {
       var nw = subs.filter(function (x) { return x.id === e.id && (isNew(x.at) || isNew(x.updated)); });
@@ -900,7 +902,7 @@ function apiHubAlerts(pw) {
         detail: hubAlertNames_(nw.map(function (x) { return x.name; }), 8) });
     });
   });
-  step('학급 회의', function () {
+  if (!solo_()) step('학급 회의', function () {
     var ag = agendas_().filter(function (a) { return a.propNo && a.status === '제안'; });
     if (ag.length) add({ k: 'agenda', cat: '학급 회의', pend: true, n: ag.length, go: 'meet',
       title: '학생이 낸 안건 ' + ag.length + '개 (아직 논의 전)', detail: ag.slice(0, 6).map(function (a) { return '· ' + a.title + ' — ' + a.propName; }).join('\n') });

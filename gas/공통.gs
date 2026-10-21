@@ -13,7 +13,7 @@
  *            Index.html(자율) / 상담.html / 담임.html
  *******************************************************/
 
-var FILEVER_공통 = '2026-11-02a';
+var FILEVER_공통 = '2026-11-03b';
 var RELEASE = '2026-10-27a';
 
 /* ---------- 파일 버전 한눈에 보기 ----------
@@ -22,16 +22,16 @@ var RELEASE = '2026-10-27a';
  *  - 담임 기록실에서 보면: 실제로 '배포된' 파일 기준 (새 버전 배포를 했는지 확인)
  * 새 파일이 생기거나 버전이 바뀌면 이 표만 고치면 됩니다. */
 var FILE_EXPECT = [
-  ['code.gs (21일 · 문제해결)', 'gs', 'FILEVER_자율', '2026-11-01a'],
-  ['공통.gs', 'gs', 'FILEVER_공통', '2026-11-02a'],
-  ['담임.gs', 'gs', 'FILEVER_담임', '2026-11-02a'],
+  ['code.gs (21일 · 문제해결)', 'gs', 'FILEVER_자율', '2026-11-03a'],
+  ['공통.gs', 'gs', 'FILEVER_공통', '2026-11-03b'],
+  ['담임.gs', 'gs', 'FILEVER_담임', '2026-11-03a'],
   ['상담.gs', 'gs', 'FILEVER_상담', '2026-11-01a'],
   ['교실.gs', 'gs', 'FILEVER_교실', '2026-11-02a'],
-  ['알림장.gs (새 파일)', 'gs', 'FILEVER_알림장', '2026-10-07a'],
+  ['알림장.gs (새 파일)', 'gs', 'FILEVER_알림장', '2026-11-03a'],
   ['앱.gs', 'gs', 'FILEVER_앱', '2026-10-24a'],
   ['활동.gs (새 파일)', 'gs', 'FILEVER_활동', '2026-10-24a'],
   ['보안.gs', 'gs', 'FILEVER_보안', '2026-10-30a'],
-  ['연결.gs (새 파일 · 학생 앱 연결 통로)', 'gs', 'FILEVER_연결', '2026-11-02a'],
+  ['연결.gs (새 파일 · 학생 앱 연결 통로)', 'gs', 'FILEVER_연결', '2026-11-03a'],
   ['Index.html', 'html', 'Index', '2026-11-01a'],
   ['프로젝트21.html (새 파일 · 21일 화면)', 'html', '프로젝트21', '2026-11-01a'],
   ['문제해결.html (새 파일 · 문제 해결 화면)', 'html', '문제해결', '2026-11-01a'],
@@ -40,10 +40,14 @@ var FILE_EXPECT = [
   ['교실화면.html', 'html', '교실화면', '2026-11-02a'],
   ['활동화면.html (새 파일)', 'html', '활동화면', '2026-10-25a'],
   ['게이트.html (새 파일 · 공용 로그인 창)', 'html', '게이트', '2026-11-01a'],
-  ['테마.html (새 파일 · 공용 디자인)', 'html', '테마', '2026-10-26b']
+  ['테마.html (새 파일 · 공용 디자인)', 'html', '테마', '2026-10-26b'],
+  ['설치화면.html (교실 화면 단독판 설치 창)', 'html', '설치화면', '2026-11-03b']
 ];
+var SOLO_SKIP_ = ['Index', '프로젝트21', '문제해결', '활동화면'];   /* 단독판에 없는 화면 */
 function fileVersions_() {
-  return FILE_EXPECT.map(function (f) {
+  var list = solo_() ? FILE_EXPECT.filter(function (f) { return SOLO_SKIP_.indexOf(f[2]) < 0; })
+    .map(function (f) { return [f[2] === 'FILEVER_자율' ? 'code.gs (기본)' : f[0].replace(/ \(.*\)$/, ''), f[1], f[2], f[3]]; }) : FILE_EXPECT;
+  return list.map(function (f) {
     var have = '';
     if (f[1] === 'gs') {
       try { have = String(globalThis[f[2]] || ''); } catch (e) { have = ''; }
@@ -171,11 +175,12 @@ function onEdit(e) {
 function onOpen() {
   if (solo_()) {
     SpreadsheetApp.getUi()
-      .createMenu('교실 화면')
-      .addItem('① 처음 설정 (사본을 만든 뒤 한 번)', '교실화면_처음설정')
-      .addItem('웹앱 주소 보기', '통합주소보기')
-      .addItem('파일 버전 한눈에 보기', '파일버전점검')
+      .createMenu('🖥 교실 화면')
+      .addItem('설치 · 내 주소 보기', '설치창열기')
+      .addSeparator()
+      .addItem('파일 버전 확인', '파일버전점검')
       .addToUi();
+    try { 시작하기안내_(); } catch (e) {}
     return;
   }
   SpreadsheetApp.getUi()
@@ -360,58 +365,131 @@ function 외부기록받기_(e) {
 }
 
 
-/* ================= 교실 화면 단독판: 사본을 만든 선생님이 처음 한 번 실행 =================
- * 학년 · 반 · 관리자 비밀번호를 정하고, 시트를 만들고, 이 사본만의 새 주소 키를 만듭니다.
- * (원본 템플릿에서 따라온 값은 모두 새로 만듭니다) */
-function 교실화면_처음설정() {
-  var ui = SpreadsheetApp.getUi();
-  if (!solo_()) { ui.alert('이 메뉴는 교실 화면 단독판에서만 씁니다.'); return; }
-  var ask = function (title, msg, check) {
-    for (;;) {
-      var r = ui.prompt(title, msg, ui.ButtonSet.OK_CANCEL);
-      if (r.getSelectedButton() !== ui.Button.OK) throw new Error('처음 설정을 멈췄어요. 메뉴에서 다시 실행하면 됩니다.');
-      var v = String(r.getResponseText() || '').trim(), bad = check(v);
-      if (!bad) return v;
-      ui.alert(bad);
-    }
+/* ================= 교실 화면 단독판: 설치 =================
+ * 다른 선생님이 사본을 만든 뒤 메뉴 [🖥 교실 화면 → 설치 · 내 주소 보기] 로 엽니다.
+ * 21일 · 문제해결 · 담임 기록 시트는 만들지 않고, 교실 화면에 필요한 시트만 만듭니다. */
+function 교실화면_처음설정() { 설치창열기(); }
+function 설치창열기() {
+  if (!solo_()) { SpreadsheetApp.getUi().alert('이 메뉴는 교실 화면 단독판에서만 씁니다.'); return; }
+  var h = HtmlService.createHtmlOutputFromFile('설치화면').setWidth(700).setHeight(720);
+  SpreadsheetApp.getUi().showModalDialog(h, '교실 화면 설치');
+}
+function 단독판_상태() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet(), c = {};
+  var installed = !!ss.getSheetByName('설정');
+  if (installed) { try { c = getConfig_(); } catch (e) { c = {}; } }
+  installed = installed && !!c['관리자비밀번호'] && !!c['교실_키'];
+  var url = '';
+  try { url = ScriptApp.getService().getUrl() || ''; } catch (e) {}
+  if (!/\/exec$/.test(url) && /\/exec$/.test(String(c['단독판_주소'] || ''))) url = String(c['단독판_주소']);
+  var out = {
+    installed: installed, grade: c['학년'] || '', klass: c['반'] || '', teacher: String(c['담임'] || '').replace(/\s*선생님$/, ''),
+    deployed: /\/exec$/.test(url), url: url,
+    editor: 'https://script.google.com/home/projects/' + ScriptApp.getScriptId() + '/edit',
+    tv: '', view: ''
   };
-  var grade = ask('처음 설정 1/3 · 학년', '몇 학년인가요? 숫자만 적어 주세요. (예: 1)', function (v) { return /^[1-3]$/.test(v) ? '' : '1 · 2 · 3 중 하나를 적어 주세요.'; });
-  var klass = ask('처음 설정 2/3 · 반', '몇 반인가요? 숫자만 적어 주세요. (예: 2)', function (v) { return /^\d{1,2}$/.test(v) ? '' : '반을 숫자로 적어 주세요.'; });
-  var pw = ask('처음 설정 3/3 · 관리자 비밀번호',
-    '교실 화면 관리에 들어갈 때 쓰는 비밀번호를 정해 주세요. (6자 이상, 학생에게 알려 주지 마세요)',
-    function (v) { return v.length >= 6 ? '' : '6자 이상으로 정해 주세요.'; });
-
-  /* 원본에서 따라온 스크립트 속성(화면 배치 · 알림 기록 등)을 비웁니다 */
-  try { PropertiesService.getScriptProperties().deleteAllProperties(); } catch (e) {}
-  try { CacheService.getScriptCache().removeAll(['cfg_v1', 'cs_pub_v1', 'cs_ready_v1', 'b21v2', 'bpv2']); } catch (e) {}
-
-  setup(); 준비(true); 담임준비_(); board준비_();
+  if (out.deployed && installed) {
+    out.tv = url + '?p=board&t=' + c['교실_키'];
+    out.view = c['교실_보기키'] ? url + '?p=board&t=' + c['교실_보기키'] : '';
+    try { 시작하기주소_(out); } catch (e) {}
+  }
+  return out;
+}
+/* 배포를 마쳤는데 자동으로 못 찾을 때: 배포 창의 '웹 앱 URL'을 붙여 넣어 저장 */
+function 단독판_주소저장(url) {
+  url = String(url || '').trim();
+  if (!/^https:\/\/script\.google\.com\/[^\s?#]*\/exec$/.test(url)) throw new Error('배포 창에 나온 "웹 앱" 주소(https://script.google.com/… /exec 로 끝남)를 그대로 붙여 넣어 주세요.');
+  setConfigValue_('단독판_주소', url);
+  cfgBust_();
+  return 단독판_상태();
+}
+function 단독판_설치(f) {
+  if (!solo_()) throw new Error('단독판이 아닙니다.');
+  f = f || {};
+  var grade = String(f.grade || '').trim(), klass = String(f.klass || '').trim(), pw = String(f.pw || '');
+  var teacher = String(f.teacher || '').trim().slice(0, 20);
+  if (!/^[1-6]$/.test(grade)) throw new Error('학년을 숫자로 적어 주세요. (1~6)');
+  if (teacher.length < 2) throw new Error('선생님 성함을 적어 주세요. (상담 신청판에 나옵니다)');
+  if (!/^\d{1,2}$/.test(klass) || Number(klass) < 1) throw new Error('반을 숫자로 적어 주세요.');
+  if (pw.length < 6) throw new Error('비밀번호는 6자 이상으로 정해 주세요.');
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var first = !ss.getSheetByName('설정');
+  if (first) {
+    /* 원본에서 따라온 스크립트 속성(화면 배치 · 알림 기록 등)을 비웁니다 */
+    try { PropertiesService.getScriptProperties().deleteAllProperties(); } catch (e) {}
+  }
+  단독판준비_();
   var put = function (k, v) { setConfigValue_(k, v); };
   put('학년', grade); put('반', klass); put('관리자비밀번호', pw);
-  put('부제', grade + '-' + klass + ' 교실 화면');
-  put('교실_키', Utilities.getUuid().replace(/-/g, '').slice(0, 10));
-  put('교실_보기키', 'v' + Utilities.getUuid().replace(/-/g, '').slice(0, 11));
-  put('PIN솔트', Utilities.getUuid());
-  put('앱주소', '');
-  put('교실_호출', '');
-  put('교실_휴대폰참여', '아니오');
-  /* 학교: 강릉제일고등학교 (다른 학교면 관리 화면 → 설정 · 시간표 → 급식 · 나이스에서 바꾸면 됩니다) */
-  put('NEIS_교육청', 'K10'); put('NEIS_학교코드', '7801097'); put('NEIS_학교명', '강릉제일고등학교');
-  /* 첨부 폴더는 이 선생님 드라이브에 새로 */
-  put('교실_첨부폴더ID', '');
-  /* 처음 만든 빈 시트(시트1)는 지웁니다 */
+  put('부제', grade + '학년 ' + klass + '반');
+  put('담임', /선생님$/.test(teacher) ? teacher : teacher + ' 선생님');
+  if (first || !getConfig_()['교실_키']) {
+    put('교실_키', Utilities.getUuid().replace(/-/g, '').slice(0, 10));
+    put('교실_보기키', 'v' + Utilities.getUuid().replace(/-/g, '').slice(0, 11));
+    put('앱주소', ''); put('교실_호출', ''); put('교실_휴대폰참여', '아니오'); put('교실_첨부폴더ID', '');
+    /* 학교: 강릉제일고등학교 (다른 학교면 관리 화면 → 설정 · 시간표 → 급식 · 나이스에서 바꾸기) */
+    put('NEIS_교육청', 'K10'); put('NEIS_학교코드', '7801097'); put('NEIS_학교명', '강릉제일고등학교');
+  }
+  try { ss.rename(grade + '-' + klass + ' 교실 화면'); } catch (e) {}
+  cfgBust_();
+  return 단독판_상태();
+}
+/* 교실 화면에 필요한 시트만 */
+function 단독판준비_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss.getSheetByName(SHEETS.CONFIG)) {
+    var c = ss.insertSheet(SHEETS.CONFIG);
+    c.getRange(1, 1, 1, 2).setValues([['항목', '값']]).setFontWeight('bold');
+    c.setColumnWidth(1, 180); c.setColumnWidth(2, 420); c.setFrozenRows(1);
+  }
+  if (!ss.getSheetByName(SHEETS.STUDENTS)) {
+    var st = ss.insertSheet(SHEETS.STUDENTS);
+    st.getRange(1, 1, 1, 14).setValues([['번호', '이름', 'PIN(암호화)', '시작일', '완료일', '비고', '별칭(인식 이름)', '현재회차', '생일',
+      'PIN정한시각', '승인', '요청', 'PIN길이', '스탬프']]).setFontWeight('bold');
+    st.setFrozenRows(1);
+  }
+  cfgBust_();
+  준비(true);
+  board준비_();
+  note준비_();
+  /* 빈 '시트1' 정리, '시작하기'를 맨 앞으로 */
   ss.getSheets().forEach(function (sh) {
     if (/^(시트|Sheet)\d+$/.test(sh.getName()) && sh.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(sh);
   });
-  cfgBust_();
-  ui.alert('처음 설정을 마쳤어요',
-    grade + '학년 ' + klass + '반 교실 화면을 준비했습니다.\n\n' +
-    '이어서 할 일\n' +
-    '1) 확장 프로그램 → Apps Script → 오른쪽 위 [배포] → [새 배포]\n' +
-    '   · 유형: 웹 앱   · 실행: 나   · 액세스 권한: 모든 사용자  → [배포]\n' +
-    '2) 나온 웹앱 주소를 열고 방금 정한 비밀번호로 들어갑니다. (즐겨찾기 해 두세요)\n' +
-    '3) [명단 · 설정]에 학생 번호 · 이름을 붙여 넣고 저장합니다.\n' +
-    '4) [교실 화면 → 설정 · 시간표]에서 교실 TV 주소를 복사해 TV에서 엽니다.',
-    ui.ButtonSet.OK);
+  var g = ss.getSheetByName('시작하기');
+  if (g) { ss.setActiveSheet(g); ss.moveActiveSheet(1); }
+}
+/* 사본을 연 순간(설치 전) 첫 시트에 큰 글씨 안내를 적어 둡니다 — 단순 트리거라 권한 없이도 됩니다 */
+function 시작하기안내_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var g = ss.getSheetByName('시작하기');
+  if (!g) {
+    var s0 = ss.getSheets()[0];
+    if (ss.getSheets().length === 1 && s0.getLastRow() === 0) { g = s0; g.setName('시작하기'); }
+    else return;
+  }
+  if (g.getRange('A1').getValue()) return;
+  var L = [
+    ['🖥 교실 화면 설치하기'], [''],
+    ['① 위쪽 메뉴 [🖥 교실 화면] → [설치 · 내 주소 보기] 를 누르세요.'],
+    ['    메뉴가 안 보이면 10초쯤 기다렸다가 새로고침(F5) 해 주세요.'], [''],
+    ['② 처음 한 번 \'승인 필요\' 창이 뜹니다.'],
+    ['    [계속] → 내 계정 선택 → [고급] → [교실 화면(으)로 이동] → [허용]'],
+    ['    선생님 드라이브에만 저장되는 선생님 소유의 사본이라 나오는 안내입니다.'], [''],
+    ['③ 다시 [🖥 교실 화면] → [설치 · 내 주소 보기] 를 누르고, 안내 창을 따라 하면 끝!'], [''],
+    ['※ 이 시트의 탭들은 교실 화면 자료가 저장되는 곳입니다. 지우거나 이름을 바꾸지 마세요.']
+  ];
+  g.getRange(1, 1, L.length, 1).setValues(L);
+  g.getRange('A1').setFontSize(22).setFontWeight('bold');
+  g.getRange(3, 1, L.length - 2, 1).setFontSize(13);
+  g.getRange('A3').setFontWeight('bold'); g.getRange('A10').setFontWeight('bold');
+  g.setColumnWidth(1, 900);
+}
+function 시작하기주소_(o) {
+  var g = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('시작하기');
+  if (!g) return;
+  var rows = [['✅ 설치 완료 — 내 주소 (메뉴 [🖥 교실 화면 → 설치 · 내 주소 보기] 에서도 다시 볼 수 있어요)'],
+    ['교실 화면 관리 (선생님만): ' + o.url], ['교실 TV 주소: ' + o.tv], ['학부모 · 학생 보기 주소: ' + o.view]];
+  g.getRange(14, 1, rows.length, 1).setValues(rows);
+  g.getRange(14, 1).setFontWeight('bold').setFontSize(13);
 }

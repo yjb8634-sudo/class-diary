@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<style>
+:root{--ink:#1d2320;--ink2:#4c5550;--ink3:#7a837e;--line:#dde1dc;--bg:#fff;--soft:#f3f5f2;--pri:#1a73e8;--ok:#1e7a4c;--bad:#b3261e;--hi:#fde68a}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:14.5px;line-height:1.55}
+.wrap{padding:6px 4px 10px}
+.steps{display:flex;gap:6px;margin-bottom:14px}
+.steps span{flex:1;text-align:center;font-size:12.5px;font-weight:700;color:var(--ink3);padding:6px 0;border-bottom:3px solid var(--line)}
+.steps span.on{color:var(--pri);border-color:var(--pri)}
+.steps span.done{color:var(--ok);border-color:var(--ok)}
+h2{font-size:20px;margin:0 0 4px}
+.lead{color:var(--ink2);margin:0 0 14px}
+label{display:block;font-weight:700;font-size:13.5px;margin:12px 0 6px}
+input{font:inherit;font-size:16px;padding:10px 12px;border:1px solid #c7ccc8;border-radius:8px;width:100%}
+input:focus{outline:2px solid var(--pri);border-color:transparent}
+.seg{display:flex;gap:8px}
+.seg button{flex:1;font:inherit;font-size:16px;font-weight:700;padding:10px;border:1px solid #c7ccc8;border-radius:8px;background:#fff;cursor:pointer}
+.seg button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.row{display:flex;gap:10px;align-items:center}
+.go{display:block;width:100%;margin-top:18px;font:inherit;font-size:16px;font-weight:800;padding:13px;border:0;border-radius:10px;background:var(--pri);color:#fff;cursor:pointer}
+.go[disabled]{opacity:.5;cursor:default}
+.ghost{font:inherit;font-weight:700;padding:8px 12px;border:1px solid #c7ccc8;border-radius:8px;background:#fff;cursor:pointer;text-decoration:none;color:var(--ink);white-space:nowrap;display:inline-block}
+.msg{margin-top:10px;font-size:13.5px;min-height:20px}
+.msg.bad{color:var(--bad)} .msg.ok{color:var(--ok)}
+.note{font-size:12.5px;color:var(--ink3);margin-top:8px}
+ol.how{margin:0;padding:0;list-style:none;counter-reset:n}
+ol.how>li{counter-increment:n;display:grid;grid-template-columns:28px 1fr;gap:10px;margin-bottom:14px}
+ol.how>li::before{content:counter(n);width:26px;height:26px;border-radius:50%;background:var(--pri);color:#fff;font-weight:800;display:grid;place-items:center;font-size:13px}
+ol.how b.k{background:var(--soft);border:1px solid var(--line);border-radius:5px;padding:0 6px;font-weight:700}
+/* 화면 그림 */
+.mock{margin-top:8px;border:1px solid var(--line);border-radius:10px;background:var(--soft);padding:10px;font-size:12.5px}
+.bar{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+.bar .t{color:var(--ink3);flex:1}
+.dep{background:var(--pri);color:#fff;font-weight:800;border-radius:6px;padding:4px 12px;position:relative;box-shadow:0 0 0 3px var(--hi)}
+.menu{margin:6px 0 0 auto;width:150px;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1);overflow:hidden}
+.menu div{padding:6px 10px;color:var(--ink2)}
+.menu div.hl{background:#e8f0fe;color:var(--pri);font-weight:800;box-shadow:inset 3px 0 0 var(--pri)}
+.dlg{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px}
+.dlg .f{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding:6px 2px}
+.dlg .f:last-of-type{border-bottom:0}
+.dlg .v{font-weight:700}
+.hlx{background:var(--hi);border-radius:4px;padding:0 6px}
+.gear{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--hi);font-size:14px}
+.dlg .btn{display:inline-block;margin-top:8px;background:var(--pri);color:#fff;border-radius:6px;padding:4px 14px;font-weight:800;box-shadow:0 0 0 3px var(--hi)}
+/* 완료 */
+.big{font-size:22px;font-weight:800;margin:0 0 4px}
+.card{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:10px}
+.card h3{margin:0 0 4px;font-size:15px}
+.card p{margin:0 0 8px;color:var(--ink2);font-size:13px}
+.card input{font-size:13px;padding:8px 10px;background:var(--soft)}
+.card.main{border-color:var(--pri);background:#f5f9ff}
+.next{margin-top:14px;background:var(--soft);border-radius:10px;padding:10px 14px;font-size:13.5px}
+.next b{color:var(--ink)}
+.spin{display:inline-block;width:16px;height:16px;border:3px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;animation:sp 1s linear infinite;vertical-align:-3px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+[hidden]{display:none !important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="steps"><span id="s1">1. 반 정보</span><span id="s2">2. 웹앱 배포</span><span id="s3">3. 완료</span></div>
+
+  <!-- 1. 반 정보 -->
+  <section id="p1" hidden>
+    <h2>우리 반 교실 화면 만들기</h2>
+    <p class="lead">학년 · 반과 관리 비밀번호만 정하면 됩니다. 자료는 <b>선생님 드라이브의 이 시트에만</b> 저장돼요.</p>
+    <div class="row" style="gap:12px">
+      <div style="flex:1"><label for="grade">학년</label><input id="grade" type="number" min="1" max="6" inputmode="numeric" placeholder="예: 2"></div>
+      <div style="flex:1"><label for="klass">반</label><input id="klass" type="number" min="1" max="30" inputmode="numeric" placeholder="예: 5"></div>
+    </div>
+    <label for="teacher">선생님 성함 <span style="font-weight:400;color:var(--ink3)">(상담 신청판에 '○○○ 선생님'으로 나와요)</span></label>
+    <input id="teacher" maxlength="20" placeholder="예: 홍길동">
+    <label for="pw">관리 비밀번호 <span style="font-weight:400;color:var(--ink3)">(6자 이상 · 학생에게 알려 주지 마세요)</span></label>
+    <input id="pw" type="password" autocomplete="new-password">
+    <label for="pw2">비밀번호 한 번 더</label>
+    <input id="pw2" type="password" autocomplete="new-password">
+    <button class="go" id="btnInstall" type="button">설치하기</button>
+    <div class="msg" id="m1"></div>
+  </section>
+
+  <!-- 2. 웹앱 배포 -->
+  <section id="p2" hidden>
+    <h2>웹앱으로 배포하기 <span style="font-size:14px;color:var(--ink3);font-weight:600">· 처음 한 번, 2분</span></h2>
+    <p class="lead">교실 TV · 휴대폰에서 열 수 있는 <b>주소</b>를 만드는 단계예요. 그림의 <span class="hlx">노란 곳</span>만 차례로 누르면 됩니다.</p>
+    <ol class="how">
+      <li><div><a class="ghost" id="lnkEditor" href="#" target="_blank" rel="noopener">Apps Script 열기 ↗</a>
+        <div class="note">새 탭이 열립니다. 이 창은 닫지 말고 그대로 두세요.</div></div></li>
+      <li><div>오른쪽 위 파란 <b class="k">배포</b> → <b class="k">새 배포</b>
+        <div class="mock"><div class="bar"><span class="t">교실 화면 · Apps Script</span><span class="dep">배포 ▾</span></div>
+          <div class="menu"><div class="hl">새 배포</div><div>배포 관리</div><div>배포 테스트</div></div></div></div></li>
+      <li><div><b class="k">유형 선택</b> 옆 톱니바퀴 → <b class="k">웹 앱</b>을 고르고, 아래처럼 되어 있는지 보고 <b class="k">배포</b>
+        <div class="mock"><div class="dlg">
+          <div class="f"><span>유형 선택 <span class="gear">⚙</span></span><span class="v"><span class="hlx">웹 앱</span></span></div>
+          <div class="f"><span>다음 사용자 인증 정보로 실행</span><span class="v">나 (선생님 메일)</span></div>
+          <div class="f"><span>액세스 권한이 있는 사용자</span><span class="v"><span class="hlx">모든 사용자</span></span></div>
+          <span class="btn">배포</span></div></div></div></li>
+      <li><div><b class="k">액세스 승인</b>이 나오면 → 내 계정 → <b class="k">고급</b> → <b class="k">교실 화면(으)로 이동</b> → <b class="k">허용</b> → <b class="k">완료</b>
+        <div class="note">선생님이 직접 가진 사본이라 나오는 안내예요. '모든 사용자'가 안 보이면 학교 계정 설정 때문이니 개인 구글 계정 사본으로 해 주세요.</div></div></li>
+    </ol>
+    <button class="go" id="btnCheck" type="button">배포했어요 · 확인하기</button>
+    <div class="msg" id="m2"></div>
+    <div id="pasteBox" hidden style="margin-top:6px">
+      <label for="urlIn">배포 창 마지막에 나온 <b>웹 앱 URL</b>을 [복사]해서 여기에 붙여 넣어도 됩니다</label>
+      <div class="row"><input id="urlIn" placeholder="https:&#47;&#47;script.google.com/macros/s/…/exec"><button class="ghost" id="btnUrl" type="button">저장</button></div>
+    </div>
+    <p class="note" style="text-align:center"><a href="#" id="back1">← 학년 · 반 · 비밀번호 다시 정하기</a></p>
+  </section>
+
+  <!-- 3. 완료 -->
+  <section id="p3" hidden>
+    <p class="big">🎉 <span id="cls"></span> 교실 화면 준비 완료!</p>
+    <p class="lead">아래 주소는 이 시트의 <b>[시작하기]</b> 탭에도 적어 두었어요.</p>
+    <div class="card main"><h3>① 교실 화면 관리 (선생님만)</h3>
+      <p>공지 · 알림장 · 조사 · 시간표를 올리는 곳. 방금 정한 비밀번호로 들어갑니다. <b>즐겨찾기</b> 해 두세요.</p>
+      <div class="row"><input id="uAdmin" readonly><a class="ghost" id="oAdmin" target="_blank" rel="noopener">열기 ↗</a><button class="ghost" data-copy="uAdmin" type="button">복사</button></div></div>
+    <div class="card"><h3>② 교실 TV 주소</h3>
+      <p>TV(전자칠판) 브라우저에서 열고 즐겨찾기 · 전체 화면. 학생 단톡방에는 올리지 마세요.</p>
+      <div class="row"><input id="uTv" readonly><a class="ghost" id="oTv" target="_blank" rel="noopener">열기 ↗</a><button class="ghost" data-copy="uTv" type="button">복사</button></div></div>
+    <div class="card"><h3>③ 학부모 · 학생 보기 주소</h3>
+      <p>공지 · 일정 · 급식을 휴대폰으로 보기만 하는 주소 (이름은 가려 보여요).</p>
+      <div class="row"><input id="uView" readonly><button class="ghost" data-copy="uView" type="button">복사</button></div></div>
+    <div class="next"><b>다음 할 일</b> — ① 관리 주소에 들어가 <b>[명단 · 설정]</b>에 번호 · 이름을 붙여 넣고 저장하세요.
+      엑셀에서 두 열을 복사해 붙여도 됩니다. 그다음 TV 주소를 TV에서 열면 끝!</div>
+    <div class="msg ok" id="m3"></div>
+  </section>
+</div>
+<script>
+var FILE_VER = '2026-11-03b';
+var G = '', ST = null;
+function $(id){ return document.getElementById(id); }
+function step(n){
+  ['p1', 'p2', 'p3'].forEach(function(p, i){ $(p).hidden = (i + 1 !== n); });
+  ['s1', 's2', 's3'].forEach(function(s, i){ $(s).className = i + 1 < n ? 'done' : (i + 1 === n ? 'on' : ''); });
+}
+function say(id, cls, t){ var m = $(id); m.className = 'msg ' + cls; m.textContent = t; }
+function busy(btn, on, label){ btn.disabled = on; btn.innerHTML = on ? '<span class="spin"></span>' + label : label; }
+function show(st){
+  ST = st;
+  if (st.grade) $('grade').value = st.grade;
+  if (st.klass) $('klass').value = st.klass;
+  if (st.teacher) $('teacher').value = st.teacher;
+  $('lnkEditor').href = st.editor;
+  if (!st.installed) return step(1);
+  if (!st.deployed) return step(2);
+  $('cls').textContent = st.grade + '학년 ' + st.klass + '반';
+  $('uAdmin').value = st.url; $('oAdmin').href = st.url;
+  $('uTv').value = st.tv; $('oTv').href = st.tv;
+  $('uView').value = st.view;
+  step(3);
+}
+$('btnInstall').onclick = function(){
+  var k = $('klass').value.trim(), p = $('pw').value, p2 = $('pw2').value, btn = this, t = $('teacher').value.trim();
+  G = $('grade').value.trim();
+  if (!/^[1-6]$/.test(G)) return say('m1', 'bad', '학년을 숫자로 적어 주세요. (1~6)');
+  if (!/^\d{1,2}$/.test(k) || Number(k) < 1) return say('m1', 'bad', '반을 숫자로 적어 주세요.');
+  if (t.length < 2) return say('m1', 'bad', '선생님 성함을 적어 주세요.');
+  if (p.length < 6) return say('m1', 'bad', '비밀번호는 6자 이상으로 정해 주세요.');
+  if (p !== p2) return say('m1', 'bad', '두 번 적은 비밀번호가 서로 달라요.');
+  busy(btn, true, '시트를 만드는 중… (20초쯤)'); say('m1', '', '');
+  google.script.run.withSuccessHandler(function(st){ busy(btn, false, '설치하기'); show(st); })
+    .withFailureHandler(function(e){ busy(btn, false, '설치하기'); say('m1', 'bad', e.message); })
+    .단독판_설치({grade: G, klass: k, pw: p, teacher: t});
+};
+$('btnCheck').onclick = function(){
+  var btn = this;
+  busy(btn, true, '확인하는 중…'); say('m2', '', '');
+  google.script.run.withSuccessHandler(function(st){
+    busy(btn, false, '배포했어요 · 확인하기');
+    if (!st.deployed){ $('pasteBox').hidden = false; return say('m2', 'bad', '아직 배포가 보이지 않아요. 3번에서 [배포]를 누르고, 4번 [완료]까지 했는지 확인해 주세요. (끝낸 직후라면 10초 뒤 다시 눌러 주세요)'); }
+    show(st);
+  }).withFailureHandler(function(e){ busy(btn, false, '배포했어요 · 확인하기'); say('m2', 'bad', e.message); }).단독판_상태();
+};
+$('btnUrl').onclick = function(){
+  var btn = this, u = $('urlIn').value.trim();
+  if (!u) return say('m2', 'bad', '주소를 붙여 넣어 주세요.');
+  btn.disabled = true;
+  google.script.run.withSuccessHandler(function(st){ btn.disabled = false; show(st); })
+    .withFailureHandler(function(e){ btn.disabled = false; say('m2', 'bad', e.message); }).단독판_주소저장(u);
+};
+$('back1').onclick = function(ev){ ev.preventDefault(); step(1); };
+document.querySelectorAll('[data-copy]').forEach(function(b){
+  b.onclick = function(){
+    var i = $(b.getAttribute('data-copy')); i.focus(); i.select();
+    var ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+    say('m3', 'ok', ok ? '복사했어요.' : '주소가 선택되었어요. Ctrl+C 로 복사해 주세요.');
+  };
+});
+google.script.run.withSuccessHandler(show).withFailureHandler(function(e){ step(1); say('m1', 'bad', e.message); }).단독판_상태();
+</script>
+</body>
+</html>
