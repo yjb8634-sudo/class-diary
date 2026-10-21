@@ -664,7 +664,7 @@ html,body{background:var(--bg);color:var(--chalk)}
 #flash.urgent .tag{background:#C9573F}
 #flash.urgent .who{color:#EBB0A4}
 </style>
-<style>#btnEdit,#btnShare{display:none !important}</style>
+<style>body:not(.cr-owner) #btnEdit,#btnShare{display:none !important}</style>
 </head>
 <body>
 
@@ -680,10 +680,13 @@ html,body{background:var(--bg);color:var(--chalk)}
 /* 교실 화면 공용판: 예전 앱스 스크립트 서버 대신 Firestore + 학교 자료(data/school.json)에서 화면 자료를 만듭니다. */
 (function () {
   'use strict';
-  var K = (new URLSearchParams(location.search).get('k') || '').replace(/[^a-z0-9]/g, '');
-  var VER = 'fb-2026-11-04a';
+  var QS = new URLSearchParams(location.search);
+  var K = (QS.get('k') || '').replace(/[^a-z0-9]/g, '');
+  var WANT_EDIT = QS.get('edit') === '1';
+  var VER = 'fb-2026-11-05a';
   window.__BOOT = { t: K, preview: 0, phone: false, ver: VER };
-  var B = null, gone = false, SCH = null, schAt = 0, schBusy = false, WX = null, wxAt = 0, wxBusy = false;
+  var FB = null, B = null, gone = false, SCH = null, schAt = 0, schBusy = false, WX = null, wxAt = 0, wxBusy = false;
+  var ANS = {}, USER = null, OWNER = false, editDone = false;
   var rev = 0, builtRev = -1, readyOk, readyNo, failMsg = '';
   var ready = new Promise(function (a, b) { readyOk = a; readyNo = b; });
   ready.catch(function () {});
@@ -702,14 +705,32 @@ html,body{background:var(--bg);color:var(--chalk)}
     kickT = setTimeout(function again() {
       if (typeof window.load !== 'function') { kickT = setTimeout(again, 500); return; }
       var p = window.load();
-      if (p && p.then) p.then(function () { if (builtRev !== rev) kickT = setTimeout(again, 400); });
+      if (p && p.then) p.then(function () { if (builtRev !== rev) kickT = setTimeout(again, 400); else afterPaint(); });
     }, 150);
   }
+  /* 담임 선생님이 로그인한 채로 열면: 화면 배치 조절 */
+  function checkOwner() {
+    OWNER = !!(USER && !USER.isAnonymous && B && B.owner === USER.uid);
+    if (document.body) document.body.classList.toggle('cr-owner', OWNER);
+    afterPaint();
+  }
+  function afterPaint() {
+    if (WANT_EDIT && OWNER && !editDone && document.getElementById('grid') && typeof window.enterEdit === 'function') {
+      editDone = true;
+      setTimeout(function () { window.enterEdit('fb'); }, 300);
+    }
+  }
+  document.addEventListener('click', function (e) {
+    if (OWNER && e.target.closest && e.target.closest('#btnEdit') && typeof window.enterEdit === 'function') {
+      e.preventDefault(); e.stopPropagation(); window.enterEdit('fb');
+    }
+  }, true);
 
-  /* ---- Firestore: 우리 반 자료를 실시간으로 ---- */
+  /* ---- Firestore: 우리 반 자료 · 조사 응답을 실시간으로 ---- */
   if (!K || K.length < 16) { failMsg = 'TV 주소가 올바르지 않아요. 관리 화면에서 [TV 화면 열기]로 다시 열어 주세요.'; readyNo(new Error(failMsg)); }
   else {
     import('./fb.js').then(function (m) { return m.fb(); }).then(function (F) {
+      FB = F;
       F.F.onSnapshot(F.F.doc(F.db, 'boards', K), function (snap) {
         if (!snap.exists()) {
           gone = true; B = null;
@@ -723,11 +744,17 @@ html,body{background:var(--bg);color:var(--chalk)}
         }
         gone = false; failMsg = ''; B = snap.data();
         var g0 = document.getElementById('crGone'); if (g0) g0.remove();
-        readyOk(); kick();
+        readyOk(); checkOwner(); kick();
       }, function (e) {
         failMsg = /permission/i.test(String(e && e.code)) ? '이 TV 주소로는 볼 수 없어요. 새 주소를 받아 주세요.' : '연결이 끊겼어요. 잠시 뒤 다시 시도합니다.';
         readyNo(new Error(failMsg));
       });
+      F.F.onSnapshot(F.F.collection(F.db, 'boards', K, 'answers'), function (qs) {
+        var A = {};
+        qs.docs.forEach(function (d) { var x = d.data(); if (x && x.sid) (A[x.sid] = A[x.sid] || {})[x.no] = { ch: x.ch || [], etc: x.etc || '' }; });
+        ANS = A; if (B) kick();
+      }, function () {});
+      F.A.onAuthStateChanged(F.auth, function (u) { USER = u; checkOwner(); });
     }).catch(function () {
       failMsg = '인터넷 연결을 확인해 주세요. (학교 망에서 막혔다면 담임 선생님께 알려 주세요)';
       readyNo(new Error(failMsg));
@@ -777,6 +804,7 @@ html,body{background:var(--bg);color:var(--chalk)}
   }
 
   /* ---- 화면 자료 만들기 ---- */
+  function students() { return ((B && B.students) || []).filter(function (s) { return s && s.no && s.name; }); }
   function nextSchoolDay(today) {
     var M = (SCH && SCH.meals) || {};
     for (var i = 1; i <= 10; i++) { var d = addDays(today, i); if (M[d] && M[d].length) return d; }
@@ -814,11 +842,51 @@ html,body{background:var(--bg);color:var(--chalk)}
     try { if (localStorage.getItem('cr_ack') === f.id) return null; } catch (e) {}
     return { id: f.id, who: f.who || '', text: f.text || '', level: f.level === '긴급' ? '긴급' : '알림', until: new Date(Number(f.until)).toISOString() };
   }
+  function notesOut(today, sts) {
+    return ((B && B.notes) || []).filter(function (n) { return n && n.title && (!n.due || addDays(n.due, 1) >= today); })
+      .sort(function (a, b) { var x = a.due || '9999', y = b.due || '9999'; return x === y ? String(b.at || '').localeCompare(String(a.at || '')) : (x < y ? -1 : 1); })
+      .slice(0, 12).map(function (n) {
+        var done = n.done || [];
+        return { id: n.id, kind: n.kind, title: n.title, text: n.text || '', due: n.due || '', file: n.file || null, track: !!n.track,
+          pending: n.track && sts.length ? sts.filter(function (s) { return done.indexOf(s.no) < 0; }).length : null };
+      });
+  }
+  function birthdays(today, sts) {
+    if (B.birthdayOn === false) return [];
+    var w = dowOf(today) || 7, mon = addDays(today, 1 - w), out = [];
+    for (var i = 0; i < 7; i++) {
+      var d = addDays(mon, i), md = d.slice(5), y = +d.slice(0, 4), leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+      sts.forEach(function (s) {
+        if (s.bd && (s.bd === md || (s.bd === '02-29' && !leap && md === '02-28'))) out.push({ no: s.no, name: s.name, date: d, dow: i + 1, today: d === today });
+      });
+    }
+    return out;
+  }
+  function survey(id) { return ((B && B.surveys) || []).filter(function (s) { return s && s.id === id; })[0]; }
+  function summary(s, sts) {
+    var A = ANS[s.id] || {}, counts = s.options.map(function () { return 0; }), nos = Object.keys(A).map(Number);
+    nos.forEach(function (no) { (A[no].ch || []).forEach(function (i) { if (counts[i] != null) counts[i]++; }); });
+    return { id: s.id, q: s.q, options: s.options, multi: !!s.multi, anon: !!s.anon, open: !!s.open, pub: !!s.pub, showMissing: s.showMissing !== false,
+      total: sts.length, count: nos.length, kind: s.kind === '체크' ? '체크' : '선택', desc: s.desc || '', file: s.file || null, etc: !!s.etc,
+      doneNos: nos, counts: s.pub ? counts : null };
+  }
+  /* TV 칸 위치(order)는 Firestore에 2중 배열로 못 넣어서 'a,b' 글자로 저장합니다 */
+  function layoutIn(l) {
+    l = l || {};
+    var o = {}; for (var k in l) o[k] = l[k];
+    if (Array.isArray(l.order)) o.order = l.order.map(function (c) { return typeof c === 'string' ? c.split(',').filter(Boolean) : c; });
+    return o;
+  }
+  function layoutOut(l) {
+    var o = JSON.parse(JSON.stringify(l || {}));
+    if (Array.isArray(o.order)) o.order = o.order.map(function (c) { return Array.isArray(c) ? c.join(',') : String(c); });
+    return o;
+  }
   function build() {
     builtRev = rev;
     loadSchool();
     if (B.weatherOn !== false) loadWeather();
-    var today = ymd(kst()), dow = dowOf(today), g = String(B.grade || ''), k = String(B.klass || '');
+    var today = ymd(kst()), dow = dowOf(today), g = String(B.grade || ''), k = String(B.klass || ''), sts = students();
     var periods = (B.periods || []).filter(function (p) { return p && p.s && p.e; });
     var subj = {}, ttNote = '';
     var TT = SCH && SCH.timetable && SCH.timetable[g + '-' + k];
@@ -831,7 +899,7 @@ html,body{background:var(--bg);color:var(--chalk)}
     var notices = (B.notices || []).filter(function (n) {
       return n && n.text && (!n.start || n.start <= today) && (!n.end || n.end >= today);
     }).sort(function (a, b) { return String(b.at || '').localeCompare(String(a.at || '')); })
-      .map(function (n) { var lv = Number(n.level) || 0; return { id: n.id, text: n.text, level: lv, important: lv >= 1, file: null, files: [] }; });
+      .map(function (n) { var lv = Number(n.level) || 0; return { id: n.id, text: n.text, level: lv, important: lv >= 1, file: null, files: n.files || [] }; });
     var Q = B.quote || {};
     return {
       ok: true, now: Date.now(), today: today, label: g + '학년 ' + k + '반', needExt: false,
@@ -839,19 +907,27 @@ html,body{background:var(--bg);color:var(--chalk)}
       ttNote: ttNote, lunch: B.lunch || '',
       meal: M[today] || [], mealErr: SCH ? '' : (schAt ? '급식 정보를 불러오지 못했어요' : '급식을 불러오는 중…'),
       mealTomorrow: { date: tom, meals: M[tom] || [] },
-      notices: notices, notes: [], birthdays: [], suggestOn: false,
+      notices: notices, notes: notesOut(today, sts), birthdays: birthdays(today, sts), suggestOn: !!B.suggestOn,
       links: (B.links || []).filter(function (l) { return l && l.url && l.on !== false; }).map(function (l) { return { id: l.id, title: l.title, url: l.url }; }),
       specials: (B.specials || []).filter(function (x) { return x && x.name && x.s && x.e; }),
-      events: eventsFor(g, today), layout: B.layout || {}, pbl: null, stat21: null,
+      events: eventsFor(g, today), layout: layoutIn(B.layout), pbl: null, stat21: null,
       ddays: (B.ddays || []).filter(function (d) { return d && d.label && d.date; }),
       quote: Q.on !== false && Q.list && Q.list.length ? { mode: Q.mode || 'day', list: Q.list } : null,
-      counsel: [], counselOn: false, counselMode: '', surveys: [], students: [],
+      counsel: [], counselOn: false, counselMode: '',
+      surveys: (B.surveys || []).filter(function (s) { return s && (s.open || s.pub); }).map(function (s) { return summary(s, sts); }),
+      students: sts.map(function (s) { return { no: s.no, name: s.name, hasPin: false }; }),
       weather: B.weatherOn !== false ? WX : null,
       shareUrl: '', homeUrl: '', flash: flashOut(), ver: VER, url: location.href,
       phone: false, phoneJoin: false, needPin: false
     };
   }
   function soon() { return Promise.reject(new Error('공용판에서는 아직 준비 중인 기능이에요.')); }
+  function needFb() { if (!FB || !B) throw new Error('연결하는 중이에요. 잠시 뒤 다시 눌러 주세요.'); }
+  function student(no) {
+    var s = students().filter(function (x) { return x.no === Number(no); })[0];
+    if (!s) throw new Error('명단에 없는 번호예요.');
+    return s;
+  }
   var API = {
     apiBoardData: function () {
       return ready.then(function () {
@@ -861,7 +937,62 @@ html,body{background:var(--bg);color:var(--chalk)}
     },
     apiBoardExt: function () { return API.apiBoardData(); },
     apiBoardFlashPoll: function () { return ready.then(function () { return { flash: B ? flashOut() : null, ver: VER }; }); },
-    apiBoardFlashAck: function (id) { try { localStorage.setItem('cr_ack', String(id)); } catch (e) {} kick(); return Promise.resolve({ ok: true }); }
+    apiBoardFlashAck: function (id) { try { localStorage.setItem('cr_ack', String(id)); } catch (e) {} kick(); return Promise.resolve({ ok: true }); },
+    apiBoardCheckPin: function () { return Promise.resolve({ ok: true }); },
+    /* 조사 답하기 (같은 학생이 다시 하면 바뀝니다) */
+    apiBoardAnswer: function (id, no, choices, pin, etcText) {
+      needFb();
+      var s = survey(id);
+      if (!s) throw new Error('없어진 조사입니다.');
+      if (!s.open) throw new Error('이미 마감된 조사입니다.');
+      var st = student(no);
+      var ch = (choices || []).map(Number).filter(function (i) { return i >= 0 && i < s.options.length; });
+      ch = ch.filter(function (v, i) { return ch.indexOf(v) === i; });
+      if (s.kind === '체크') ch = [0];
+      if (!ch.length) throw new Error('보기를 하나 이상 골라 주세요.');
+      if (!s.multi) ch = ch.slice(0, 1);
+      var etc = '';
+      if (s.etc && ch.indexOf(s.options.length - 1) >= 0) {
+        etc = String(etcText || '').replace(/\s+/g, ' ').trim().slice(0, 100);
+        if (!etc) throw new Error("'기타'를 골랐으면 내용을 적어 주세요.");
+      }
+      var again = !!(ANS[s.id] && ANS[s.id][st.no]);
+      var F = FB.F;
+      return F.setDoc(F.doc(FB.db, 'boards', K, 'answers', s.id + '_' + st.no), { sid: s.id, no: st.no, ch: ch, etc: etc, at: F.serverTimestamp() }).then(function () {
+        (ANS[s.id] = ANS[s.id] || {})[st.no] = { ch: ch, etc: etc };
+        return { ok: true, again: again, survey: summary(s, students()) };
+      });
+    },
+    apiBoardUncheck: function (id, no) {
+      needFb();
+      var s = survey(id);
+      if (!s) throw new Error('없어진 조사입니다.');
+      if (!s.open) throw new Error('이미 마감된 조사입니다.');
+      var st = student(no), F = FB.F;
+      return F.deleteDoc(F.doc(FB.db, 'boards', K, 'answers', s.id + '_' + st.no)).then(function () {
+        if (ANS[s.id]) delete ANS[s.id][st.no];
+        return { ok: true, survey: summary(s, students()) };
+      });
+    },
+    apiBoardSuggest: function (text, no) {
+      needFb();
+      if (!B.suggestOn) throw new Error('지금은 건의사항을 받지 않습니다.');
+      text = String(text || '').trim().slice(0, 300);
+      if (text.length < 2) throw new Error('건의할 내용을 적어 주세요.');
+      var st = no ? student(no) : null, F = FB.F;
+      return F.addDoc(F.collection(FB.db, 'boards', K, 'suggest'), { text: text, no: st ? st.no : 0, name: st ? st.name : '', at: F.serverTimestamp() })
+        .then(function () { return { ok: true }; });
+    },
+    apiBoardLayoutAuth: function () {
+      if (OWNER) return Promise.resolve({ ok: true });
+      return Promise.reject(new Error('화면 배치는 담임 선생님 관리 화면의 [화면 배치 조정]으로 바꿀 수 있어요.'));
+    },
+    apiBoardSaveLayout: function (pw, lay) {
+      needFb();
+      if (!OWNER) throw new Error('담임 선생님 계정으로 로그인한 화면에서만 저장할 수 있어요.');
+      var F = FB.F, out = layoutOut(lay);
+      return F.updateDoc(F.doc(FB.db, 'boards', K), { layout: out, updatedAt: F.serverTimestamp() }).then(function () { return { ok: true, layout: layoutIn(out) }; });
+    }
   };
   function runner(ok, no) {
     var o = {
