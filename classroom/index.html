@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
 <title>교실 화면 관리</title>
-<link rel="icon" href="../icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="교실 화면">
 <!-- 학급 다이어리 공용 디자인 (칠판과 분필) · 2026-10-21a
      각 화면 맨 끝에 끼워 넣어, 화면마다 다르던 색 · 글꼴 이름을 한 가지 토큰으로 다시 묶습니다. -->
 <script>var FILE_VER = '2026-10-26b'; var THEME_VER = '2026-10-21a';</script>
@@ -390,7 +393,7 @@ async function route(){
 
 function vLogin(){
   $('app').innerHTML = `<div class="center">
-    <img class="logo" src="../icon-192.png" alt="">
+    <img class="logo" src="icon-192.png" alt="">
     <h1 style="font-size:34px;margin:0 0 8px">교실 화면</h1>
     <p class="muted" style="margin:0 0 24px;font-size:16px">${esc(SCHOOL.name)} 선생님용<br>우리 반 TV에 시계 · 시간표 · 급식 · 공지를 띄웁니다</p>
     <button class="b y big" id="btnLogin" style="width:100%">구글 계정으로 시작하기</button>
@@ -747,13 +750,13 @@ function vRoster(){
   const R = S.rost || (B.students || []).map(s => ({ no: s.no, name: s.name, bd: s.bd || '' }));
   const dirty = !!S.rost;
   return `<section class="card"><h2>학급 명단 <span class="sub">${(B.students || []).length}명 저장됨</span></h2>
-    <p class="lead">조사 · 투표, 알림장 제출 확인, 이번 주 생일에 씁니다. 나이스에서 받은 엑셀 파일을 그대로 올리면 번호 · 이름 · 생일을 찾아 넣어요.
+    <p class="lead">조사 · 투표, 알림장 제출 확인, 이번 주 생일에 씁니다. 나이스(기본학적관리 → 명렬표출력 → 엑셀 내려받기)에서 받은 엑셀 파일을 그대로 올리면 번호 · 이름 · 생일을 찾아 넣어요.
       파일은 이 컴퓨터 안에서만 읽고, 저장되는 것은 <b>번호 · 이름 · 생일(월-일)</b>뿐입니다.</p>
     <div class="row"><button class="b y" data-a="xls">나이스 엑셀 파일 올리기</button><button class="b" data-a="rpaste">붙여 넣기로 입력</button><button class="b" data-a="radd">한 줄 추가</button>
       ${R.length ? '<button class="b r" data-a="rclear">모두 비우기</button>' : ''}</div>
     ${S.edit === 'paste' ? `<div style="margin-top:12px"><textarea class="in" id="rPaste" rows="8" placeholder="한 줄에 한 명: 번호 이름 생일&#10;1 김민수 03-05&#10;2 이서연 2010.11.21&#10;(엑셀에서 번호 · 이름 · 생년월일 칸을 복사해 붙여 넣어도 돼요)"></textarea>
       <div class="row" style="margin-top:8px;justify-content:flex-end"><button class="b" data-a="ecancel">취소</button><button class="b y" data-a="rpasteok">명단으로 넣기</button></div></div>` : ''}
-    <div class="hint">· 나이스 → 학적 → 반편성 / 학생 명렬 화면의 [엑셀 저장] 파일이면 됩니다. 첫 줄에 '번호' · '성명' 같은 제목이 있으면 알아서 찾아요.<br>· 생일은 TV 시계 아래에 이번 주 생일로 나와요. (화면 꾸미기 → 보이기 설정에서 끌 수 있어요)</div>
+    <div class="hint">· <b>나이스 → 기본학적관리 → 명렬표출력 → 엑셀 내려받기</b>로 받은 파일을 그대로 올리세요. 첫 줄에 '번호' · '성명' 같은 제목이 있으면 알아서 찾아요.<br>· 생일은 TV 시계 아래에 이번 주 생일로 나와요. (화면 꾸미기 → 보이기 설정에서 끌 수 있어요)</div>
     ${R.length ? `<table class="t rost" style="margin-top:14px"><tr><th style="width:90px">번호</th><th>이름</th><th style="width:150px">생일 (월-일)</th><th style="width:70px"></th></tr>
       ${R.map((s, i) => `<tr><td><input class="in" data-rn="${i}" type="number" min="1" max="99" value="${esc(s.no)}"></td><td><input class="in" data-rm="${i}" value="${esc(s.name)}" maxlength="20"></td>
         <td><input class="in" data-rb="${i}" value="${esc(s.bd)}" placeholder="03-05" maxlength="5"></td><td><button class="b sm r" data-a="rdel" data-i="${i}">빼기</button></td></tr>`).join('')}</table>` : '<p class="small muted" style="margin-top:14px">아직 명단이 없어요.</p>'}
