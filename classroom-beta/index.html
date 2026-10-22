@@ -315,6 +315,14 @@ nav.tabs button .dot{position:absolute;top:6px;right:8px;min-width:18px;height:1
 #pvHost{position:absolute;z-index:1;overflow:hidden;border-radius:12px;display:none}
 #pvHost iframe{border:0;width:1600px;height:900px;transform-origin:0 0;display:block;background:#1D2A25}
 #betaBar{position:sticky;top:0;z-index:60;background:#E0705F;color:#fff;font-size:13.5px;padding:7px 14px;text-align:center;line-height:1.5}
+#updModal{position:fixed;inset:0;z-index:200;background:rgba(10,16,13,.72);display:flex;align-items:center;justify-content:center;padding:16px}
+#updModal .updc{background:#22312B;border:1px solid var(--line2);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.5);width:min(560px,100%);max-height:86vh;display:flex;flex-direction:column;padding:22px 22px 18px}
+#updModal h2{margin:0 0 10px;font-size:21px}
+#updModal .updl{margin:6px 0 4px;overflow:auto;min-height:0;flex:1}
+#updModal .updb{margin-top:14px}
+#prevBar{position:sticky;top:0;z-index:60;background:#3C5A8A;color:#fff;font-size:13.5px;padding:7px 14px;text-align:center;line-height:1.5}
+#prevBar a{color:#FFE9A8;font-weight:700;margin-left:8px}
+.updlink{all:unset;cursor:pointer;font-size:13px;color:var(--chalk3);text-decoration:underline;margin-right:14px}
 .viewbox{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line2)}
 .tt td{padding:3px}.tt .in{width:100%;min-width:70px;padding:6px 8px;font-size:14px}.tt th{font-weight:600;color:var(--chalk2);font-size:13.5px}
 .ttwrap{overflow-x:auto}
@@ -356,6 +364,7 @@ table.t td,table.t th{padding:7px 6px;text-align:left;font-size:14.5px;border-bo
 </style>
 </head>
 <body>
+<div id="prevBar" hidden>⏪ 바로 전 버전을 쓰고 있어요 · 새 버전은 다음에 열 때 다시 물어볼게요<a href="../classroom/">최신 버전으로 가기</a></div>
 <div id="betaBar" hidden>🧪 <b>시험판</b>입니다 · 실제 반 자료를 그대로 씁니다 · 확인이 끝나면 GitHub [Actions] → '교실 화면 정식판 옮기기'로 정식판에 옮기세요</div>
 <div class="wrap" id="app"><div class="loading">불러오는 중…</div></div>
 <div id="busy" hidden></div>
@@ -504,7 +513,7 @@ function vOperatorOnly(){
 /* ================= 우리 반 자료 (boards/{TV 키}) ================= */
 function boardDefaults(){
   return {
-    owner: S.user.uid, grade: String(S.me.grade), klass: String(S.me.klass), teacherName: S.me.name,
+    owner: S.user.uid, grade: String(S.me.grade), klass: String(S.me.klass), teacherName: S.me.name, verSeen: APP_VER,
     notices: [], notes: [], surveys: [], students: [], events: [], ddays: [], links: [], flash: null, layout: {},
     quote: { on: true, mode: 'day', list: [] }, suggestOn: false, birthdayOn: true,
     periods: DEFAULT_PERIODS, specials: DEFAULT_SPECIALS, lunch: DEFAULT_LUNCH,
@@ -528,6 +537,7 @@ function watchBoard(){
   S.unsub = F.onSnapshot(F.doc(db, 'boards', S.key), snap => {
     if (!snap.exists()){ S.B = null; makeBoard().then(watchBoard).catch(fail); return; }
     S.B = snap.data();
+    if (!S.updChecked){ S.updChecked = true; setTimeout(updOnOpen, 600); }
     render(); syncView();
   }, fail);
   /* 조사 · 투표 응답 (TV에서 학생들이 누른 것) */
@@ -703,7 +713,7 @@ function render(){
         <p class="lead" style="margin:6px 0 0">시간표 · 급식 · 일정 · 공지 · 알림장 · 링크 조사를 휴대폰에서 볼 수 있어요. 투표 · 상담 신청 · 건의는 교실 TV에서만 됩니다.</p>` : ''}</div></section>
     <nav class="tabs">${T.map(([v, ic, l]) => `<button data-tab="${v}" class="${S.tab === v ? 'on' : ''}"><span class="ic">${ic}</span>${l}${v === 'survey' && openSv ? `<span class="dot">${openSv}</span>` : ''}${v === 'counsel' && upC ? `<span class="dot">${upC}</span>` : ''}</button>`).join('')}</nav>
     <div id="body">${({ flash: vFlash, notice: vNotice, look: vLook, time: vTime, roster: vRoster, survey: vSurvey, counsel: vCounsel, suggest: vSuggest, op: () => '<div id="opBox"></div>' })[S.tab]()}</div>
-    <div class="foot"><p class="privacy">🔒 우리 반 자료는 담임 선생님만 관리하며, 운영자는 열람할 수 없습니다.</p><p class="credit">제작자 : 강릉제일고 유준배 선생님</p></div>`;
+    <div class="foot"><p class="privacy">🔒 우리 반 자료는 담임 선생님만 관리하며, 운영자는 열람할 수 없습니다.</p><p class="credit"><button class="updlink" data-a="updhist">📋 업데이트 내역</button>제작자 : 강릉제일고 유준배 선생님</p></div>`;
   $('btnOut').onclick = logout;
   { const bb = $('btnBell'); if (bb) bb.onclick = ev => { ev.stopPropagation(); bellToggle(); }; }
   restoreDrafts(keep);
@@ -1049,8 +1059,11 @@ function vLinkForm(){
 }
 
 /* ---------- 알림 종 ---------- */
-const APP_VER = '2026-10-22f';
+const APP_VER = '2026-10-22g';
 const UPDATES = [
+  { v: '2026-10-22g', title: '10월 22일 업데이트 (5)', items: [
+    '🆕 새 버전이 나오면 알림 종 대신 이렇게 창으로 알려 드려요. [이번엔 예전 버전 쓰기]를 고르면 바로 전 버전으로 열 수 있어요',
+    '📋 업데이트 내역은 화면 맨 아래 [업데이트 내역]에서 언제든 볼 수 있어요'] },
   { v: '2026-10-22f', title: '10월 22일 업데이트 (4)', items: [
     '💾 우리 반 백업 · 되살리기: 시간표 설정 탭에서 내 구글 드라이브나 파일로 저장해요 (운영자는 받지 않아요). 일주일이 지나면 알림 종이 알려 줘요'] },
   { v: '2026-10-22e', title: '10월 22일 오후 업데이트 (3)', items: [
@@ -1110,8 +1123,7 @@ function bellItems(){
 }
 function addDaysA(s, n){ const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
 function bellCount(){
-  const n = bellItems().filter(x => x.isNew).length, upd = lsg(updKey()) !== APP_VER ? 1 : 0;
-  return n + upd + (S.newVer ? 1 : 0);
+  return bellItems().filter(x => x.isNew).length;
 }
 function bellHtml(){
   const n = S.bellOpen ? 0 : bellCount(), ring = n > (S.lastBellN || 0); S.lastBellN = n;
@@ -1120,11 +1132,8 @@ function bellHtml(){
 function bellPanel(){
   const L = bellItems(), updNew = S.bellUpdNew;
   return `<div class="bellp" id="bellPanel">
-    ${S.newVer ? `<div class="bupd new"><b>🆕 새 버전이 올라왔어요</b><br><span class="small muted">새로 바뀐 점을 쓰려면 화면을 새로고침해 주세요.</span><div class="row" style="margin-top:6px"><button class="b sm y" data-a="reloadapp">지금 새로고침</button></div></div>` : ''}
     <h3>알림</h3>
     ${L.length ? L.map(x => `<div class="bi${x.isNew ? ' new' : ''}" data-a="bellgo" data-v="${x.tab}"><span class="ic">${x.ic}</span><span><span class="tt">${x.tt}</span><span class="sm">${x.sm}</span></span></div>`).join('') : '<div class="bempty">새 알림이 없어요.</div>'}
-    <h3>업데이트 안내</h3>
-    ${UPDATES.slice(0, 3).map((u, i) => `<div class="bupd${i === 0 && updNew ? ' new' : ''}"><b>${esc(u.title)}</b>${i === 0 && updNew ? ' <span class="tag y">새로 바뀐 점</span>' : ''}<ul>${u.items.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('')}
   </div>`;
 }
 function bellToggle(){
@@ -1133,12 +1142,51 @@ function bellToggle(){
   lss(seenKey(), String(Date.now())); lss(seenKey() + '_day', kstToday()); lss(updKey(), APP_VER);
   render();
 }
+/* ---------- 업데이트 팝업 ----------
+ * 정식판을 열 때 새 버전이면 바뀐 점을 보여 주고 [업데이트하기] / [이번엔 예전 버전 쓰기] 중에 고릅니다.
+ * 예전 버전은 정식판 옮기기 때 classroom-prev/ 에 보관됩니다. 고른 것은 반 자료(verSeen)에 저장돼 다른 기기에서도 같아요. */
+const PREV = /\/classroom-prev\//.test(location.pathname);
+let prevOk = null;
+async function hasPrev(){
+  if (prevOk !== null) return prevOk;
+  try { const r = await fetch(new URL('../classroom-prev/index.html', location.href).href + '?h=' + Date.now(), { method: 'HEAD', cache: 'no-store' }); prevOk = r.ok; } catch (e) { prevOk = false; }
+  return prevOk;
+}
+function updList(){ const v = S.B && S.B.verSeen; return UPDATES.filter(u => !v || u.v > v).slice(0, 6); }
+async function updOnOpen(){
+  if (BETA || PREV || !S.B || S.B.verSeen === APP_VER) return;
+  if (!updList().length){ save({ verSeen: APP_VER }); return; }
+  updModal('open');
+}
+async function updModal(mode){
+  const old = $('updModal'); if (old) old.remove();
+  const L = mode === 'history' ? UPDATES : updList(), prev = mode === 'open' ? await hasPrev() : false;
+  const box = document.createElement('div'); box.id = 'updModal';
+  box.innerHTML = `<div class="updc" role="dialog" aria-modal="true" aria-labelledby="updT">
+    <h2 id="updT">${mode === 'history' ? '📋 업데이트 내역' : mode === 'live' ? '🆕 새 버전이 올라왔어요' : '🆕 교실 화면이 새 버전으로 바뀌었어요'}</h2>
+    ${mode === 'live' ? '<p class="lead">지금 업데이트하면 화면을 새로고침합니다. 적고 있던 내용이 있으면 먼저 저장해 주세요.</p>' : ''}
+    <div class="updl">${(mode === 'live' ? UPDATES.filter(u => u.v > APP_VER) : L).map(u => `<div class="bupd"><b>${esc(u.title)}</b><ul>${u.items.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('')
+      || '<p class="small muted">자세한 내용은 새로고침하면 볼 수 있어요.</p>'}</div>
+    <div class="row updb">${mode === 'open' ? `${prev ? '<button class="b" data-u="prev">이번엔 예전 버전 쓰기</button>' : ''}<span class="grow"></span><button class="b y" data-u="ok">업데이트하기</button>`
+      : mode === 'live' ? '<button class="b" data-u="close">나중에</button><span class="grow"></span><button class="b y" data-u="reload">지금 업데이트</button>'
+      : '<span class="grow"></span><button class="b" data-u="close">닫기</button>'}</div>
+    ${mode === 'open' && prev ? '<p class="small muted" style="margin:8px 0 0">예전 버전을 고르면 이번에는 바로 전 버전으로 열어요. 다음에 열 때 다시 물어볼게요.</p>' : ''}</div>`;
+  box.addEventListener('click', ev => {
+    const b = ev.target.closest('[data-u]'); if (!b) return;
+    const u = b.dataset.u;
+    if (u === 'ok'){ box.remove(); save({ verSeen: APP_VER }); return; }
+    if (u === 'prev'){ location.href = new URL('../classroom-prev/', location.href).href; return; }
+    if (u === 'reload'){ location.reload(); return; }
+    box.remove();
+  });
+  document.body.appendChild(box);
+}
 /* 새 버전 확인: 30분마다 올라간 관리 화면의 버전을 살핍니다 */
 async function checkNewVer(){
   try {
     const t = await (await fetch('index.html?nv=' + Date.now(), { cache: 'no-store' })).text();
     const m = t.match(/const APP_VER = '([^']+)'/);
-    if (m && m[1] !== APP_VER && m[1] > APP_VER && S.newVer !== m[1]){ S.newVer = m[1]; if (S.B) render(); }
+    if (m && m[1] !== APP_VER && m[1] > APP_VER && S.newVer !== m[1]){ S.newVer = m[1]; if (S.B && !BETA && !PREV) updModal('live'); }
   } catch (e) {}
 }
 setInterval(checkNewVer, 30 * 60e3); setTimeout(checkNewVer, 20e3);
@@ -1150,6 +1198,7 @@ document.addEventListener('click', ev => {
 
 const BETA = /\/classroom-beta\//.test(location.pathname);
 if (BETA){ const bb = document.getElementById('betaBar'); if (bb) bb.hidden = false; document.title = '[시험판] ' + document.title; }
+if (/\/classroom-prev\//.test(location.pathname)){ const pb = document.getElementById('prevBar'); if (pb) pb.hidden = false; document.title = '[예전 버전] ' + document.title; }
 /* ---------- 우리 반 백업 · 되살리기 ----------
  * 백업은 선생님 컴퓨터(파일) 또는 선생님 구글 드라이브(비공개 폴더 '교실화면_백업')에만 저장합니다. 운영자는 받지 않습니다. */
 const BK_SUBS = ['answers', 'counsel', 'suggest', 'sevents'];
@@ -1426,6 +1475,7 @@ document.addEventListener('click', async ev => {
     case 'pvreload': if (PVH){ try { PVH.firstChild.contentWindow.location.reload(); } catch (e) { pvKey = ''; placePv(); } } return;
     case 'bellgo': S.bellOpen = false; S.tab = t.dataset.v; try { localStorage.setItem('cr_tab', S.tab); } catch (e) {} S.edit = ''; render(); window.scrollTo(0, 0); return;
     case 'reloadapp': location.reload(); return;
+    case 'updhist': updModal('history'); return;
     case 'copyview': { const i = $('viewUrlIn'); i.select(); try { await navigator.clipboard.writeText(i.value); } catch (e) { document.execCommand('copy'); } toast('학생용 주소를 복사했어요. 단톡방에 붙여 넣으세요.'); return; }
     case 'viewmake': case 'viewnew': {
       if (a === 'viewnew' && !confirm('학생용 주소를 새로 만들까요? 예전 주소는 바로 막혀요.')) return;
