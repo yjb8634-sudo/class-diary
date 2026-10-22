@@ -2150,7 +2150,7 @@ function vEventBox(){
       <button class="btn pri sm" data-bact="evadd">추가</button></div>
     ${list.length ? `<ul class="log" style="margin-top:8px">${list.map(e => `<li class="it" style="grid-template-columns:110px 1fr">
       <span class="small muted">${md(e.start)}${e.end !== e.start ? '~' + md(e.end) : ''}${e.end < B.today ? ' · 지남' : ''}</span>
-      <div class="row sb"><span>${esc(e.title)}${e.by ? ` <span class="tg">학생 · ${esc(e.by)}</span>` : ''}</span><button class="btn txt sm neg" data-bact="evdel" data-id="${esc(e.id)}">지우기</button></div></li>`).join('')}</ul>` : ''}
+      <div class="row sb"><span>${esc(e.title)}${e.by ? ` <span class="tg">학생이 올림</span>` : ''}</span><button class="btn txt sm neg" data-bact="evdel" data-id="${esc(e.id)}">지우기</button></div></li>`).join('')}</ul>` : ''}
     <div class="lbl" style="margin-top:12px">지금 TV에 나오는 일정</div>
     ${shown.events.length ? `<ul class="log">${shown.events.slice(0, 10).map(e => `<li class="it" style="grid-template-columns:110px 1fr">
       <span class="small muted">${md(e.start)}${e.end !== e.start ? '~' + md(e.end) : ''}</span>

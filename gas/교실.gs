@@ -1023,7 +1023,6 @@ function apiBoardEventAdd(t, no, date, per, text, pin) {
   var mode = boardAuthWrite_(t);
   if (!boardCfg_().eventAddOn) throw new Error('지금은 교실 화면에서 일정을 올릴 수 없어요.');
   board준비_();
-  var st = boardStudent_(mode, no, pin);
   date = String(date || '');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('날짜를 골라 주세요.');
   var today = today_(), last = ymd_(new Date(new Date().getTime() + 60 * 86400000));
@@ -1032,14 +1031,14 @@ function apiBoardEventAdd(t, no, date, per, text, pin) {
   text = String(text || '').replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 30);
   if (text.length < 2) throw new Error('일정 내용을 적어 주세요.');
   var title = (per ? per + ' ' : '') + text;
-  var mine = boardManualEvents_().filter(function (e) { return e.by && e.end >= today && Number(String(e.by).split('.')[0]) === Number(st.no); });
-  if (mine.length >= 5) throw new Error('한 사람이 올린 일정이 너무 많아요. 지난 일정이 지나거나 선생님이 정리한 뒤 다시 올려 주세요.');
+  var stu = boardManualEvents_().filter(function (e) { return e.by && e.end >= today; });
+  if (stu.length >= 30) throw new Error('학생이 올린 일정이 너무 많아요. 선생님이 정리한 뒤 다시 올려 주세요.');
   if (boardManualEvents_().some(function (e) { return e.start === date && String(e.title).replace(/\s+/g, '') === title.replace(/\s+/g, ''); }))
     throw new Error('같은 날 같은 일정이 이미 있어요.');
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
-    ss_().getSheetByName(BOARD.EVENT).appendRow(['e_' + Utilities.getUuid().slice(0, 8), date, date, boardTxt_(title), new Date(), st.no + '. ' + st.name]);
+    ss_().getSheetByName(BOARD.EVENT).appendRow(['e_' + Utilities.getUuid().slice(0, 8), date, date, boardTxt_(title), new Date(), '학생']);
   } finally { lock.releaseLock(); }
   boardBust_();
   return { ok: true };
