@@ -377,7 +377,7 @@ function friendly(e){
   if (/network|unavailable|offline|Failed to fetch/i.test(m)) return '인터넷 연결을 확인해 주세요.';
   return (e && e.message ? e.message : m).replace(/^Firebase:\s*/, '');
 }
-const S = { CNS: [], cnsUnsub: null, ANSL: [], SUGL: [], sugUnsub: null, bellOpen: false, bellPrev: 0, newVer: '', fb: null, user: null, me: null, B: null, key: '', tab: 'flash', unsub: null, ansUnsub: null, ANS: {}, teachers: null,
+const S = { SEV: [], sevUnsub: null, CNS: [], cnsUnsub: null, ANSL: [], SUGL: [], sugUnsub: null, bellOpen: false, bellPrev: 0, newVer: '', fb: null, user: null, me: null, B: null, key: '', tab: 'flash', unsub: null, ansUnsub: null, ANS: {}, teachers: null,
   nf: { level: 0 }, edit: '', pend: { notice: [], note: [], survey: [] }, pickFor: '', sugg: null, rost: null, openSv: '' };
 try { S.tab = localStorage.getItem('cr_tab') || 'flash'; } catch (e) {}
 
@@ -402,7 +402,7 @@ async function login(){
     fail(e);
   }
 }
-function stopWatch(){ if (S.unsub){ S.unsub(); S.unsub = null; } if (S.ansUnsub){ S.ansUnsub(); S.ansUnsub = null; } if (S.cnsUnsub){ S.cnsUnsub(); S.cnsUnsub = null; } if (S.sugUnsub){ S.sugUnsub(); S.sugUnsub = null; } }
+function stopWatch(){ if (S.unsub){ S.unsub(); S.unsub = null; } if (S.ansUnsub){ S.ansUnsub(); S.ansUnsub = null; } if (S.cnsUnsub){ S.cnsUnsub(); S.cnsUnsub = null; } if (S.sugUnsub){ S.sugUnsub(); S.sugUnsub = null; } if (S.sevUnsub){ S.sevUnsub(); S.sevUnsub = null; } }
 async function logout(){ stopWatch(); S.me = null; S.B = null; await S.fb.A.signOut(S.fb.auth); }
 const isOperator = () => !!(S.user && S.user.email === OPERATOR);
 
@@ -542,6 +542,11 @@ function watchBoard(){
       .sort((a, b) => (a.date + (a.slot === 'lunch' ? 0 : 1)).localeCompare(b.date + (b.slot === 'lunch' ? 0 : 1)));
     if (S.B) render();
   }, () => {});
+  /* 학생이 TV에서 올린 일정 */
+  S.sevUnsub = F.onSnapshot(F.collection(db, 'boards', S.key, 'sevents'), qs => {
+    S.SEV = qs.docs.map(d => Object.assign({ id: d.id }, d.data())).filter(x => x.date && x.title).sort((a, b) => a.date.localeCompare(b.date));
+    if (S.B){ render(); syncView(); }
+  }, () => {});
   /* 건의 (알림 종에 개수만) */
   S.sugUnsub = F.onSnapshot(F.collection(db, 'boards', S.key, 'suggest'), qs => {
     S.SUGL = qs.docs.map(d => ({ id: d.id, t: msOf(d.data().at), text: d.data().text || '' }));
@@ -564,6 +569,7 @@ function viewDoc(B){
   pick.forEach(k => { if (B[k] !== undefined) o[k] = B[k]; });
   o.students = (B.students || []).map(t => ({ no: t.no, name: maskName(t.name), bd: t.bd || '' }));
   o.links = (B.links || []).filter(l => l.on !== false);
+  o.events = (B.events || []).concat((S.SEV || []).map(e => ({ id: e.id, title: e.title, start: e.date, end: e.date })));
   return o;
 }
 let viewT = null, viewLast = '';
@@ -848,10 +854,12 @@ function vTime(){
     <div class="row" style="margin-top:22px;justify-content:flex-end"><button class="b sm" data-a="pdef">강릉제일고 기본값으로</button><button class="b y" data-a="psave">교시 · 특별 시간 저장</button></div></section></div>
   <section class="card"><h2>학급 일정</h2>
     <p class="lead">학교 학사일정(나이스)은 자동으로 나와요. 여기에는 우리 반만의 일정(학급 회의, 반 단체 활동 등)을 더합니다.</p>
+    <div class="row" style="margin-bottom:6px"><label class="chk"><input type="checkbox" data-a="tog" data-f="eventAddOn" ${B.eventAddOn !== false ? 'checked' : ''}> 학생이 교실 TV에서 일정 올리기 (일정 칸의 [＋ 일정 추가])</label></div>
     <div class="row" style="margin-bottom:10px"><label class="chk"><input type="checkbox" data-a="tog" data-f="eventNeis" ${B.eventNeis !== false ? 'checked' : ''}> 학교 학사일정(나이스)도 보이기</label>
       <span class="small muted" style="margin-left:10px">TV에 보일 기간</span><select class="in" id="evDays" data-a="evdays">${[7, 14, 30, 60, 90].map(n => `<option value="${n}" ${(+B.eventDays || 30) === n ? 'selected' : ''}>앞으로 ${n}일</option>`).join('')}</select></div>
     <div class="row"><input class="in grow" id="evTitle" data-keep placeholder="일정 이름"><input class="in" type="date" id="evStart" data-keep>~<input class="in" type="date" id="evEnd" data-keep><button class="b y" data-a="evadd">추가</button></div>
     ${ev.length ? `<ul class="list">${ev.map(e => `<li><div class="t">${esc(e.title)} <span class="small muted">${esc(e.start)}${e.end && e.end !== e.start ? ' ~ ' + esc(e.end) : ''}${(e.end || e.start) < today ? ' · 지남' : ''}</span></div><button class="b sm r" data-a="evdel" data-id="${esc(e.id)}">지우기</button></li>`).join('')}</ul>` : ''}
+  ${(S.SEV || []).length ? `<h3 style="margin:16px 0 6px;font-size:15px">학생이 올린 일정 <span class="small muted">잘못 올라온 것은 지워 주세요</span></h3><ul class="list">${S.SEV.map(e => `<li><div class="t">${esc(e.title)} <span class="small muted">${esc(e.date)}${e.date < today ? ' · 지남' : ''} · ${esc(e.no + '. ' + (e.name || ''))}</span></div><button class="b sm r" data-a="sevdel" data-id="${esc(e.id)}">지우기</button></li>`).join('')}</ul>` : ''}
   </section>
   <section class="card"><h2>TV 주소 바꾸기</h2>
     <p class="lead">TV 주소가 학생들에게 퍼졌을 때 새 주소로 바꿉니다. 예전 주소는 바로 막히고, 공지 · 명단 등 내용은 그대로 옮겨집니다. (조사 응답 · 건의는 새로 시작돼요)</p>
@@ -1038,8 +1046,10 @@ function vLinkForm(){
 }
 
 /* ---------- 알림 종 ---------- */
-const APP_VER = '2026-10-22d';
+const APP_VER = '2026-10-22e';
 const UPDATES = [
+  { v: '2026-10-22e', title: '10월 22일 오후 업데이트 (3)', items: [
+    '🗓 학생이 교실 TV 일정 칸의 [＋ 일정 추가]로 일정을 올릴 수 있어요 (예: 11/13 3교시 영어 단어 시험). 시간표 설정 탭에서 끄거나, 잘못 올라온 일정을 지울 수 있어요'] },
   { v: '2026-10-22d', title: '10월 22일 오후 업데이트 (2)', items: [
     '📺 화면 꾸미기 탭 맨 위에 TV 화면 미리보기가 생겼어요 (눌러 봐도 저장되지 않아요)'] },
   { v: '2026-10-22c', title: '10월 22일 오후 업데이트', items: [
@@ -1472,6 +1482,8 @@ document.addEventListener('click', async ev => {
       if (await save({ events: (B.events || []).concat([{ id: rid(8), title, start: st, end: en }]) }, '일정을 더했어요.')){ ['evTitle', 'evStart', 'evEnd'].forEach(k => $(k).value = ''); }
       return;
     }
+    case 'sevdel': if (!confirm('이 일정을 지울까요?')) return;
+      try { await F.deleteDoc(F.doc(db, 'boards', S.key, 'sevents', id)); toast('지웠어요.'); } catch (e) { fail(e); } return;
     case 'evdel': return save({ events: (B.events || []).filter(e => e.id !== id) }, '지웠어요.');
     case 'rekey': {
       if (!confirm('새 TV 주소를 만들까요? 예전 주소로 열어 둔 TV는 연결 숫자 화면으로 바뀌니, 숫자를 넣어 다시 연결해 주세요.')) return;
