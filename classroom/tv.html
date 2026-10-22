@@ -706,7 +706,7 @@ html,body{background:var(--bg);color:var(--chalk)}
   var VIEW = !K && V.length >= 20;
   var WANT_EDIT = QS.get('edit') === '1';
   var PV = QS.get('pv') === '1';   /* 관리 화면 안 미리보기: 눌러도 저장 안 됨 */
-  var VER = 'fb-2026-11-09a';
+  var VER = 'fb-2026-11-10a';
   window.__BOOT = { t: K || V, preview: PV ? 1 : 0, phone: VIEW, ver: VER };
   if (VIEW) document.write('<style>#btnMine,#btnEdit,#btnShare{display:none !important}html,body{height:auto !important;overflow:auto !important}</style>');
   var FB = null, B = null, gone = false, SCH = null, schAt = 0, schBusy = false, WX = null, wxAt = 0, wxBusy = false;
@@ -751,7 +751,9 @@ html,body{background:var(--bg);color:var(--chalk)}
   }, true);
 
   /* ---- TV 연결: 주소에 키가 없으면 이 TV가 기억한 반으로, 없으면 연결 숫자 화면 ---- */
-  var LSK = 'cr_tv_key';
+  var BETA = /\/classroom-beta\//.test(location.pathname);   /* 시험판: 정식판 TV와 기억을 나눠 씀 */
+  var LSK = BETA ? 'cr_tv_key_beta' : 'cr_tv_key';
+  if (BETA) document.write('<div style="position:fixed;left:0;bottom:0;z-index:120;background:#E0705F;color:#fff;font:700 13px/1 sans-serif;padding:6px 10px;border-top-right-radius:8px;pointer-events:none">🧪 시험판</div>');
   function lsGet() { try { return (localStorage.getItem(LSK) || '').replace(/[^a-z0-9]/g, ''); } catch (e) { return ''; } }
   function lsSet(v) { try { if (v) localStorage.setItem(LSK, v); else localStorage.removeItem(LSK); } catch (e) {} }
   function goKey(k) { location.replace(location.pathname + '?k=' + k); }

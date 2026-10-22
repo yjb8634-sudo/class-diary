@@ -314,6 +314,7 @@ nav.tabs button .dot{position:absolute;top:6px;right:8px;min-width:18px;height:1
 .pvslot{margin-top:12px;width:100%;aspect-ratio:16/9;border-radius:12px;background:#14201B;border:1px solid var(--line)}
 #pvHost{position:absolute;z-index:1;overflow:hidden;border-radius:12px;display:none}
 #pvHost iframe{border:0;width:1600px;height:900px;transform-origin:0 0;display:block;background:#1D2A25}
+#betaBar{position:sticky;top:0;z-index:60;background:#E0705F;color:#fff;font-size:13.5px;padding:7px 14px;text-align:center;line-height:1.5}
 .viewbox{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line2)}
 .tt td{padding:3px}.tt .in{width:100%;min-width:70px;padding:6px 8px;font-size:14px}.tt th{font-weight:600;color:var(--chalk2);font-size:13.5px}
 .ttwrap{overflow-x:auto}
@@ -355,6 +356,7 @@ table.t td,table.t th{padding:7px 6px;text-align:left;font-size:14.5px;border-bo
 </style>
 </head>
 <body>
+<div id="betaBar" hidden>🧪 <b>시험판</b>입니다 · 실제 반 자료를 그대로 씁니다 · 확인이 끝나면 GitHub [Actions] → '교실 화면 정식판 옮기기'로 정식판에 옮기세요</div>
 <div class="wrap" id="app"><div class="loading">불러오는 중…</div></div>
 <div id="busy" hidden></div>
 <div id="toast" role="status"></div>
@@ -861,6 +863,7 @@ function vTime(){
     ${ev.length ? `<ul class="list">${ev.map(e => `<li><div class="t">${esc(e.title)} <span class="small muted">${esc(e.start)}${e.end && e.end !== e.start ? ' ~ ' + esc(e.end) : ''}${(e.end || e.start) < today ? ' · 지남' : ''}</span></div><button class="b sm r" data-a="evdel" data-id="${esc(e.id)}">지우기</button></li>`).join('')}</ul>` : ''}
   ${(S.SEV || []).length ? `<h3 style="margin:16px 0 6px;font-size:15px">학생이 올린 일정 <span class="small muted">잘못 올라온 것은 지워 주세요</span></h3><ul class="list">${S.SEV.map(e => `<li><div class="t">${esc(e.title)} <span class="small muted">${esc(e.date)}${e.date < today ? ' · 지남' : ''}</span></div><button class="b sm r" data-a="sevdel" data-id="${esc(e.id)}">지우기</button></li>`).join('')}</ul>` : ''}
   </section>
+  ${vBackup()}
   <section class="card"><h2>TV 주소 바꾸기</h2>
     <p class="lead">TV 주소가 학생들에게 퍼졌을 때 새 주소로 바꿉니다. 예전 주소는 바로 막히고, 공지 · 명단 등 내용은 그대로 옮겨집니다. (조사 응답 · 건의는 새로 시작돼요)</p>
     <button class="b r" data-a="rekey">새 TV 주소 만들기</button></section>`;
@@ -1046,8 +1049,10 @@ function vLinkForm(){
 }
 
 /* ---------- 알림 종 ---------- */
-const APP_VER = '2026-10-22e';
+const APP_VER = '2026-10-22f';
 const UPDATES = [
+  { v: '2026-10-22f', title: '10월 22일 업데이트 (4)', items: [
+    '💾 우리 반 백업 · 되살리기: 시간표 설정 탭에서 내 구글 드라이브나 파일로 저장해요 (운영자는 받지 않아요). 일주일이 지나면 알림 종이 알려 줘요'] },
   { v: '2026-10-22e', title: '10월 22일 오후 업데이트 (3)', items: [
     '🗓 학생이 교실 TV 일정 칸의 [＋ 일정 추가]로 일정을 올릴 수 있어요 (이름 없이) (예: 11/13 3교시 영어 단어 시험). 시간표 설정 탭에서 끄거나, 잘못 올라온 일정을 지울 수 있어요'] },
   { v: '2026-10-22d', title: '10월 22일 오후 업데이트 (2)', items: [
@@ -1094,6 +1099,10 @@ function bellItems(){
     if (!pend) return;
     out.push({ ic: '⏰', tab: 'notice', t: Date.parse(today + 'T00:00:00+09:00'), isNew: lsg(seenKey() + '_day') !== today, tt: `${n.due === today ? '오늘' : '내일'} 마감 · ${esc(n.title)}`, sm: `아직 안 낸 학생 ${pend}명` });
   });
+  /* 백업 */
+  const lb = B.lastBackup ? Date.parse(B.lastBackup) : 0, hasData = (B.students || []).length || (B.notices || []).length || (B.surveys || []).length;
+  if (hasData && Date.now() - lb > 7 * 864e5)
+    out.push({ ic: '💾', tab: 'time', t: Date.parse(today + 'T00:00:00+09:00'), isNew: lsg(seenKey() + '_day') !== today, tt: lb ? '백업한 지 일주일이 지났어요' : '아직 우리 반 백업이 없어요', sm: '시간표 설정 탭 → 우리 반 백업 (버튼 한 번)' });
   /* 건의 */
   const sg = (S.SUGL || []).filter(x => x.t > seen);
   if (sg.length) out.push({ ic: '✉️', tab: 'suggest', t: Math.max(...sg.map(x => x.t)), isNew: true, tt: `새 건의 ${sg.length}건`, sm: esc(sg[0].text.slice(0, 40)) });
@@ -1138,6 +1147,77 @@ document.addEventListener('click', ev => {
   if (ev.target.closest && (ev.target.closest('#bellPanel') || ev.target.closest('#btnBell'))) return;
   S.bellOpen = false; render();
 });
+
+const BETA = /\/classroom-beta\//.test(location.pathname);
+if (BETA){ const bb = document.getElementById('betaBar'); if (bb) bb.hidden = false; document.title = '[시험판] ' + document.title; }
+/* ---------- 우리 반 백업 · 되살리기 ----------
+ * 백업은 선생님 컴퓨터(파일) 또는 선생님 구글 드라이브(비공개 폴더 '교실화면_백업')에만 저장합니다. 운영자는 받지 않습니다. */
+const BK_SUBS = ['answers', 'counsel', 'suggest', 'sevents'];
+const bkOut = v => { if (v && typeof v.toMillis === 'function') return { __ts: v.toMillis() }; if (Array.isArray(v)) return v.map(bkOut);
+  if (v && typeof v === 'object'){ const o = {}; for (const k in v) o[k] = bkOut(v[k]); return o; } return v; };
+const bkIn = v => { if (v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length === 1 && typeof v.__ts === 'number') return new Date(v.__ts);
+  if (Array.isArray(v)) return v.map(bkIn); if (v && typeof v === 'object'){ const o = {}; for (const k in v) o[k] = bkIn(v[k]); return o; } return v; };
+async function bkBuild(){
+  const { db, F } = S.fb, B = S.B, sub = {};
+  for (const c of BK_SUBS){
+    const qs = await F.getDocs(F.collection(db, 'boards', S.key, c));
+    sub[c] = qs.docs.map(d => ({ id: d.id, data: bkOut(d.data()) }));
+  }
+  const board = bkOut(B); delete board.updatedAt;
+  return { app: '교실화면 백업', v: 1, at: new Date().toISOString(), grade: B.grade, klass: B.klass, teacher: S.me.name, board, sub };
+}
+const bkName = j => `교실화면_백업_${j.grade}-${j.klass}_${kstToday()}.json`;
+function bkDownload(j, name){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(j, null, 1)], { type: 'application/json' }));
+  a.download = name || `classroom-backup_${j.grade}-${j.klass}_${kstToday()}.json`; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+}
+async function bkDriveSave(j, tok){
+  const ck = 'cr_bkfolder_' + S.user.uid;
+  let folder = ''; try { folder = localStorage.getItem(ck) || ''; } catch (e) {}
+  if (!folder){
+    const q = encodeURIComponent("name='교실화면_백업' and mimeType='application/vnd.google-apps.folder' and trashed=false");
+    const l = await gfetch(GAPI + 'drive/v3/files?q=' + q + '&fields=files(id)&spaces=drive', {}, tok);
+    folder = l.files && l.files[0] && l.files[0].id;
+    if (!folder) folder = (await gfetch(GAPI + 'drive/v3/files?fields=id', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: '교실화면_백업', mimeType: 'application/vnd.google-apps.folder' }) }, tok)).id;
+    try { localStorage.setItem(ck, folder); } catch (e) {}
+  }
+  const bd = 'crk' + rid(12), meta = { name: bkName(j), parents: [folder], mimeType: 'application/json' };
+  const body = new Blob(['--' + bd + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + JSON.stringify(meta) + '\r\n--' + bd + '\r\nContent-Type: application/json\r\n\r\n',
+    JSON.stringify(j), '\r\n--' + bd + '--']);
+  /* 공유 설정은 하지 않습니다 (선생님만 보는 파일) */
+  return gfetch(GAPI + 'upload/drive/v3/files?uploadType=multipart&fields=id,name', { method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + bd }, body }, tok);
+}
+async function bkRestore(j){
+  const { db, F } = S.fb;
+  if (!j || j.app !== '교실화면 백업' || !j.board || !j.sub) throw new Error('교실 화면 백업 파일이 아니에요.');
+  busy('되살리기 전에 지금 자료를 파일로 받아 두는 중…');
+  bkDownload(await bkBuild(), `classroom-backup_before-restore_${S.B.grade}-${S.B.klass}_${kstToday()}.json`);
+  busy('게시판을 되살리는 중…');
+  const board = bkIn(j.board);
+  delete board.updatedAt;
+  board.owner = S.user.uid; board.viewKey = S.B.viewKey || '';
+  await F.setDoc(F.doc(db, 'boards', S.key), Object.assign(board, { updatedAt: F.serverTimestamp(), lastBackup: S.B.lastBackup || '' }));
+  for (const c of BK_SUBS){
+    busy('되살리는 중… (' + c + ')');
+    const cur = await F.getDocs(F.collection(db, 'boards', S.key, c));
+    await Promise.all(cur.docs.map(d => F.deleteDoc(d.ref)));
+    const L = j.sub[c] || [];
+    for (let i = 0; i < L.length; i += 50) await Promise.all(L.slice(i, i + 50).map(x => F.setDoc(F.doc(db, 'boards', S.key, c, x.id), bkIn(x.data))));
+  }
+  busy('');
+}
+function vBackup(){
+  const B = S.B, last = B.lastBackup ? new Date(B.lastBackup) : null, days = last ? Math.floor((Date.now() - last) / 864e5) : null;
+  return `<section class="card"><h2>💾 우리 반 백업 · 되살리기</h2>
+    <p class="lead">공지 · 알림장 · 조사 응답 · 상담 · 건의 · 학생 일정 · 명단을 한 파일로 저장합니다. 백업은 <b>선생님 컴퓨터나 선생님 구글 드라이브에만</b> 저장되고 운영자는 받지 않아요.
+      ${last ? `마지막 백업: <b>${last.toLocaleDateString('ko-KR')}</b> (${days === 0 ? '오늘' : days + '일 전'})` : '<b style="color:var(--pink)">아직 백업한 적이 없어요.</b>'} 일주일에 한 번 해 두면 안심이에요.</p>
+    <div class="row"><button class="b y" data-a="bkdrive">내 구글 드라이브에 저장</button><button class="b" data-a="bkfile">파일로 내려받기</button>
+      <span class="grow"></span><button class="b r" data-a="bkpick">백업 파일로 되살리기</button><input type="file" id="bkPick" accept=".json,application/json" hidden></div>
+    <p class="small muted" style="margin:8px 0 0">되살리면 지금 자료가 백업 때 상태로 바뀝니다. 되살리기 직전 자료는 자동으로 파일로 한 번 더 받아 두니 안심하세요. 드라이브 백업은 '교실화면_백업' 폴더에 있어요.</p></section>`;
+}
 
 /* ---------- TV 화면 미리보기 (관리 화면을 다시 그려도 미리보기는 다시 불러오지 않게 #app 밖에 둠) ---------- */
 let PVH = null, pvKey = '';
@@ -1283,6 +1363,18 @@ document.addEventListener('change', ev => {
   const t = ev.target;
   if (t.id === 'filePick'){ if (t.files.length) addPending(S.pickFor, [...t.files]); t.value = ''; return; }
   if (t.id === 'xlsPick'){ if (t.files[0]) readRosterFile(t.files[0]); t.value = ''; return; }
+  if (t.id === 'bkPick'){
+    const f = t.files[0]; t.value = ''; if (!f) return;
+    f.text().then(async txt => {
+      let j; try { j = JSON.parse(txt); } catch (e) { return toast('백업 파일을 읽지 못했어요.', true); }
+      if (!j || j.app !== '교실화면 백업') return toast('교실 화면 백업 파일이 아니에요.', true);
+      const n = c => ((j.sub || {})[c] || []).length;
+      const other = String(j.grade) !== String(S.B.grade) || String(j.klass) !== String(S.B.klass);
+      if (!confirm(`${new Date(j.at).toLocaleString('ko-KR')}에 만든 ${j.grade}학년 ${j.klass}반 백업으로 되살릴까요?${other ? '\n\n⚠ 지금 반(' + S.B.grade + '-' + S.B.klass + ')과 다른 반의 백업이에요.' : ''}\n\n공지 ${(j.board.notices || []).length} · 조사 ${(j.board.surveys || []).length} · 응답 ${n('answers')} · 상담 ${n('counsel')} · 건의 ${n('suggest')} · 학생 일정 ${n('sevents')}\n\n지금 자료는 이 백업 상태로 바뀝니다.`)) return;
+      try { await bkRestore(j); toast('되살렸어요.'); } catch (e) { busy(''); fail(e); }
+    });
+    return;
+  }
   if (t.dataset && t.dataset.a === 'tog'){ const f = t.dataset.f; save({ [f]: t.checked }, t.checked ? '켰어요.' : '껐어요.'); }
   if (t.id === 'evDays') save({ eventDays: +t.value }, '일정 보일 기간을 바꿨어요.');
 });
@@ -1318,6 +1410,19 @@ document.addEventListener('click', async ev => {
       } catch (e) { fail(e); }
       return;
     }
+    case 'bkfile': case 'bkdrive': {
+      try {
+        let tok = '';
+        if (a === 'bkdrive') tok = await driveToken();   /* 팝업은 단추를 누른 바로 그때 */
+        busy('백업 만드는 중…');
+        const j = await bkBuild();
+        if (a === 'bkdrive'){ busy('드라이브에 저장하는 중…'); await bkDriveSave(j, tok); } else bkDownload(j);
+        busy('');
+        await save({ lastBackup: new Date().toISOString() }, a === 'bkdrive' ? '구글 드라이브 \'교실화면_백업\' 폴더에 저장했어요.' : '백업 파일을 내려받았어요.');
+      } catch (e) { busy(''); fail(e); }
+      return;
+    }
+    case 'bkpick': $('bkPick').click(); return;
     case 'pvreload': if (PVH){ try { PVH.firstChild.contentWindow.location.reload(); } catch (e) { pvKey = ''; placePv(); } } return;
     case 'bellgo': S.bellOpen = false; S.tab = t.dataset.v; try { localStorage.setItem('cr_tab', S.tab); } catch (e) {} S.edit = ''; render(); window.scrollTo(0, 0); return;
     case 'reloadapp': location.reload(); return;
