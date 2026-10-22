@@ -54,10 +54,22 @@ h2{font-size:15px;font-weight:700;letter-spacing:-.01em}
 .row.end{justify-content:flex-end}
 .grow{flex:1}
 .cols{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}
-.bsub{display:flex;gap:8px;margin:4px 0 16px;flex-wrap:wrap;position:sticky;top:0;z-index:5;background:var(--paper,var(--sheet));padding:6px 0}
-.bsub button{all:unset;cursor:pointer;flex:1;min-width:150px;padding:10px 14px;border:1px solid var(--rule2);border-radius:8px;background:var(--sheet);display:flex;flex-direction:column;gap:2px}
-.bsub button b{font-size:15px}.bsub button span{font-size:11.5px;color:var(--ink3,var(--ink2))}
-.bsub button[aria-selected="true"]{border-color:var(--ink);box-shadow:inset 0 -3px 0 var(--ink)}
+.bsub{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:8px;margin:4px 0 16px;position:sticky;top:0;z-index:5;background:var(--paper,var(--sheet));padding:6px 0}
+.bsub button{all:unset;box-sizing:border-box;cursor:pointer;position:relative;text-align:center;padding:11px 6px;border:1.5px solid var(--rule2);border-radius:10px;background:var(--sheet);font-size:14.5px;line-height:1.3;color:var(--ink2)}
+.bsub button:hover{border-color:var(--ink3,var(--ink2))}
+.bsub button .ic{display:block;font-size:20px;margin-bottom:3px}
+.bsub button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#1D2A25;font-weight:700}
+.bsub button .dot{position:absolute;top:6px;right:8px;min-width:18px;height:18px;border-radius:9px;background:var(--neg,#E0705F);color:#fff;font-size:11.5px;line-height:18px;padding:0 5px;box-sizing:border-box}
+.tvbar{padding:12px 16px}.tvbar a.btn{text-decoration:none}
+.bsub button{white-space:nowrap;font-size:14px}
+.g2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+.svopts{margin-top:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:8px 28px}
+.svo .bar{display:grid;grid-template-columns:minmax(0,1fr) 30% 52px;gap:10px;align-items:center;font-size:13.5px}
+.svo .bar i{display:block;height:8px;background:var(--hover);border-radius:3px;overflow:hidden}
+.svo .bar i b{display:block;height:100%;background:var(--accent)}
+.svo .who{font-size:12.5px;color:var(--ink3,var(--ink2));margin:2px 0 0 2px}
+.sedit{margin-top:10px;padding:12px 14px;border:1.5px dashed var(--accent);border-radius:8px}
+@media (max-width:900px){.g2{grid-template-columns:1fr}.svopts{grid-template-columns:1fr}}
 .bsub button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 details.past{margin-top:12px;border:1px dashed var(--rule2);border-radius:6px;padding:8px 10px}
 details.past>summary{cursor:pointer;font-size:13px;list-style-position:inside}
@@ -625,7 +637,7 @@ document.addEventListener('click', ev => {
       if (u) window.open(u, '_blank', 'noopener'); else toast('주소를 찾지 못했어요. 웹앱 배포 주소를 확인해 주세요.', true);
       if (o.url === 'p21' || o.url === 'pbl') toast('새 창에서 아래쪽 [담임] 탭을 누르면 확인할 수 있어요.');
     } else {
-      if (o.go === 'board'){ S.bsub = 'daily'; try { sessionStorage.setItem('hub_bsub', 'daily'); } catch (e) {} }
+      if (o.go === 'board'){ S.bsub = o.sub || 'flash'; try { sessionStorage.setItem('hub_bsub', S.bsub); } catch (e) {} }
       S.view = o.go; render(); window.scrollTo(0, 0);
     }
     bellClose();
@@ -1440,7 +1452,7 @@ function vRosterSolo(){
         <input class="in" data-conf="반" value="${esc(c.반)}" style="width:60px">반</div>
       <p class="small muted" style="margin-top:8px">시간표(나이스)와 상담 신청 학번 확인에 씁니다. 학번 = 학년×10000 + 반×100 + 번호</p>
       <div class="row end" style="margin-top:8px"><button class="btn pri sm" data-act="saveconf">저장</button></div></section>
-    <section class="box"><h2>생일</h2><p class="small muted">학생 생일은 [교실 화면 → 화면 꾸미기 → 학급 생일]에서 넣습니다.</p></section>
+    <section class="box"><h2>생일</h2><p class="small muted">학생 생일은 [교실 화면 → 학급 명단]에서 넣습니다.</p></section>
     <section class="box"><h2>관리자 비밀번호 바꾸기</h2><p class="small muted">스프레드시트의 [설정] 시트에서 '관리자비밀번호' 줄을 고치면 됩니다.</p></section>
   </aside></div>`;
 }
@@ -1795,6 +1807,8 @@ function btCollect(){
   const sg = $('bSg'); if (sg) B.suggestOn = sg.checked;
   const ntx = $('bnText'); if (ntx) S.nDraft = ntx.value;
   const net = $('neText'); if (net && S.nEdit){ S.nEdit.text = net.value; S.nEdit.start = ($('neStart') || {}).value || ''; S.nEdit.end = ($('neEnd') || {}).value || ''; }
+  const seq = $('seQ'); if (seq && S.sEdit) S.seDraft = {id: S.sEdit, q: seq.value, d: ($('seD') || {}).value || '', o: $('seO') ? $('seO').value : '',
+    multi: !!($('seMulti') && $('seMulti').checked), anon: !!($('seAnon') && $('seAnon').checked), etc: !!($('seEtc') && $('seEtc').checked)};
   const sq = $('bsQ'); if (sq) S.sDraft = {q: sq.value, d: ($('bsD') || {}).value || '', o: $('bsO') ? $('bsO').value : ((S.sDraft || {}).o || '')};
   document.querySelectorAll('[data-bdm]').forEach(el => {
     S.bdDraft = S.bdDraft || {};
@@ -1807,35 +1821,38 @@ function vBoard(){
   if (!S.bt) btInit();
   const B = S.B, c = B.cfg, T = S.bt, today = B.today;
   const sub = bsubGet();
+  const V = {
+    flash: () => vFlashBox(),
+    notice: () => vNoticeBox() + vNoteBox(),
+    look: () => vPreview() + `<div class="g2">${vQuoteBox()}${vLookSetBox()}</div>` + vWeatherBox(),
+    time: () => vTimetableBox() + `<div class="g2">${vEventBox()}${vNeisBox()}</div>`,
+    roster: () => vBirthdayBox() + `<section class="box"><h2>학급 명단</h2><p class="small muted">학생 명단(번호 · 이름 · 학번)은 왼쪽 메뉴 <b>명단 · 설정</b>에서 고칩니다. 여기서 고친 명단이 교실 TV에도 그대로 쓰입니다.</p>
+      <div class="row" style="margin-top:8px"><button class="btn sm" data-view="roster">명단 · 설정 열기</button></div></section>`,
+    survey: () => vSurveyBox() + vLinkBox(),
+    counsel: () => vCounselSetBox(),
+    suggest: () => vSuggestSetBox() + vSuggestBox(),
+    setup: () => vTvAddrBox() + vPhoneBox()
+  };
   return `<div class="head"><div><h1>교실 화면</h1>
       <p>교실 TV(전자칠판)에 시계 · 지금 교시 · 시간표 · 급식 · 알림 · 오늘 상담을 띄우고, 학생은 화면을 터치해 조사에 답하거나 상담을 신청합니다.</p></div></div>
+  <section class="box tvbar"><div class="row"><b style="font-size:16px">📺 교실 TV 주소</b><input class="in grow" readonly value="${esc(B.url)}" style="min-width:240px" aria-label="교실 TV 주소">
+    <a class="btn pri sm" href="${esc(B.url)}" target="_blank" rel="noopener">TV 화면 열기</a><button class="btn sm" data-bact="copyurl">복사</button>
+    <button class="btn txt sm" data-bact="bsub" data-v="setup">휴대폰 주소 · 새 주소</button></div></section>
   ${bsubBar()}
-  ${sub === 'daily' ? `<div class="cols"><div>
-    ${vFlashBox()}
-    ${vNoteBox()}
-    ${vNoticeBox()}
-  </div><aside>
-    ${vSurveyBox()}
-    ${vLinkBox()}
-    ${vSuggestBox()}
-  </aside></div>` : ''}
-  ${sub === 'look' ? `${vPreview()}
-  <div class="cols"><div>
-    ${vQuoteBox()}
-    ${vEventBox()}
-  </div><aside>
-    ${vBirthdayBox()}
-    ${vWeatherBox()}
-  </aside></div>` : ''}
-  ${sub === 'setup' ? `<div class="cols"><div>
-  <section class="box"><h2>교실 TV 주소</h2>
+  ${(V[sub] || V.flash)()}`;
+}
+function vTvAddrBox(){
+  const B = S.B;
+  return `  <section class="box"><h2>교실 TV 주소</h2>
     <div class="row" style="margin-top:6px"><input class="in grow" id="bUrl" readonly value="${esc(B.url)}" style="min-width:280px">
       <a class="btn pri" href="${esc(B.url)}" target="_blank" rel="noopener">열기</a>
       <button class="btn" data-bact="copyurl">복사</button><button class="btn txt" data-bact="regen">새 주소 만들기</button></div>
     <p class="small muted" style="margin-top:8px">TV 브라우저에서 이 주소를 열고 즐겨찾기에 넣어 두세요. 화면 오른쪽 위 버튼으로 전체 화면이 됩니다.
-      주소를 아는 사람은 볼 수 있으니 학생 단톡방 등에는 올리지 마세요. 새 주소를 만들면 예전 주소는 바로 막힙니다.</p></section>
-    ${vPhoneBox()}
-    <section class="box"><h2>급식 · 나이스</h2>
+      주소를 아는 사람은 볼 수 있으니 학생 단톡방 등에는 올리지 마세요. 새 주소를 만들면 예전 주소는 바로 막힙니다.</p></section>`;
+}
+function vNeisBox(){
+  const B = S.B, c = B.cfg, T = S.bt;
+  return `<section class="box"><h2>급식 · 나이스</h2>
       <p class="small">${c.neis.code ? `<b>${esc(c.neis.name)}</b> <span class="muted">(${esc(c.neis.atpt)} · ${esc(c.neis.code)})</span>` : '<span style="color:var(--neg)">학교가 아직 설정되지 않았습니다</span>'}</p>
       <div class="row" style="margin-top:8px"><input class="in grow" id="bSch" placeholder="학교 이름" value="${esc(c.neis.name || '강릉제일고등학교')}"><button class="btn sm" data-bact="sch">학교 찾기</button></div>
       <div id="bSchList"></div>
@@ -1843,26 +1860,11 @@ function vBoard(){
         <input class="in" id="bNk" style="width:100%" value="${esc(T.neisKey)}" placeholder="open.neis.go.kr에서 무료 발급"></label>
       <p class="small muted" style="margin-top:4px">급식은 키 없이도 됩니다. 시간표를 나이스에서 받으려면 키가 있어야 7교시까지 다 옵니다.</p>
       <div class="row" style="margin-top:8px"><button class="btn sm" data-bact="nkey">키 저장</button><button class="btn sm" data-bact="ntest">오늘 급식 · 시간표 불러오기 시험</button></div>
-      <div id="bTest" class="small" style="margin-top:8px"></div></section>
-  </div><aside>
-    <section class="box"><h2>화면 설정</h2>
-      <label class="small" style="display:block;margin-top:6px">오늘 상담을 칠판에
-        <select class="in" id="bCm">${[['가린이름','가린 이름 (김○언)'],['이름','이름 그대로'],['시간만','시간만 (예약 있음)']].map(([v, l]) =>
-          `<option value="${v}" ${T.counselMode === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
-      <label class="small row" style="gap:5px;margin-top:10px"><input type="checkbox" id="bCo" ${T.counselOn ? 'checked' : ''}> 칠판에서 상담 신청 받기</label>
-      <p class="small muted" style="margin-top:4px">칠판에서는 시간만 신청하고, 하고 싶은 이야기는 받지 않습니다.</p>
-      <label class="small row" style="gap:5px;margin-top:8px"><input type="checkbox" id="bSg" ${T.suggestOn ? 'checked' : ''}> 칠판에서 건의사항 받기</label>
-      <div class="lbl" style="margin-top:12px">화면 크기 · 여백</div>
-      <p class="small muted" style="margin-top:2px">TV 화면(또는 위 미리보기) 오른쪽 위 <b>톱니바퀴</b>를 누르고 관리자 비밀번호를 넣으면, 칸마다 마우스로 끌어 크기를 바꿀 수 있습니다.
-        아래쪽이 잘려 건의 버튼이 안 보이면 거기서 '아래 여백'을 늘려 주세요.</p>
-      <button class="btn txt sm" data-bact="layreset" style="margin-top:4px">화면 배치를 처음대로</button>
-      <div class="lbl" style="margin-top:12px">D-day (최대 3개)</div>
-      ${T.ddays.map((d, i) => `<div class="row" style="margin-top:6px"><input class="in" style="width:120px" placeholder="기말고사" data-bdd="${i}|label" value="${esc(d.label)}">
-        <input class="in" type="date" data-bdd="${i}|date" value="${esc(d.date)}"></div>`).join('')}
-      <div class="row end" style="margin-top:10px"><button class="btn pri sm" data-bact="saveset">설정 저장</button></div></section>
-
-  </aside></div>
-  <section class="box"><div class="row sb"><h2>시간표</h2>
+      <div id="bTest" class="small" style="margin-top:8px"></div></section>`;
+}
+function vTimetableBox(){
+  const B = S.B, c = B.cfg, T = S.bt;
+  return `<section class="box"><div class="row sb"><h2>시간표</h2>
       <div class="seg" role="group" aria-label="시간표 출처">${[['직접','직접 입력'],['NEIS','나이스에서 자동']].map(([v, l]) =>
         `<button data-bact="src" data-v="${v}" aria-pressed="${T.source === v}">${l}</button>`).join('')}</div></div>
     <p class="small" style="margin:6px 0 2px">지금 교실 TV는 <b>${c.source === 'NEIS' ? '나이스 시간표' : '아래 표에 직접 적은 시간표'}</b>를 씁니다.
@@ -1893,23 +1895,53 @@ function vBoard(){
       <input class="in" type="time" data-bsp="${i}|s" value="${esc(s.s)}"><span class="small muted">~</span><input class="in" type="time" data-bsp="${i}|e" value="${esc(s.e)}">
       <button class="btn txt sm neg" data-bact="spdel" data-i="${i}" aria-label="빼기">×</button></div>`).join('')}
     <div class="row" style="margin-top:8px"><button class="btn sm" data-bact="spadd">특별 시간 추가</button>
-      <span class="grow"></span><button class="btn pri" data-bact="savett">시간표 저장</button></div></section>
-` : ''}`;
+      <span class="grow"></span><button class="btn pri" data-bact="savett">시간표 저장</button></div></section>`;
 }
-const BSUBS = [['daily', '매일 쓰기', '호출 · 알림장 · 공지 · 조사 · 링크 · 건의'], ['look', '화면 꾸미기', '미리보기 · 맨 윗줄 · 일정 · 생일 · 날씨'], ['setup', '설정 · 시간표', 'TV 주소 · 휴대폰 보기 · 시간표 · 급식']];
+function vLookSetBox(){
+  const T = S.bt;
+  return `<section class="box"><h2>화면 배치 · D-day</h2>
+      <p class="small muted" style="margin-top:2px">TV 화면(또는 위 미리보기) 오른쪽 위 <b>톱니바퀴</b>를 누르고 관리자 비밀번호를 넣으면, 칸마다 마우스로 끌어 크기를 바꿀 수 있습니다.
+        아래쪽이 잘려 건의 버튼이 안 보이면 거기서 '아래 여백'을 늘려 주세요.</p>
+      <button class="btn txt sm" data-bact="layreset" style="margin-top:4px">화면 배치를 처음대로</button>
+      <div class="lbl" style="margin-top:12px">D-day (최대 3개)</div>
+      ${T.ddays.map((d, i) => `<div class="row" style="margin-top:6px"><input class="in" style="width:140px" placeholder="기말고사" data-bdd="${i}|label" value="${esc(d.label)}">
+        <input class="in" type="date" data-bdd="${i}|date" value="${esc(d.date)}"></div>`).join('')}
+      <div class="row end" style="margin-top:10px"><button class="btn pri sm" data-bact="saveset">D-day 저장</button></div></section>`;
+}
+function vCounselSetBox(){
+  const T = S.bt;
+  return `<section class="box"><h2>교실 TV 상담 신청</h2>
+      <label class="small row" style="gap:5px;margin-top:6px"><input type="checkbox" id="bCo" ${T.counselOn ? 'checked' : ''}> 칠판에서 상담 신청 받기</label>
+      <p class="small muted" style="margin-top:4px">칠판에서는 시간만 신청하고, 하고 싶은 이야기는 받지 않습니다.</p>
+      <label class="small" style="display:block;margin-top:12px">오늘 상담을 칠판에
+        <select class="in" id="bCm">${[['가린이름','가린 이름 (김○언)'],['이름','이름 그대로'],['시간만','시간만 (예약 있음)']].map(([v, l]) =>
+          `<option value="${v}" ${T.counselMode === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <div class="row end" style="margin-top:12px"><button class="btn pri sm" data-bact="saveset">저장</button></div></section>
+    <section class="box"><h2>신청 목록 · 상담 시간</h2>
+      <p class="small muted">신청한 학생 목록, 상담 가능한 시간 · 쉬는 날은 왼쪽 아래 <b>상담 신청판</b>에서 관리합니다.</p></section>`;
+}
+function vSuggestSetBox(){
+  const T = S.bt;
+  return `<section class="box"><div class="row"><label class="small row grow" style="gap:5px"><input type="checkbox" id="bSg" ${T.suggestOn ? 'checked' : ''}> 칠판에서 건의사항 받기 (TV 오른쪽 아래 [건의사항] 단추)</label>
+      <button class="btn pri sm" data-bact="saveset">저장</button></div></section>`;
+}
+const BSUBS = [['flash', '📣', '긴급 호출·쪽지'], ['notice', '📌', '공지·알림장'], ['look', '🎨', '화면 꾸미기'], ['time', '🕘', '시간표 설정'],
+  ['roster', '👥', '학급 명단'], ['survey', '🗳', '설문·투표·조사'], ['counsel', '💬', '상담 신청'], ['suggest', '✉️', '건의함'], ['setup', '📺', 'TV·휴대폰']];
 document.addEventListener('toggle', ev => {
   const d = ev.target; if (!d || !d.dataset || !d.dataset.past) return;
   const k = d.dataset.past; if (k === 'n') S.pastN = d.open; else if (k === 'a2') S.pastA = d.open; else if (k === 'a') S.calOpen = d.open;
 }, true);
 function bsubGet(){
   if (!S.bsub){ try { S.bsub = sessionStorage.getItem('hub_bsub') || ''; } catch (e) { S.bsub = ''; } }
-  if (!BSUBS.some(x => x[0] === S.bsub)) S.bsub = 'daily';
+  if (!BSUBS.some(x => x[0] === S.bsub)) S.bsub = 'flash';
   return S.bsub;
 }
 function bsubBar(){
   const sub = bsubGet();
-  return `<div class="bsub" role="tablist" aria-label="교실 화면 메뉴">${BSUBS.map(([v, l, d]) =>
-    `<button role="tab" data-bact="bsub" data-v="${v}" aria-selected="${sub === v}"><b>${l}</b><span>${d}</span></button>`).join('')}</div>`;
+  const B = S.B || {}, open = (B.surveys || []).filter(x => x.open).length, sg = (B.suggestions || []).filter(x => !x.read).length;
+  const dot = v => v === 'survey' && open ? `<span class="dot">${open}</span>` : (v === 'suggest' && sg ? `<span class="dot">${sg}</span>` : '');
+  return `<nav class="bsub" role="tablist" aria-label="교실 화면 메뉴">${BSUBS.map(([v, ic, l]) =>
+    `<button role="tab" data-bact="bsub" data-v="${v}" aria-selected="${sub === v}"><span class="ic">${ic}</span>${l}${dot(v)}</button>`).join('')}</nav>`;
 }
 function boardSave(obj, msg, keep){
   const keepBt = keep ? S.bt : null;
@@ -2050,6 +2082,7 @@ function vSurveyBox(){
         <span class="tg ${s.open ? 'pos' : ''}" style="margin-left:6px">${s.open ? '진행 중' : '마감'}</span>
         <span class="small muted" style="margin-left:6px">${s.kind === '체크' ? '체크' : (s.multi ? '여러 개' : '하나')} · ${s.count}/${s.total}명${s.anon ? ' · 익명' : ''}</span></div>
       <div class="row" style="gap:2px">
+        <button class="btn txt sm" data-bact="sedit" data-id="${esc(s.id)}">수정</button>
         <button class="btn txt sm" data-bact="${s.open ? 'sclose' : 'sopen'}" data-id="${esc(s.id)}">${s.open ? '마감' : '다시 열기'}</button>
         <button class="btn txt sm" data-bact="spub" data-id="${esc(s.id)}">${s.pub ? '결과 공개 끄기' : '결과 공개'}</button>
         <button class="btn txt sm" data-bact="smiss" data-id="${esc(s.id)}">${s.showMissing ? '미응답 표시 끄기' : '미응답 표시'}</button>
@@ -2061,14 +2094,13 @@ function vSurveyBox(){
     const desc = s.desc ? `<p class="small" style="margin-top:4px;white-space:pre-wrap">${esc(s.desc)}</p>` : '';
     const body = s.kind === '체크'
       ? `<p class="small" style="margin-top:6px"><span class="muted">체크한 학생</span> ${s.byOption && s.byOption[0].length ? s.byOption[0].map(esc).join(', ') : '아직 없음'}</p>`
-      : `<div style="margin-top:8px;display:grid;gap:6px">${s.options.map((o, i) => `<div>
-          <div class="row small"><b style="min-width:120px">${esc(o)}</b><span class="grow" style="height:8px;background:var(--hover);border-radius:2px;overflow:hidden;display:block">
-            <i style="display:block;height:100%;width:${Math.round(s.counts[i] / max * 100)}%;background:var(--accent)"></i></span><span style="min-width:44px;text-align:right">${s.counts[i]}명</span></div>
-          ${s.byOption && s.byOption[i].length ? `<div class="small muted" style="margin:2px 0 0 4px">${s.byOption[i].map(esc).join(', ')}</div>` : ''}</div>`).join('')}</div>`;
+      : `<div class="svopts">${s.options.map((o, i) => `<div class="svo">
+          <div class="bar"><span>${esc(o)}</span><i><b style="width:${Math.round(s.counts[i] / max * 100)}%"></b></i><span style="text-align:right">${s.counts[i]}명</span></div>
+          ${s.byOption && s.byOption[i].length ? `<div class="who">${s.byOption[i].map(esc).join(', ')}</div>` : ''}</div>`).join('')}</div>`;
     const etcL = s.etc && s.etcList && s.etcList.length ? `<div class="small" style="margin-top:8px;padding:8px 10px;border:1px dashed var(--rule2);border-radius:6px">
         <b>'기타'로 직접 쓴 답 ${s.etcList.length}개</b>${s.etcList.map(e => `<div style="margin-top:3px">${e.no ? `<span class="muted">${esc(e.no + '. ' + e.name)}</span> · ` : '· '}${esc(e.text)}</div>`).join('')}</div>` : '';
     const miss = s.missing.length ? `<p class="small" style="margin-top:6px"><span class="muted">아직 안 한 학생</span> ${s.missing.map(m => esc(m.no + '. ' + m.name)).join(', ')}</p>` : '';
-    return '<div class="hr"></div>' + head + desc + body + etcL + miss;
+    return '<div class="hr"></div>' + head + (S.sEdit === s.id ? vSurveyEdit(s) : desc + body + etcL + miss);
   }).join('');
   return `<section class="box"><h2>조사 · 투표 · 체크</h2>
     <div class="row" style="margin:6px 0 8px"><span class="small muted">종류</span>
@@ -2088,6 +2120,18 @@ function vSurveyBox(){
       <span class="small muted">학생이 누르면 설명과 첨부 문서가 먼저 나오고, 다음 화면에서 이름을 골라 ${kind === '체크' ? '체크' : '답'}합니다.</span>
       <span class="grow"></span><button class="btn pri" data-bact="sadd">${kind === '체크' ? '체크 시작' : '조사 시작'}</button></div>
     ${list || '<p class="empty">아직 만든 조사가 없습니다.</p>'}</section>`;
+}
+function vSurveyEdit(s){
+  const d = S.seDraft && S.seDraft.id === s.id ? S.seDraft : { q: s.q, d: s.desc || '', o: s.options.slice(0, s.etc ? -1 : undefined).join('\n'), multi: s.multi, anon: s.anon, etc: s.etc };
+  return `<div class="sedit"><div class="lbl">조사 고치기</div>
+    <input class="in" id="seQ" style="width:100%;margin-top:6px" value="${esc(d.q)}" placeholder="질문">
+    <textarea class="in" id="seD" rows="2" style="margin-top:8px" placeholder="설명 (선택)">${esc(d.d)}</textarea>
+    ${s.kind === '체크' ? '' : `<textarea class="in" id="seO" rows="${Math.min(14, Math.max(4, String(d.o).split('\n').length + 1))}" style="margin-top:8px" placeholder="보기를 한 줄에 하나씩">${esc(d.o)}</textarea>
+    <p class="small muted" style="margin-top:4px">보기 순서를 바꾸거나 새 보기를 더해도 이미 받은 응답은 그대로 남습니다. <b>보기 글자를 고치거나 지우면</b> 그 보기를 고른 응답만 사라져요 (그 학생은 다시 답하면 됩니다).</p>
+    <div class="row" style="margin-top:6px"><label class="small row" style="gap:5px"><input type="checkbox" id="seMulti" ${d.multi ? 'checked' : ''}> 여러 개 고르기</label>
+      <label class="small row" style="gap:5px"><input type="checkbox" id="seEtc" ${d.etc ? 'checked' : ''}> '기타' 직접 쓰기 받기</label></div>`}
+    <div class="row" style="margin-top:6px"><label class="small row" style="gap:5px"><input type="checkbox" id="seAnon" ${d.anon ? 'checked' : ''}> 익명 (누가 무엇을 골랐는지 안 보기)</label>
+      <span class="grow"></span><button class="btn sm" data-bact="secancel">취소</button><button class="btn pri sm" data-bact="sesave" data-id="${esc(s.id)}">고친 내용 저장</button></div></div>`;
 }
 function vEventBox(){
   const B = S.B, T = S.bt, list = B.events || [], shown = B.eventsShown || {events: [], err: ''}, dr = S.evDraft || {};
@@ -2580,6 +2624,24 @@ document.addEventListener('click', ev => {
       t.disabled = true;
       readPick('bsFile').then(file => call('apiBoardSurvey', S.pw, 'add', Object.assign(opt, {file})))
         .then(b => { S.B = b; S.sDraft = null; toast(kind === '체크' ? '체크를 시작했습니다.' : '조사를 시작했습니다.'); render(); })
+        .catch(e => { t.disabled = false; fail(e); });
+      return;
+    }
+    case 'sedit': S.sEdit = S.sEdit === id ? '' : id; S.seDraft = null; render(); return;
+    case 'secancel': S.sEdit = ''; S.seDraft = null; render(); return;
+    case 'sesave': {
+      const s = S.B.surveys.find(x => x.id === id); if (!s) return;
+      const q = $('seQ').value.trim();
+      const options = s.kind === '체크' ? [] : $('seO').value.split('\n').map(x => x.replace(/\t+/g, ' · ').trim()).filter(Boolean);
+      if (!q) return toast('질문을 적어 주세요.', true);
+      if (s.kind !== '체크' && options.length < 2) return toast('보기를 두 줄 이상 적어 주세요.', true);
+      if (options.length > 80) return toast('보기는 80개까지 넣을 수 있어요.', true);
+      const keep = s.options.slice(0, s.etc ? -1 : undefined), lost = keep.filter(o => !options.includes(o)).filter((o, i) => s.counts[s.options.indexOf(o)] > 0);
+      if (lost.length && !confirm('고치거나 지운 보기를 고른 응답이 사라집니다.\n\n' + lost.slice(0, 6).join('\n') + (lost.length > 6 ? '\n…' : '') + '\n\n계속할까요?')) return;
+      t.disabled = true;
+      call('apiBoardSurvey', S.pw, 'edit', {id, q, desc: $('seD').value.trim(), options, multi: !!($('seMulti') && $('seMulti').checked),
+        anon: $('seAnon').checked, etc: !!($('seEtc') && $('seEtc').checked)})
+        .then(b => { S.B = b; S.sEdit = ''; S.seDraft = null; toast('조사를 고쳤습니다.'); render(); })
         .catch(e => { t.disabled = false; fail(e); });
       return;
     }

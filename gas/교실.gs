@@ -1240,6 +1240,40 @@ function apiBoardSurvey(pw, op, d) {
   }
   var s = boardSurveys_().filter(function (x) { return x.id === String(d.id); })[0];
   if (!s) throw new Error('이미 지워진 조사입니다.');
+  if (op === 'edit') {
+    /* 조사 고치기: 보기 글자가 그대로인 응답은 남기고, 고치거나 지운 보기를 고른 부분만 뺍니다 */
+    var q2 = String(d.q || '').trim().slice(0, 200);
+    if (!q2) throw new Error('질문을 적어 주세요.');
+    var lock = LockService.getScriptLock();
+    lock.waitLock(20000);
+    try {
+      sh.getRange(s.row, 2).setValue(q2);
+      sh.getRange(s.row, 5).setValue(d.anon ? '예' : '');
+      sh.getRange(s.row, 11).setValue(String(d.desc || '').trim().slice(0, 600));
+      if (s.kind === '선택') {
+        var etc2 = !!d.etc;
+        var nopts = (d.options || []).map(function (x) { return String(x).replace(/\t+/g, ' · ').trim().slice(0, 100); })
+          .filter(function (x) { return x && x !== BOARD_ETC; });
+        nopts = nopts.filter(function (x, i) { return nopts.indexOf(x) === i; }).slice(0, 80);
+        if (nopts.length < 2) throw new Error('보기는 두 개 이상 적어 주세요.');
+        if (etc2) nopts.push(BOARD_ETC);
+        var multi2 = !!d.multi;
+        var map = s.options.map(function (o) { return nopts.indexOf(o); });
+        sh.getRange(s.row, 3).setValue(JSON.stringify(nopts));
+        sh.getRange(s.row, 4).setValue(multi2 ? '예' : '');
+        sh.getRange(s.row, 15).setValue(etc2 ? '예' : '');
+        var rsh = ss_().getSheetByName(BOARD.RESP), etcI = etc2 ? nopts.length - 1 : -1;
+        boardResponses_().filter(function (r) { return r.id === s.id; }).sort(function (x, y) { return y.row - x.row; }).forEach(function (r) {
+          var ch = [];
+          (r.choices || []).forEach(function (i) { var j = map[Number(i)]; if (j != null && j >= 0 && ch.indexOf(j) < 0) ch.push(j); });
+          if (!multi2) ch = ch.slice(0, 1);
+          if (!ch.length) { rsh.deleteRow(r.row); return; }
+          rsh.getRange(r.row, 4).setValue(JSON.stringify(ch));
+          if (r.etc && ch.indexOf(etcI) < 0) rsh.getRange(r.row, 6).setValue('');
+        });
+      }
+    } finally { lock.releaseLock(); }
+  }
   if (op === 'close') sh.getRange(s.row, 6).setValue('마감');
   if (op === 'open') sh.getRange(s.row, 6).setValue('진행');
   if (op === 'pub') sh.getRange(s.row, 7).setValue(s.pub ? '' : '예');
