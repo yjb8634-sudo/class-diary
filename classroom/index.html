@@ -419,10 +419,14 @@ async function route(){
   if (S.me.status !== 'ok') return vStopped();
   /* TV 열쇠는 본인만 읽을 수 있는 keys/{uid}에 둡니다 (운영자 명단에는 남기지 않음) */
   try {
-    let key = '';
-    try { const ks = await F.getDoc(F.doc(db, 'keys', S.user.uid)); if (ks.exists()) key = ks.data().boardKey || ''; } catch (e) {}
-    if (!key && S.me.boardKey){ key = S.me.boardKey; await F.setDoc(F.doc(db, 'keys', S.user.uid), { boardKey: key }); }
-    if (S.me.boardKey){ await F.updateDoc(F.doc(db, 'teachers', S.user.uid), { boardKey: F.deleteField() }).catch(() => {}); }
+    let key = '', inKeys = false;
+    try { const ks = await F.getDoc(F.doc(db, 'keys', S.user.uid)); if (ks.exists() && ks.data().boardKey){ key = ks.data().boardKey; inKeys = true; } } catch (e) { console.warn('keys get', e); }
+    if (!key && S.me.boardKey){
+      key = S.me.boardKey;
+      try { await F.setDoc(F.doc(db, 'keys', S.user.uid), { boardKey: key }); inKeys = true; } catch (e) { console.warn('keys set (보안 규칙 확인 필요)', e); }
+    }
+    /* 열쇠가 keys/로 옮겨진 것이 확인됐을 때만 명단에서 지웁니다 */
+    if (S.me.boardKey && inKeys){ await F.updateDoc(F.doc(db, 'teachers', S.user.uid), { boardKey: F.deleteField() }).catch(() => {}); }
     S.me.boardKey = key;
     if (!key) await makeBoard();
   } catch (e) { return fail(e); }
@@ -506,7 +510,8 @@ async function makeBoard(data){
   const key = rid(24);
   const d = Object.assign(boardDefaults(), data || {}, { owner: S.user.uid, updatedAt: F.serverTimestamp() });
   await F.setDoc(F.doc(db, 'boards', key), d);
-  await F.setDoc(F.doc(db, 'keys', S.user.uid), { boardKey: key });
+  try { await F.setDoc(F.doc(db, 'keys', S.user.uid), { boardKey: key }); }
+  catch (e) { console.warn('keys set (보안 규칙 확인 필요)', e); await F.updateDoc(F.doc(db, 'teachers', S.user.uid), { boardKey: key }); }
   S.me.boardKey = key;
   return key;
 }
