@@ -307,6 +307,9 @@ nav.tabs button .dot{position:absolute;top:6px;right:8px;min-width:18px;height:1
 .bupd ul{margin:4px 0 0;padding-left:18px}
 .bupd.new{border-color:var(--yellow)}
 .bempty{padding:10px;color:var(--chalk2);font-size:14px}
+.foot{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-top:6px}
+.foot .credit{margin:0;margin-left:auto}
+.privacy{margin:0;font-size:13px;color:var(--chalk2);line-height:1.6}
 .viewbox{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line2)}
 .tt td{padding:3px}.tt .in{width:100%;min-width:70px;padding:6px 8px;font-size:14px}.tt th{font-weight:600;color:var(--chalk2);font-size:13.5px}
 .ttwrap{overflow-x:auto}
@@ -414,7 +417,15 @@ async function route(){
   }
   if (S.me.status === 'pending') return vWait();
   if (S.me.status !== 'ok') return vStopped();
-  try { if (!S.me.boardKey) await makeBoard(); } catch (e) { return fail(e); }
+  /* TV 열쇠는 본인만 읽을 수 있는 keys/{uid}에 둡니다 (운영자 명단에는 남기지 않음) */
+  try {
+    let key = '';
+    try { const ks = await F.getDoc(F.doc(db, 'keys', S.user.uid)); if (ks.exists()) key = ks.data().boardKey || ''; } catch (e) {}
+    if (!key && S.me.boardKey){ key = S.me.boardKey; await F.setDoc(F.doc(db, 'keys', S.user.uid), { boardKey: key }); }
+    if (S.me.boardKey){ await F.updateDoc(F.doc(db, 'teachers', S.user.uid), { boardKey: F.deleteField() }).catch(() => {}); }
+    S.me.boardKey = key;
+    if (!key) await makeBoard();
+  } catch (e) { return fail(e); }
   watchBoard();
 }
 
@@ -425,7 +436,8 @@ function vLogin(){
     <p class="muted" style="margin:0 0 24px;font-size:16px">${esc(SCHOOL.name)} 선생님용<br>우리 반 TV에 시계 · 시간표 · 급식 · 공지를 띄웁니다</p>
     <button class="b y big" id="btnLogin" style="width:100%">구글 계정으로 시작하기</button>
     <p class="small muted" style="margin-top:16px">처음이면 학년 · 반을 입력해 가입을 신청하고, 승인되면 바로 쓸 수 있어요.</p>
-    <p class="credit" style="text-align:center">제작자 : 강릉제일고 유준배 선생님</p></div>`;
+    <p class="privacy" style="text-align:center;margin-top:18px">🔒 우리 반 자료는 담임 선생님만 관리하며, 운영자는 열람할 수 없습니다.</p>
+    <p class="credit" style="text-align:center;margin-top:6px">제작자 : 강릉제일고 유준배 선생님</p></div>`;
   $('btnLogin').onclick = login;
 }
 function vJoin(){
@@ -494,7 +506,7 @@ async function makeBoard(data){
   const key = rid(24);
   const d = Object.assign(boardDefaults(), data || {}, { owner: S.user.uid, updatedAt: F.serverTimestamp() });
   await F.setDoc(F.doc(db, 'boards', key), d);
-  await F.updateDoc(F.doc(db, 'teachers', S.user.uid), { boardKey: key });
+  await F.setDoc(F.doc(db, 'keys', S.user.uid), { boardKey: key });
   S.me.boardKey = key;
   return key;
 }
@@ -674,7 +686,7 @@ function render(){
         <p class="lead" style="margin:6px 0 0">시간표 · 급식 · 일정 · 공지 · 알림장 · 링크 조사를 휴대폰에서 볼 수 있어요. 투표 · 상담 신청 · 건의는 교실 TV에서만 됩니다.</p>` : ''}</div></section>
     <nav class="tabs">${T.map(([v, ic, l]) => `<button data-tab="${v}" class="${S.tab === v ? 'on' : ''}"><span class="ic">${ic}</span>${l}${v === 'survey' && openSv ? `<span class="dot">${openSv}</span>` : ''}${v === 'counsel' && upC ? `<span class="dot">${upC}</span>` : ''}</button>`).join('')}</nav>
     <div id="body">${({ flash: vFlash, notice: vNotice, look: vLook, time: vTime, roster: vRoster, survey: vSurvey, counsel: vCounsel, suggest: vSuggest, op: () => '<div id="opBox"></div>' })[S.tab]()}</div>
-    <p class="credit">제작자 : 강릉제일고 유준배 선생님</p>`;
+    <div class="foot"><p class="privacy">🔒 우리 반 자료는 담임 선생님만 관리하며, 운영자는 열람할 수 없습니다.</p><p class="credit">제작자 : 강릉제일고 유준배 선생님</p></div>`;
   $('btnOut').onclick = logout;
   { const bb = $('btnBell'); if (bb) bb.onclick = ev => { ev.stopPropagation(); bellToggle(); }; }
   restoreDrafts(keep);
