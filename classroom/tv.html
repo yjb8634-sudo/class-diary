@@ -688,8 +688,9 @@ html,body{background:var(--bg);color:var(--chalk)}
   var V = (QS.get('v') || '').replace(/[^a-z0-9]/g, '');   /* 학생 휴대폰용 보기 주소 (읽기 전용) */
   var VIEW = !K && V.length >= 20;
   var WANT_EDIT = QS.get('edit') === '1';
-  var VER = 'fb-2026-11-07a';
-  window.__BOOT = { t: K || V, preview: 0, phone: VIEW, ver: VER };
+  var PV = QS.get('pv') === '1';   /* 관리 화면 안 미리보기: 눌러도 저장 안 됨 */
+  var VER = 'fb-2026-11-08a';
+  window.__BOOT = { t: K || V, preview: PV ? 1 : 0, phone: VIEW, ver: VER };
   if (VIEW) document.write('<style>#btnMine,#btnEdit,#btnShare{display:none !important}html,body{height:auto !important;overflow:auto !important}</style>');
   var FB = null, B = null, gone = false, SCH = null, schAt = 0, schBusy = false, WX = null, wxAt = 0, wxBusy = false;
   var ANS = {}, CNS = [], USER = null, OWNER = false, editDone = false;
@@ -813,12 +814,13 @@ html,body{background:var(--bg);color:var(--chalk)}
           ov.id = 'crGone';
           ov.style.cssText = 'position:fixed;inset:0;z-index:99;background:#1D2A25;color:#E4E0D3;display:flex;align-items:center;justify-content:center;text-align:center;padding:2rem;font-size:1.8rem;line-height:1.7';
           ov.textContent = failMsg;
+          if (PV) return;
           if (lsGet() === K) lsSet('');
           setTimeout(function () { if (gone) location.replace(location.pathname); }, 6000);
           return;
         }
         gone = false; failMsg = ''; B = snap.data();
-        if (!WANT_EDIT && lsGet() !== K) lsSet(K);
+        if (!WANT_EDIT && !PV && lsGet() !== K) lsSet(K);
         var g0 = document.getElementById('crGone'); if (g0) g0.remove();
         readyOk(); checkOwner(); kick();
       }, function (e) {
@@ -1160,7 +1162,7 @@ html,body{background:var(--bg);color:var(--chalk)}
   var lastTouch = 0;
   document.addEventListener('pointerdown', function () { lastTouch = Date.now(); }, true);
   setInterval(function () {
-    if (WANT_EDIT || PAIR || Date.now() - lastTouch < 120e3) return;
+    if (WANT_EDIT || PAIR || PV || Date.now() - lastTouch < 120e3) return;
     fetch(location.pathname + '?nv=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = t.match(/var VER = '([^']+)'/);
       if (m && m[1] !== VER && m[1] > VER) location.reload();

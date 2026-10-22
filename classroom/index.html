@@ -311,6 +311,9 @@ nav.tabs button .dot{position:absolute;top:6px;right:8px;min-width:18px;height:1
 .foot .credit{margin:0;margin-left:auto}
 .privacy{margin:0;font-size:13px;color:var(--chalk2);line-height:1.6}
 .sedit{margin:10px 0;padding:12px 14px;border:1.5px dashed var(--yellow);border-radius:10px}
+.pvslot{margin-top:12px;width:100%;aspect-ratio:16/9;border-radius:12px;background:#14201B;border:1px solid var(--line)}
+#pvHost{position:absolute;z-index:1;overflow:hidden;border-radius:12px;display:none}
+#pvHost iframe{border:0;width:1600px;height:900px;transform-origin:0 0;display:block;background:#1D2A25}
 .viewbox{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line2)}
 .tt td{padding:3px}.tt .in{width:100%;min-width:70px;padding:6px 8px;font-size:14px}.tt th{font-weight:600;color:var(--chalk2);font-size:13.5px}
 .ttwrap{overflow-x:auto}
@@ -782,7 +785,11 @@ function addDays(s, n){ const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.get
 function vLook(){
   const B = S.B, Q = B.quote || { on: true, mode: 'day', list: [] };
   const dd = (B.ddays || []).concat([{}, {}, {}]).slice(0, 3);
-  return `<section class="card"><h2>화면 배치 조정</h2>
+  return `<section class="card"><div class="row"><h2 style="flex:1;margin:0">📺 TV 화면 미리보기</h2>
+      <button class="b sm" data-a="pvreload">새로고침</button><a class="b sm" href="${esc(tvUrl())}" target="_blank" rel="noopener">새 탭에서 열기</a></div>
+    <div id="pvSlot" class="pvslot"></div>
+    <p class="lead" style="margin:8px 0 0">교실 TV와 같은 모습이에요. 눌러 봐도 실제로 저장되지 않아요. 여기서 고친 내용은 몇 초 안에 미리보기에도 바뀝니다.</p></section>
+  <section class="card"><h2>화면 배치 조정</h2>
     <p class="lead">TV 화면에서 칸(시계 · 지금 수업 · 시간표 · 일정 · 급식 · 공지)의 위치를 옮기고, 칸 크기 · 너비 · 전체 크기 · 여백을 바꿉니다.
     아래 단추를 누르면 TV 화면이 조절 모드로 열려요. 칸 왼쪽 위 [✥ 옮기기]를 끌어 자리를 바꾸고, 노란 손잡이로 크기를 바꾼 뒤 [저장]을 누르세요.</p>
     <div class="row"><a class="b y" href="${esc(tvUrl(true))}" target="_blank" rel="noopener">화면 배치 조정 열기</a><button class="b" data-a="layreset">처음 배치로 되돌리기</button></div>
@@ -1031,8 +1038,10 @@ function vLinkForm(){
 }
 
 /* ---------- 알림 종 ---------- */
-const APP_VER = '2026-10-22c';
+const APP_VER = '2026-10-22d';
 const UPDATES = [
+  { v: '2026-10-22d', title: '10월 22일 오후 업데이트 (2)', items: [
+    '📺 화면 꾸미기 탭 맨 위에 TV 화면 미리보기가 생겼어요 (눌러 봐도 저장되지 않아요)'] },
   { v: '2026-10-22c', title: '10월 22일 오후 업데이트', items: [
     '✏️ 설문·투표·조사: 올린 조사도 [수정]으로 질문 · 설명 · 보기 · 옵션을 고칠 수 있어요 (같은 보기를 고른 응답은 그대로 남아요)'] },
   { v: '2026-10-22b', title: '10월 22일 업데이트', items: [
@@ -1119,6 +1128,22 @@ document.addEventListener('click', ev => {
   if (ev.target.closest && (ev.target.closest('#bellPanel') || ev.target.closest('#btnBell'))) return;
   S.bellOpen = false; render();
 });
+
+/* ---------- TV 화면 미리보기 (관리 화면을 다시 그려도 미리보기는 다시 불러오지 않게 #app 밖에 둠) ---------- */
+let PVH = null, pvKey = '';
+function placePv(){
+  const slot = $('pvSlot');
+  if (!slot || !S.key){ if (PVH) PVH.style.display = 'none'; return; }
+  if (!PVH){ PVH = document.createElement('div'); PVH.id = 'pvHost'; PVH.innerHTML = '<iframe title="TV 화면 미리보기" loading="lazy"></iframe>'; document.body.appendChild(PVH); }
+  const fr = PVH.firstChild;
+  if (pvKey !== S.key){ pvKey = S.key; fr.src = new URL('tv.html?k=' + S.key + '&pv=1', location.href).href; }
+  const r = slot.getBoundingClientRect();
+  Object.assign(PVH.style, { display: 'block', left: (r.left + scrollX) + 'px', top: (r.top + scrollY) + 'px', width: r.width + 'px', height: r.height + 'px' });
+  fr.style.transform = 'scale(' + (r.width / 1600) + ')';
+}
+new MutationObserver(() => placePv()).observe(document.getElementById('app'), { childList: true, subtree: true });
+window.addEventListener('resize', placePv);
+if (window.ResizeObserver) new ResizeObserver(() => placePv()).observe(document.body);
 
 /* ---------- 상담 신청 ---------- */
 const CSL = { lunch: '점심시간', after: '방과후' }, CDEF = { lunch: '12:40~13:00', after: '16:40~17:00' };
@@ -1283,6 +1308,7 @@ document.addEventListener('click', async ev => {
       } catch (e) { fail(e); }
       return;
     }
+    case 'pvreload': if (PVH){ try { PVH.firstChild.contentWindow.location.reload(); } catch (e) { pvKey = ''; placePv(); } } return;
     case 'bellgo': S.bellOpen = false; S.tab = t.dataset.v; try { localStorage.setItem('cr_tab', S.tab); } catch (e) {} S.edit = ''; render(); window.scrollTo(0, 0); return;
     case 'reloadapp': location.reload(); return;
     case 'copyview': { const i = $('viewUrlIn'); i.select(); try { await navigator.clipboard.writeText(i.value); } catch (e) { document.execCommand('copy'); } toast('학생용 주소를 복사했어요. 단톡방에 붙여 넣으세요.'); return; }
