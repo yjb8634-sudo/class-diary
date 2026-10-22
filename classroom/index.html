@@ -288,6 +288,28 @@ nav.tabs button .dot{position:absolute;top:6px;right:8px;min-width:18px;height:1
 .tvbox{border-color:rgba(230,205,126,.35)}
 .tvbox .in{font-size:14px}
 .pairsteps{margin:10px 0 8px;padding-left:22px;line-height:1.75}
+.bellw{position:relative}
+.bell{all:unset;cursor:pointer;position:relative;width:40px;height:40px;border-radius:12px;border:1px solid var(--line2);display:inline-flex;align-items:center;justify-content:center;font-size:20px;background:var(--card)}
+.bell:hover{border-color:var(--yellow)}
+.bell .n{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 5px;box-sizing:border-box;border-radius:999px;background:#E0705F;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.bell.ring{animation:ring 1.2s ease 2}
+@keyframes ring{0%,100%{transform:rotate(0)}15%{transform:rotate(14deg)}30%{transform:rotate(-12deg)}45%{transform:rotate(8deg)}60%{transform:rotate(-5deg)}}
+.bellp{position:absolute;right:0;top:48px;z-index:50;width:min(420px,calc(100vw - 32px));max-height:70vh;overflow:auto;background:#22312B;border:1px solid var(--line2);border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.45);padding:12px}
+.bellp h3{margin:10px 4px 6px;font-size:14px;color:var(--chalk2);font-weight:600}
+.bellp h3:first-child{margin-top:2px}
+.bi{display:flex;gap:10px;padding:9px 10px;border-radius:10px;cursor:pointer;line-height:1.5;font-size:14.5px}
+.bi:hover{background:rgba(255,255,255,.05)}
+.bi .ic{flex:none;width:24px;text-align:center}
+.bi.new{background:rgba(242,209,107,.08)}
+.bi.new .tt::after{content:'새';margin-left:6px;font-size:11px;font-weight:700;color:#1D2A25;background:var(--yellow);border-radius:6px;padding:1px 5px}
+.bi .sm{display:block;color:var(--chalk2);font-size:12.5px}
+.bupd{border:1px dashed var(--line2);border-radius:10px;padding:8px 12px;margin:4px 0 8px;font-size:14px;line-height:1.6}
+.bupd ul{margin:4px 0 0;padding-left:18px}
+.bupd.new{border-color:var(--yellow)}
+.bempty{padding:10px;color:var(--chalk2);font-size:14px}
+.viewbox{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line2)}
+.tt td{padding:3px}.tt .in{width:100%;min-width:70px;padding:6px 8px;font-size:14px}.tt th{font-weight:600;color:var(--chalk2);font-size:13.5px}
+.ttwrap{overflow-x:auto}
 .pairsteps .addr{color:#F2D16B;word-break:break-all}
 .pairrow #pairIn{font-size:26px;letter-spacing:.18em;width:220px;text-align:center;font-weight:700}
 .pairrow #pairIn::placeholder{font-size:16px;letter-spacing:0;font-weight:400}
@@ -348,7 +370,7 @@ function friendly(e){
   if (/network|unavailable|offline|Failed to fetch/i.test(m)) return '인터넷 연결을 확인해 주세요.';
   return (e && e.message ? e.message : m).replace(/^Firebase:\s*/, '');
 }
-const S = { fb: null, user: null, me: null, B: null, key: '', tab: 'flash', unsub: null, ansUnsub: null, ANS: {}, teachers: null,
+const S = { CNS: [], cnsUnsub: null, ANSL: [], SUGL: [], sugUnsub: null, bellOpen: false, bellPrev: 0, newVer: '', fb: null, user: null, me: null, B: null, key: '', tab: 'flash', unsub: null, ansUnsub: null, ANS: {}, teachers: null,
   nf: { level: 0 }, edit: '', pend: { notice: [], note: [], survey: [] }, pickFor: '', sugg: null, rost: null, openSv: '' };
 try { S.tab = localStorage.getItem('cr_tab') || 'flash'; } catch (e) {}
 
@@ -373,7 +395,7 @@ async function login(){
     fail(e);
   }
 }
-function stopWatch(){ if (S.unsub){ S.unsub(); S.unsub = null; } if (S.ansUnsub){ S.ansUnsub(); S.ansUnsub = null; } }
+function stopWatch(){ if (S.unsub){ S.unsub(); S.unsub = null; } if (S.ansUnsub){ S.ansUnsub(); S.ansUnsub = null; } if (S.cnsUnsub){ S.cnsUnsub(); S.cnsUnsub = null; } if (S.sugUnsub){ S.sugUnsub(); S.sugUnsub = null; } }
 async function logout(){ stopWatch(); S.me = null; S.B = null; await S.fb.A.signOut(S.fb.auth); }
 const isOperator = () => !!(S.user && S.user.email === OPERATOR);
 
@@ -483,16 +505,57 @@ function watchBoard(){
   S.unsub = F.onSnapshot(F.doc(db, 'boards', S.key), snap => {
     if (!snap.exists()){ S.B = null; makeBoard().then(watchBoard).catch(fail); return; }
     S.B = snap.data();
-    render();
+    render(); syncView();
   }, fail);
   /* 조사 · 투표 응답 (TV에서 학생들이 누른 것) */
   S.ansUnsub = F.onSnapshot(F.collection(db, 'boards', S.key, 'answers'), qs => {
     const A = {};
-    qs.docs.forEach(d => { const x = d.data(); if (!x || !x.sid) return; (A[x.sid] = A[x.sid] || {})[x.no] = { ch: x.ch || [], etc: x.etc || '' }; });
-    S.ANS = A;
-    if (S.B && S.tab === 'survey') render();
+    const AL = [];
+    qs.docs.forEach(d => { const x = d.data(); if (!x || !x.sid) return; (A[x.sid] = A[x.sid] || {})[x.no] = { ch: x.ch || [], etc: x.etc || '' }; AL.push({ sid: x.sid, no: x.no, t: msOf(x.at) }); });
+    S.ANS = A; S.ANSL = AL;
+    if (S.B) render();
+  }, () => {});
+  /* 상담 신청 (TV에서 학생이 신청한 것) */
+  S.cnsUnsub = F.onSnapshot(F.collection(db, 'boards', S.key, 'counsel'), qs => {
+    S.CNS = qs.docs.map(d => Object.assign({ id: d.id }, d.data())).filter(x => x.date && x.slot)
+      .sort((a, b) => (a.date + (a.slot === 'lunch' ? 0 : 1)).localeCompare(b.date + (b.slot === 'lunch' ? 0 : 1)));
+    if (S.B) render();
+  }, () => {});
+  /* 건의 (알림 종에 개수만) */
+  S.sugUnsub = F.onSnapshot(F.collection(db, 'boards', S.key, 'suggest'), qs => {
+    S.SUGL = qs.docs.map(d => ({ id: d.id, t: msOf(d.data().at), text: d.data().text || '' }));
+    if (S.sugg !== null && S.tab === 'suggest') S.sugg = null;
+    if (S.B) render();
   }, () => {});
 }
+const msOf = v => v && v.toMillis ? v.toMillis() : (v ? Date.parse(v) || 0 : 0);
+/* ---------- 학생 휴대폰용 보기 주소: 이름을 가린 읽기 전용 사본 (views/{보기 키}) ---------- */
+function maskName(name){
+  name = String(name || '').replace(/\s/g, '');
+  if (!name) return '';
+  if (name.length <= 2) return name.charAt(0) + '○';
+  return name.charAt(0) + new Array(name.length - 1).join('○') + name.charAt(name.length - 1);
+}
+function viewDoc(B){
+  const pick = ['grade', 'klass', 'notices', 'notes', 'events', 'ddays', 'links', 'quote', 'weatherOn', 'birthdayOn', 'periods', 'specials', 'lunch',
+    'layout', 'ttSource', 'timetable', 'teachers', 'eventDays', 'eventNeis'];
+  const o = { owner: S.user.uid, ver: 1 };
+  pick.forEach(k => { if (B[k] !== undefined) o[k] = B[k]; });
+  o.students = (B.students || []).map(t => ({ no: t.no, name: maskName(t.name), bd: t.bd || '' }));
+  o.links = (B.links || []).filter(l => l.on !== false);
+  return o;
+}
+let viewT = null, viewLast = '';
+function syncView(){
+  clearTimeout(viewT);
+  viewT = setTimeout(async () => {
+    const B = S.B; if (!B || !B.viewKey) return;
+    const d = viewDoc(B), j = B.viewKey + JSON.stringify(d);
+    if (j === viewLast) return;
+    try { const { db, F } = S.fb; await F.setDoc(F.doc(db, 'views', B.viewKey), d); viewLast = j; } catch (e) { console.warn('view sync', e); }
+  }, 900);
+}
+const viewUrl = () => new URL('tv.html?v=' + S.B.viewKey, location.href).href;
 async function save(patch, msg){
   const { db, F } = S.fb;
   try {
@@ -586,16 +649,16 @@ function pendBox(kind, label){
 
 /* ================= 그리기 ================= */
 const TABS = [['flash', '📣', '긴급 호출 · 쪽지'], ['notice', '📌', '공지 · 알림장'], ['look', '🎨', '화면 꾸미기'], ['time', '🕘', '시간표 설정'],
-  ['roster', '👥', '학급 명단'], ['survey', '🗳', '설문·투표·조사'], ['suggest', '✉️', '건의함']];
+  ['roster', '👥', '학급 명단'], ['survey', '🗳', '설문·투표·조사'], ['counsel', '💬', '상담 신청'], ['suggest', '✉️', '건의함']];
 function render(){
   const B = S.B; if (!B) return;
   const keep = captureDrafts();
   const T = TABS.slice(); if (isOperator()) T.push(['op', '🛡', '운영자']);
   if (!T.some(t => t[0] === S.tab)) S.tab = 'flash';
   const nStu = (B.students || []).length;
-  const openSv = (B.surveys || []).filter(s => s.open).length;
+  const openSv = (B.surveys || []).filter(s => s.open).length, upC = (S.CNS || []).filter(c => c.date >= kstToday()).length;
   $('app').innerHTML = `<header class="top"><h1>${esc(B.grade)}학년 ${esc(B.klass)}반 교실 화면<small>${esc(S.me.name)} 선생님 · ${esc(S.user.email)}</small></h1>
-      <span class="pill">학생 <b>${nStu}</b>명</span>${openSv ? `<span class="pill">진행 중 조사 <b>${openSv}</b></span>` : ''}<button class="b sm" id="btnOut">로그아웃</button></header>
+      <span class="pill">학생 <b>${nStu}</b>명</span>${openSv ? `<span class="pill">진행 중 조사 <b>${openSv}</b></span>` : ''}${bellHtml()}<button class="b sm" id="btnOut">로그아웃</button></header>
     <section class="card tvbox"><div class="row"><h2 style="margin:0;flex:1;font-size:21px">📺 TV 연결</h2>
       <a class="b" href="${esc(tvUrl())}" target="_blank" rel="noopener">TV 화면 미리 보기</a>
       <a class="b" href="${esc(tvUrl(true))}" target="_blank" rel="noopener">화면 배치 조정</a></div>
@@ -604,11 +667,16 @@ function render(){
       <div class="row pairrow"><input class="in" id="pairIn" data-keep inputmode="numeric" autocomplete="off" maxlength="7" placeholder="TV의 숫자 6자리"><button class="b y" data-a="pair">연결</button></div>
       <details style="margin-top:10px"><summary class="lead" style="cursor:pointer;margin:0">긴 TV 주소 직접 쓰기</summary>
         <div class="row" style="margin-top:8px"><input class="in" readonly value="${esc(tvUrl())}" style="flex:1" id="tvUrlIn"><button class="b" data-a="copytv">주소 복사</button></div>
-        <p class="lead" style="margin:8px 0 0">이 주소를 TV에서 바로 열어도 됩니다. 학생 단톡방 등에는 올리지 마세요.</p></details></section>
-    <nav class="tabs">${T.map(([v, ic, l]) => `<button data-tab="${v}" class="${S.tab === v ? 'on' : ''}"><span class="ic">${ic}</span>${l}${v === 'survey' && openSv ? `<span class="dot">${openSv}</span>` : ''}</button>`).join('')}</nav>
-    <div id="body">${({ flash: vFlash, notice: vNotice, look: vLook, time: vTime, roster: vRoster, survey: vSurvey, suggest: vSuggest, op: () => '<div id="opBox"></div>' })[S.tab]()}</div>
+        <p class="lead" style="margin:8px 0 0">이 주소를 TV에서 바로 열어도 됩니다. 이 주소로는 투표 · 호출 끄기 · 건의가 되니 <b>학생 단톡방에는 아래 학생용 주소</b>를 올려 주세요.</p></details>
+      <div class="viewbox"><div class="row"><b style="flex:1">📱 학생 휴대폰용 주소 <span class="small muted" style="font-weight:400">단톡방 공유용 · 보기만 됨 · 이름은 가려서 보여요</span></b>
+        ${B.viewKey ? `<button class="b sm" data-a="copyview">주소 복사</button><button class="b sm" data-a="viewnew">새 주소로 바꾸기</button><button class="b sm r" data-a="viewoff">끄기</button>` : `<button class="b sm y" data-a="viewmake">학생용 주소 만들기</button>`}</div>
+        ${B.viewKey ? `<input class="in" readonly value="${esc(viewUrl())}" style="width:100%;margin-top:8px" id="viewUrlIn">
+        <p class="lead" style="margin:6px 0 0">시간표 · 급식 · 일정 · 공지 · 알림장 · 링크 조사를 휴대폰에서 볼 수 있어요. 투표 · 상담 신청 · 건의는 교실 TV에서만 됩니다.</p>` : ''}</div></section>
+    <nav class="tabs">${T.map(([v, ic, l]) => `<button data-tab="${v}" class="${S.tab === v ? 'on' : ''}"><span class="ic">${ic}</span>${l}${v === 'survey' && openSv ? `<span class="dot">${openSv}</span>` : ''}${v === 'counsel' && upC ? `<span class="dot">${upC}</span>` : ''}</button>`).join('')}</nav>
+    <div id="body">${({ flash: vFlash, notice: vNotice, look: vLook, time: vTime, roster: vRoster, survey: vSurvey, counsel: vCounsel, suggest: vSuggest, op: () => '<div id="opBox"></div>' })[S.tab]()}</div>
     <p class="credit">제작자 : 강릉제일고 유준배 선생님</p>`;
   $('btnOut').onclick = logout;
+  { const bb = $('btnBell'); if (bb) bb.onclick = ev => { ev.stopPropagation(); bellToggle(); }; }
   restoreDrafts(keep);
   if (S.tab === 'op') loadTeachers();
   if (S.tab === 'suggest' && S.sugg === null) loadSuggest();
@@ -719,6 +787,19 @@ function vLook(){
 }
 
 /* ---------- 시간표 설정 ---------- */
+function vTimetable(){
+  const B = S.B, P = (B.periods || DEFAULT_PERIODS).filter(p => p && p.n), src = B.ttSource === 'manual' ? 'manual' : 'neis';
+  const T = B.timetable || {}, TC = B.teachers || {}, D = ['월', '화', '수', '목', '금'];
+  const cell = (m, d, n) => esc(((m || {})[String(d)] || {})[String(n)] || '');
+  return `<section class="card"><h2>요일별 시간표 <span class="sub">과목 · 선생님 이름</span></h2>
+    <div class="row"><div class="seg">${[['neis', '나이스 자동 (추천)'], ['manual', '직접 입력']].map(([v, l]) => `<button data-a="ttsrc" data-v="${v}" class="${src === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+    <p class="lead" style="margin-top:8px">${src === 'manual' ? '아래 과목을 그대로 TV에 보여 줘요. 학기가 바뀌면 고쳐 주세요.' : '과목은 나이스 것을 씁니다. 아래 과목 칸은 나이스에 그날 시간표가 없을 때만 대신 보여요.'}
+      선생님 이름을 넣으면 TV 과목 옆에 작게 나와요. (비워 두면 안 보임)</p>
+    <div class="ttwrap"><table class="t tt"><tr><th></th>${D.map(d => `<th>${d}</th>`).join('')}</tr>
+    ${P.map(p => `<tr><th>${esc(p.n)}교시</th>${D.map((_, i) => `<td><input class="in" data-tts="${i + 1}|${esc(p.n)}" value="${cell(T, i + 1, p.n)}" placeholder="과목" maxlength="12">
+      <input class="in" data-ttt="${i + 1}|${esc(p.n)}" value="${cell(TC, i + 1, p.n)}" placeholder="선생님" maxlength="6" style="margin-top:3px;font-size:13px"></td>`).join('')}</tr>`).join('')}</table></div>
+    <div class="row" style="margin-top:10px;justify-content:flex-end"><button class="b" data-a="ttclear">모두 비우기</button><button class="b y" data-a="ttsave">시간표 저장</button></div></section>`;
+}
 function vTime(){
   const B = S.B, P = B.periods || DEFAULT_PERIODS, SP = B.specials || [], today = kstToday();
   const ev = (B.events || []).slice().sort((a, b) => String(a.start).localeCompare(String(b.start)));
@@ -727,7 +808,8 @@ function vTime(){
       <label class="small">반 <input class="in" id="sClass" type="number" min="1" max="20" value="${esc(B.klass)}" style="width:84px"></label>
       <label class="small">성함 <input class="in" id="sName" value="${esc(S.me.name)}" style="width:160px"></label>
       <span class="grow"></span><button class="b y" data-a="classsave">저장</button></div>
-    <p class="lead" style="margin:8px 0 0">시간표 과목은 나이스에서 이 학년 · 반 것을 자동으로 가져옵니다 (매일 새벽 · 점심 무렵 갱신).</p></section>
+    <p class="lead" style="margin:8px 0 0">시간표 과목은 나이스에서 이 학년 · 반 것을 자동으로 가져옵니다 (매일 새벽 · 점심 무렵 갱신). 직접 넣으려면 아래 [요일별 시간표]에서 바꾸세요.</p></section>
+  ${vTimetable()}
   <div class="grid2"><section class="card"><h2>교시 시각</h2>
     <p class="lead">TV가 '지금 몇 교시'인지 계산하는 데 씁니다.</p>
     <table class="t"><tr><th>교시</th><th>시작</th><th>끝</th><th></th></tr>
@@ -741,6 +823,8 @@ function vTime(){
     <div class="row" style="margin-top:22px;justify-content:flex-end"><button class="b sm" data-a="pdef">강릉제일고 기본값으로</button><button class="b y" data-a="psave">교시 · 특별 시간 저장</button></div></section></div>
   <section class="card"><h2>학급 일정</h2>
     <p class="lead">학교 학사일정(나이스)은 자동으로 나와요. 여기에는 우리 반만의 일정(학급 회의, 반 단체 활동 등)을 더합니다.</p>
+    <div class="row" style="margin-bottom:10px"><label class="chk"><input type="checkbox" data-a="tog" data-f="eventNeis" ${B.eventNeis !== false ? 'checked' : ''}> 학교 학사일정(나이스)도 보이기</label>
+      <span class="small muted" style="margin-left:10px">TV에 보일 기간</span><select class="in" id="evDays" data-a="evdays">${[7, 14, 30, 60, 90].map(n => `<option value="${n}" ${(+B.eventDays || 30) === n ? 'selected' : ''}>앞으로 ${n}일</option>`).join('')}</select></div>
     <div class="row"><input class="in grow" id="evTitle" data-keep placeholder="일정 이름"><input class="in" type="date" id="evStart" data-keep>~<input class="in" type="date" id="evEnd" data-keep><button class="b y" data-a="evadd">추가</button></div>
     ${ev.length ? `<ul class="list">${ev.map(e => `<li><div class="t">${esc(e.title)} <span class="small muted">${esc(e.start)}${e.end && e.end !== e.start ? ' ~ ' + esc(e.end) : ''}${(e.end || e.start) < today ? ' · 지남' : ''}</span></div><button class="b sm r" data-a="evdel" data-id="${esc(e.id)}">지우기</button></li>`).join('')}</ul>` : ''}
   </section>
@@ -927,6 +1011,124 @@ function vLinkForm(){
     <div class="row" style="margin-top:10px;justify-content:flex-end"><button class="b y" data-a="ladd">TV에 올리기</button></div>`;
 }
 
+/* ---------- 알림 종 ---------- */
+const APP_VER = '2026-10-22b';
+const UPDATES = [
+  { v: '2026-10-22b', title: '10월 22일 업데이트', items: [
+    '🔔 알림 종: 새 상담 신청 · 조사 응답 · 알림장 마감 · 건의를 한눈에',
+    '💬 상담 신청: 학생이 교실 TV에서 빈 시간을 골라 신청 (쉬는 날 · 시간 설정)',
+    '🕘 요일별 시간표: 직접 입력 · 과목 옆 선생님 이름',
+    '📱 학생 휴대폰용 주소: 단톡방에 올려도 되는 보기 전용 주소 (이름 가림)',
+    '🗳 설문·투표·조사 탭: 구글 설문 같은 링크를 올리면 TV에 QR 코드',
+    '📺 TV 연결 숫자: TV에서 is.gd/jeiltv 열고 숫자 6자리만 넣으면 연결',
+    '📅 학급 일정: 나이스 학사일정 끄기 · 보일 기간 정하기'] }
+];
+const seenKey = () => 'cr_bell_' + (S.user ? S.user.uid : '');
+const updKey = () => 'cr_upd_' + (S.user ? S.user.uid : '');
+function lsg(k){ try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+function lss(k, v){ try { localStorage.setItem(k, v); } catch (e) {} }
+function bellSeen(){ const v = +lsg(seenKey()); return v || (Date.now() - 3 * 864e5); }
+function bellItems(){
+  const B = S.B, today = kstToday(), seen = S.bellOpen ? S.bellPrev : bellSeen(), out = [];
+  const DOWK = ['일', '월', '화', '수', '목', '금', '토'];
+  const dl = d => `${+d.slice(5, 7)}/${+d.slice(8, 10)}(${DOWK[new Date(d + 'T00:00:00Z').getUTCDay()]})`;
+  const CS = B.counselSlots || {};
+  /* 상담 */
+  (S.CNS || []).filter(c => c.date >= today).forEach(c => {
+    const t = msOf(c.at), isNew = t > seen;
+    if (!isNew && c.date !== today) return;
+    out.push({ ic: '💬', tab: 'counsel', t, isNew, tt: c.date === today ? `오늘 상담 · ${c.slot === 'after' ? '방과후' : '점심시간'}` : '새 상담 신청',
+      sm: `${dl(c.date)} ${c.slot === 'after' ? '방과후' : '점심'} ${esc(((CS[c.slot] || {}).time || CDEF[c.slot]).split('~')[0])} · ${esc(c.no + '. ' + (c.name || ''))}` });
+  });
+  /* 조사 응답 */
+  const stuN = (B.students || []).length;
+  (B.surveys || []).filter(s => s.open).forEach(s => {
+    const L = (S.ANSL || []).filter(a => a.sid === s.id), nw = L.filter(a => a.t > seen), done = L.length;
+    const last = L.reduce((m, a) => Math.max(m, a.t), 0);
+    if (stuN && done >= stuN){ out.push({ ic: '✅', tab: 'survey', t: last, isNew: last > seen, tt: `모두 참여했어요 · ${esc(s.q)}`, sm: `${done} / ${stuN}명 · 마감해도 돼요` }); return; }
+    if (nw.length) out.push({ ic: '🗳', tab: 'survey', t: last, isNew: true, tt: `새 응답 ${nw.length}건 · ${esc(s.q)}`, sm: `참여 ${done} / ${stuN}명` });
+  });
+  /* 알림장 마감 */
+  (B.notes || []).filter(n => n.due && n.track && n.due >= today && n.due <= addDaysA(today, 1)).forEach(n => {
+    const pend = (B.students || []).filter(st => (n.done || []).indexOf(st.no) < 0).length;
+    if (!pend) return;
+    out.push({ ic: '⏰', tab: 'notice', t: Date.parse(today + 'T00:00:00+09:00'), isNew: lsg(seenKey() + '_day') !== today, tt: `${n.due === today ? '오늘' : '내일'} 마감 · ${esc(n.title)}`, sm: `아직 안 낸 학생 ${pend}명` });
+  });
+  /* 건의 */
+  const sg = (S.SUGL || []).filter(x => x.t > seen);
+  if (sg.length) out.push({ ic: '✉️', tab: 'suggest', t: Math.max(...sg.map(x => x.t)), isNew: true, tt: `새 건의 ${sg.length}건`, sm: esc(sg[0].text.slice(0, 40)) });
+  return out.sort((a, b) => (b.isNew - a.isNew) || (b.t - a.t));
+}
+function addDaysA(s, n){ const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+function bellCount(){
+  const n = bellItems().filter(x => x.isNew).length, upd = lsg(updKey()) !== APP_VER ? 1 : 0;
+  return n + upd + (S.newVer ? 1 : 0);
+}
+function bellHtml(){
+  const n = S.bellOpen ? 0 : bellCount(), ring = n > (S.lastBellN || 0); S.lastBellN = n;
+  return `<span class="bellw"><button class="bell${ring ? ' ring' : ''}" id="btnBell" title="알림">🔔${n ? `<span class="n">${n > 99 ? '99+' : n}</span>` : ''}</button>${S.bellOpen ? bellPanel() : ''}</span>`;
+}
+function bellPanel(){
+  const L = bellItems(), updNew = S.bellUpdNew;
+  return `<div class="bellp" id="bellPanel">
+    ${S.newVer ? `<div class="bupd new"><b>🆕 새 버전이 올라왔어요</b><br><span class="small muted">새로 바뀐 점을 쓰려면 화면을 새로고침해 주세요.</span><div class="row" style="margin-top:6px"><button class="b sm y" data-a="reloadapp">지금 새로고침</button></div></div>` : ''}
+    <h3>알림</h3>
+    ${L.length ? L.map(x => `<div class="bi${x.isNew ? ' new' : ''}" data-a="bellgo" data-v="${x.tab}"><span class="ic">${x.ic}</span><span><span class="tt">${x.tt}</span><span class="sm">${x.sm}</span></span></div>`).join('') : '<div class="bempty">새 알림이 없어요.</div>'}
+    <h3>업데이트 안내</h3>
+    ${UPDATES.slice(0, 3).map((u, i) => `<div class="bupd${i === 0 && updNew ? ' new' : ''}"><b>${esc(u.title)}</b>${i === 0 && updNew ? ' <span class="tag y">새로 바뀐 점</span>' : ''}<ul>${u.items.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('')}
+  </div>`;
+}
+function bellToggle(){
+  if (S.bellOpen){ S.bellOpen = false; render(); return; }
+  S.bellPrev = bellSeen(); S.bellUpdNew = lsg(updKey()) !== APP_VER; S.bellOpen = true;
+  lss(seenKey(), String(Date.now())); lss(seenKey() + '_day', kstToday()); lss(updKey(), APP_VER);
+  render();
+}
+/* 새 버전 확인: 30분마다 올라간 관리 화면의 버전을 살핍니다 */
+async function checkNewVer(){
+  try {
+    const t = await (await fetch('index.html?nv=' + Date.now(), { cache: 'no-store' })).text();
+    const m = t.match(/const APP_VER = '([^']+)'/);
+    if (m && m[1] !== APP_VER && m[1] > APP_VER && S.newVer !== m[1]){ S.newVer = m[1]; if (S.B) render(); }
+  } catch (e) {}
+}
+setInterval(checkNewVer, 30 * 60e3); setTimeout(checkNewVer, 20e3);
+document.addEventListener('click', ev => {
+  if (!S.bellOpen) return;
+  if (ev.target.closest && (ev.target.closest('#bellPanel') || ev.target.closest('#btnBell'))) return;
+  S.bellOpen = false; render();
+});
+
+/* ---------- 상담 신청 ---------- */
+const CSL = { lunch: '점심시간', after: '방과후' }, CDEF = { lunch: '12:40~13:00', after: '16:40~17:00' };
+function vCounsel(){
+  const B = S.B, cs = B.counselSlots || {}, off = (B.counselOff || []).slice().sort(), today = kstToday();
+  const DOWK = ['일', '월', '화', '수', '목', '금', '토'];
+  const dlab = d => { const x = new Date(d + 'T00:00:00Z'); return `${+d.slice(5, 7)}/${+d.slice(8, 10)} (${DOWK[x.getUTCDay()]})`; };
+  const up = (S.CNS || []).filter(c => c.date >= today), past = (S.CNS || []).filter(c => c.date < today).reverse().slice(0, 30);
+  const row = c => `<li><div class="t"><b>${dlab(c.date)}</b> ${CSL[c.slot] || ''} <span class="small muted">${esc((cs[c.slot] || {}).time || CDEF[c.slot])}</span>
+      <div>${esc(c.no + '. ' + (c.name || ''))}${c.date === today ? ' <span class="tag on">오늘</span>' : ''}</div></div>
+      <button class="b sm r" data-a="cdel" data-id="${esc(c.id)}">${c.date >= today ? '신청 취소' : '지우기'}</button></li>`;
+  return `<section class="card"><div class="row"><h2 style="flex:1;margin:0">상담 신청 받기</h2>
+      <label class="chk"><input type="checkbox" data-a="tog" data-f="counselOn" ${B.counselOn ? 'checked' : ''}> TV에 [상담 신청하기] 단추 보이기</label></div>
+    <p class="lead" style="margin-top:6px">학생이 교실 TV에서 자기 이름을 누르고 빈 시간을 고르면 신청됩니다. 한 시간에 한 명만 신청할 수 있어요.</p>
+    <table class="t"><tr><th>때</th><th>받기</th><th>시간</th></tr>
+    ${['lunch', 'after'].map(k => `<tr><td>${CSL[k]}</td><td><input type="checkbox" id="cOn_${k}" ${(cs[k] || {}).on !== false ? 'checked' : ''}></td>
+      <td><input class="in" id="cTm_${k}" value="${esc((cs[k] || {}).time || CDEF[k])}" placeholder="${CDEF[k]}" style="width:150px"></td></tr>`).join('')}</table>
+    <div class="row" style="margin-top:10px"><span class="small muted">TV에 보일 이름</span>
+      <select class="in" id="cMode">${[['가린이름', '가린 이름 (김○수)'], ['이름', '이름 그대로'], ['시간만', '이름 없이 시간만']].map(([v, l]) => `<option value="${v}" ${(B.counselMode || '가린이름') === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      <span class="small muted" style="margin-left:8px">신청 받는 기간</span>
+      <select class="in" id="cDays">${[7, 14, 21, 28].map(n => `<option value="${n}" ${(+B.counselDays || 14) === n ? 'selected' : ''}>앞으로 ${n}일</option>`).join('')}</select>
+      <span class="grow"></span><button class="b y" data-a="csave">저장</button></div></section>
+  <div class="grid2"><section class="card"><h2>신청 목록 <span class="sub">${up.length}건</span></h2>
+    ${up.length ? `<ul class="list">${up.map(row).join('')}</ul>` : '<p class="small muted">앞으로 잡힌 상담이 없어요.</p>'}
+    ${past.length ? `<details style="margin-top:10px"><summary class="small muted" style="cursor:pointer">지난 상담 ${past.length}건</summary><ul class="list">${past.map(row).join('')}</ul></details>` : ''}</section>
+  <section class="card"><h2>상담 쉬는 날</h2>
+    <p class="lead">출장 · 행사 등으로 상담이 어려운 날을 넣으면 TV에서 그 시간은 고를 수 없어요. (주말은 자동으로 빠져요)</p>
+    <div class="row"><input class="in" type="date" id="coDate" data-keep value="${today}"><select class="in" id="coSlot" data-keep><option value="all">하루 종일</option><option value="lunch">점심시간만</option><option value="after">방과후만</option></select><button class="b y" data-a="coffadd">추가</button></div>
+    ${off.filter(o => o.split('|')[0] >= today).length ? `<ul class="list">${off.filter(o => o.split('|')[0] >= today).map(o => { const [d, k] = o.split('|'); return `<li><div class="t">${dlab(d)} · ${k === 'all' ? '하루 종일' : CSL[k]}</div><button class="b sm r" data-a="coffdel" data-id="${esc(o)}">빼기</button></li>`; }).join('')}</ul>` : '<p class="small muted">쉬는 날이 없어요.</p>'}</section></div>`;
+}
+
 /* ---------- 건의함 ---------- */
 function vSuggest(){
   const B = S.B, L = S.sugg;
@@ -1013,6 +1215,7 @@ document.addEventListener('change', ev => {
   if (t.id === 'filePick'){ if (t.files.length) addPending(S.pickFor, [...t.files]); t.value = ''; return; }
   if (t.id === 'xlsPick'){ if (t.files[0]) readRosterFile(t.files[0]); t.value = ''; return; }
   if (t.dataset && t.dataset.a === 'tog'){ const f = t.dataset.f; save({ [f]: t.checked }, t.checked ? '켰어요.' : '껐어요.'); }
+  if (t.id === 'evDays') save({ eventDays: +t.value }, '일정 보일 기간을 바꿨어요.');
 });
 document.addEventListener('dragover', ev => { const d = ev.target.closest && ev.target.closest('[data-drop]'); if (d){ ev.preventDefault(); d.classList.add('over'); } });
 document.addEventListener('dragleave', ev => { const d = ev.target.closest && ev.target.closest('[data-drop]'); if (d) d.classList.remove('over'); });
@@ -1045,6 +1248,58 @@ document.addEventListener('click', async ev => {
         toast('TV와 연결했어요! 몇 초 안에 TV에 우리 반 화면이 나와요.');
       } catch (e) { fail(e); }
       return;
+    }
+    case 'bellgo': S.bellOpen = false; S.tab = t.dataset.v; try { localStorage.setItem('cr_tab', S.tab); } catch (e) {} S.edit = ''; render(); window.scrollTo(0, 0); return;
+    case 'reloadapp': location.reload(); return;
+    case 'copyview': { const i = $('viewUrlIn'); i.select(); try { await navigator.clipboard.writeText(i.value); } catch (e) { document.execCommand('copy'); } toast('학생용 주소를 복사했어요. 단톡방에 붙여 넣으세요.'); return; }
+    case 'viewmake': case 'viewnew': {
+      if (a === 'viewnew' && !confirm('학생용 주소를 새로 만들까요? 예전 주소는 바로 막혀요.')) return;
+      const old = B.viewKey, nk = 'v' + rid(23);
+      try {
+        await F.setDoc(F.doc(db, 'views', nk), viewDoc(Object.assign({}, B, { viewKey: nk })));
+        viewLast = nk + JSON.stringify(viewDoc(B));
+        await save({ viewKey: nk }, a === 'viewnew' ? '새 학생용 주소를 만들었어요.' : '학생용 주소를 만들었어요.');
+        if (old) await F.deleteDoc(F.doc(db, 'views', old)).catch(() => {});
+      } catch (e) { fail(e); }
+      return;
+    }
+    case 'viewoff': {
+      if (!confirm('학생용 주소를 끌까요? 학생들이 가진 주소는 더 이상 열리지 않아요.')) return;
+      const old = B.viewKey;
+      if (await save({ viewKey: '' }, '학생용 주소를 껐어요.') && old) await F.deleteDoc(F.doc(db, 'views', old)).catch(() => {});
+      return;
+    }
+    /* 상담 */
+    case 'csave': {
+      const slots = {};
+      for (const k of ['lunch', 'after']){
+        const tm = $('cTm_' + k).value.trim().replace(/\s/g, '').replace(/[-–]/g, '~');
+        if (!/^\d{1,2}:\d{2}~\d{1,2}:\d{2}$/.test(tm)) return toast(CSL[k] + ' 시간을 12:40~13:00 처럼 적어 주세요.', true);
+        slots[k] = { on: $('cOn_' + k).checked, time: tm };
+      }
+      return save({ counselSlots: slots, counselMode: $('cMode').value, counselDays: +$('cDays').value }, '상담 설정을 저장했어요.');
+    }
+    case 'coffadd': {
+      const d = $('coDate').value, k = $('coSlot').value;
+      if (!d) return toast('날짜를 골라 주세요.', true);
+      const L = (B.counselOff || []).filter(o => o.split('|')[0] >= kstToday() && o !== d + '|' + k);
+      return save({ counselOff: L.concat([d + '|' + k]).sort().slice(-80) }, '쉬는 날을 넣었어요.');
+    }
+    case 'coffdel': return save({ counselOff: (B.counselOff || []).filter(o => o !== id) }, '뺐어요.');
+    case 'cdel': {
+      const c = (S.CNS || []).find(x => x.id === id); if (!c) return;
+      if (c.date >= kstToday() && !confirm(c.no + '번 ' + (c.name || '') + ' 학생의 상담 신청을 취소할까요? (그 시간이 다시 비어요)')) return;
+      try { await F.deleteDoc(F.doc(db, 'boards', S.key, 'counsel', id)); toast('지웠어요.'); } catch (e) { fail(e); }
+      return;
+    }
+    /* 요일별 시간표 */
+    case 'ttsrc': return save({ ttSource: t.dataset.v }, t.dataset.v === 'manual' ? '직접 입력한 시간표를 써요.' : '나이스 시간표를 써요.');
+    case 'ttclear': if (!confirm('요일별 과목 · 선생님 칸을 모두 비울까요?')) return; return save({ timetable: {}, teachers: {} }, '비웠어요.');
+    case 'ttsave': {
+      const T = {}, TC = {};
+      document.querySelectorAll('[data-tts]').forEach(el => { const [d, n] = el.dataset.tts.split('|'), v = el.value.trim().slice(0, 12); if (v) (T[d] = T[d] || {})[n] = v; });
+      document.querySelectorAll('[data-ttt]').forEach(el => { const [d, n] = el.dataset.ttt.split('|'), v = el.value.trim().slice(0, 6); if (v) (TC[d] = TC[d] || {})[n] = v; });
+      return save({ timetable: T, teachers: TC }, '시간표를 저장했어요.');
     }
     case 'copytv': { const i = $('tvUrlIn'); i.select(); try { await navigator.clipboard.writeText(i.value); } catch (e) { document.execCommand('copy'); } toast('TV 주소를 복사했어요.'); return; }
     case 'unpend': S.pend[t.dataset.k].splice(+t.dataset.i, 1); render(); return;

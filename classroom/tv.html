@@ -685,11 +685,14 @@ html,body{background:var(--bg);color:var(--chalk)}
   'use strict';
   var QS = new URLSearchParams(location.search);
   var K = (QS.get('k') || '').replace(/[^a-z0-9]/g, '');
+  var V = (QS.get('v') || '').replace(/[^a-z0-9]/g, '');   /* 학생 휴대폰용 보기 주소 (읽기 전용) */
+  var VIEW = !K && V.length >= 20;
   var WANT_EDIT = QS.get('edit') === '1';
-  var VER = 'fb-2026-11-06a';
-  window.__BOOT = { t: K, preview: 0, phone: false, ver: VER };
+  var VER = 'fb-2026-11-07a';
+  window.__BOOT = { t: K || V, preview: 0, phone: VIEW, ver: VER };
+  if (VIEW) document.write('<style>#btnMine,#btnEdit,#btnShare{display:none !important}html,body{height:auto !important;overflow:auto !important}</style>');
   var FB = null, B = null, gone = false, SCH = null, schAt = 0, schBusy = false, WX = null, wxAt = 0, wxBusy = false;
-  var ANS = {}, USER = null, OWNER = false, editDone = false;
+  var ANS = {}, CNS = [], USER = null, OWNER = false, editDone = false;
   var rev = 0, builtRev = -1, readyOk, readyNo, failMsg = '';
   var ready = new Promise(function (a, b) { readyOk = a; readyNo = b; });
   ready.catch(function () {});
@@ -736,7 +739,7 @@ html,body{background:var(--bg);color:var(--chalk)}
   function goKey(k) { location.replace(location.pathname + '?k=' + k); }
   function onBody(fn) { if (document.body) fn(); else document.addEventListener('DOMContentLoaded', fn); }
   var PAIR = false;
-  if (!K) {
+  if (!K && !VIEW) {
     var saved = lsGet();
     if (saved.length >= 16) { goKey(saved); }
     else { PAIR = true; startPair(); }
@@ -788,6 +791,15 @@ html,body{background:var(--bg);color:var(--chalk)}
 
   /* ---- Firestore: 우리 반 자료 · 조사 응답을 실시간으로 ---- */
   if (PAIR) { failMsg = ' '; readyNo(new Error(failMsg)); }
+  else if (VIEW) {
+    import('./fb.js').then(function (m) { return m.fb(); }).then(function (F) {
+      FB = F;
+      F.F.onSnapshot(F.F.doc(F.db, 'views', V), function (snap) {
+        if (!snap.exists()) { gone = true; B = null; failMsg = '이 주소는 더 이상 쓰지 않아요. 담임 선생님께 새 주소를 받아 주세요.'; readyNo(new Error(failMsg)); return; }
+        gone = false; failMsg = ''; B = snap.data(); readyOk(); kick();
+      }, function () { failMsg = '이 주소로는 볼 수 없어요. 담임 선생님께 새 주소를 받아 주세요.'; readyNo(new Error(failMsg)); });
+    }).catch(function () { failMsg = '인터넷 연결을 확인해 주세요.'; readyNo(new Error(failMsg)); });
+  }
   else if (!K || K.length < 16) { failMsg = 'TV 주소가 올바르지 않아요. 관리 화면에서 [TV 화면 열기]로 다시 열어 주세요.'; readyNo(new Error(failMsg)); }
   else {
     import('./fb.js').then(function (m) { return m.fb(); }).then(function (F) {
@@ -817,6 +829,11 @@ html,body{background:var(--bg);color:var(--chalk)}
         var A = {};
         qs.docs.forEach(function (d) { var x = d.data(); if (x && x.sid) (A[x.sid] = A[x.sid] || {})[x.no] = { ch: x.ch || [], etc: x.etc || '' }; });
         ANS = A; if (B) kick();
+      }, function () {});
+      /* 상담 신청 (날짜_때 마다 한 문서) */
+      F.F.onSnapshot(F.F.collection(F.db, 'boards', K, 'counsel'), function (qs) {
+        CNS = qs.docs.map(function (d) { return d.data(); }).filter(function (x) { return x && x.date && x.slot; });
+        if (B) kick();
       }, function () {});
       F.A.onAuthStateChanged(F.auth, function (u) { USER = u; checkOwner(); });
     }).catch(function () {
@@ -884,7 +901,7 @@ html,body{background:var(--bg);color:var(--chalk)}
     return true;
   }
   function eventsFor(g, today) {
-    var rows = ((SCH && SCH.events) || []).filter(function (x) {
+    var rows = (B && B.eventNeis === false ? [] : ((SCH && SCH.events) || [])).filter(function (x) {
       return x && x.name && (!x.g || !g || String(x.g).indexOf(String(g)) >= 0);
     }).map(function (x) { return { date: x.date, title: String(x.name).trim() }; })
       .sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
@@ -896,9 +913,9 @@ html,body{background:var(--bg);color:var(--chalk)}
       out.push({ title: x.title, start: x.date, end: x.date, src: '학교' });
     });
     ((B && B.events) || []).forEach(function (e) { if (e && e.title && e.start) out.push({ title: e.title, start: e.start, end: e.end || e.start, src: '학급' }); });
-    var last = addDays(today, 30);
+    var last = addDays(today, Math.max(7, Math.min(90, Number(B && B.eventDays) || 30)));
     return out.filter(function (e) { return e.end >= today && e.start <= last; })
-      .sort(function (a, b) { return a.start < b.start ? -1 : a.start > b.start ? 1 : 0; }).slice(0, 15);
+      .sort(function (a, b) { return a.start < b.start ? -1 : a.start > b.start ? 1 : 0; }).slice(0, 20);
   }
   function flashOut() {
     var f = B && B.flash;
@@ -926,6 +943,45 @@ html,body{background:var(--bg);color:var(--chalk)}
     }
     return out;
   }
+  /* ---- 상담 ---- */
+  var CSLOT = { lunch: { label: '점심시간', time: '12:40~13:00' }, after: { label: '방과후', time: '16:40~17:00' } };
+  function cslots() {
+    var c = (B && B.counselSlots) || {}, o = {};
+    ['lunch', 'after'].forEach(function (k) { var x = c[k] || {}; o[k] = { on: x.on !== false, label: CSLOT[k].label, time: x.time || CSLOT[k].time }; });
+    return o;
+  }
+  function mask(name, mode) {
+    name = String(name || '').replace(/\s/g, '');
+    if (mode === '이름') return name;
+    if (mode === '시간만' || !name) return '';
+    if (name.length <= 2) return name.charAt(0) + '○';
+    return name.charAt(0) + new Array(name.length - 1).join('○') + name.charAt(name.length - 1);
+  }
+  function hm(s) { var m = String(s || '').match(/(\d{1,2}):(\d{2})/); return m ? +m[1] * 60 + +m[2] : -1; }
+  function offOf(date, slot) { var off = (B && B.counselOff) || []; return off.indexOf(date + '|all') >= 0 || off.indexOf(date + '|' + slot) >= 0; }
+  function counselToday(today) {
+    var S2 = cslots(), mode = (B && B.counselMode) || '가린이름';
+    return CNS.filter(function (x) { return x.date === today; }).sort(function (a, b) { return a.slot === b.slot ? 0 : (a.slot === 'lunch' ? -1 : 1); })
+      .map(function (x) { var t = S2[x.slot] || CSLOT.lunch; return { slot: x.slot, label: t.label, time: t.time, who: mask(x.name, mode) }; });
+  }
+  function counselFree() {
+    var S2 = cslots(), now = kst(), today = ymd(now), nowHm = now.getUTCHours() * 60 + now.getUTCMinutes(), out = [];
+    var taken = {}; CNS.forEach(function (x) { taken[x.date + '|' + x.slot] = 1; });
+    var ahead = Math.max(3, Math.min(28, Number(B.counselDays) || 14));
+    for (var i = 0; i < ahead && out.length < 24; i++) {
+      var d = addDays(today, i), w = dowOf(d);
+      if (w === 0 || w === 6) continue;
+      ['lunch', 'after'].forEach(function (k) {
+        if (!S2[k].on || offOf(d, k) || taken[d + '|' + k]) return;
+        if (d === today && hm(S2[k].time) <= nowHm) return;
+        out.push({ date: d, dow: w, slot: k, label: S2[k].label, time: S2[k].time });
+      });
+    }
+    return out;
+  }
+  /* ---- 시간표: 직접 입력 · 과목 선생님 ---- */
+  function manualOf(dow) { var T = (B && B.timetable) || {}; return T[String(dow)] || {}; }
+  function hasManual(dow) { var m = manualOf(dow); return Object.keys(m).some(function (k) { return m[k]; }); }
   function survey(id) { return ((B && B.surveys) || []).filter(function (s) { return s && s.id === id; })[0]; }
   function summary(s, sts) {
     var A = ANS[s.id] || {}, counts = s.options.map(function () { return 0; }), nos = Object.keys(A).map(Number);
@@ -954,11 +1010,16 @@ html,body{background:var(--bg);color:var(--chalk)}
     var periods = (B.periods || []).filter(function (p) { return p && p.s && p.e; });
     var subj = {}, ttNote = '';
     var TT = SCH && SCH.timetable && SCH.timetable[g + '-' + k];
+    var manual = B.ttSource === 'manual';
     if (dow === 0 || dow === 6) ttNote = '주말';
+    else if (manual && hasManual(dow)) subj = manualOf(dow);
+    else if (manual) ttNote = '직접 입력한 오늘 시간표가 없어요';
     else if (!SCH) ttNote = schAt ? '시간표를 불러오지 못했어요' : '시간표를 불러오는 중…';
     else if (TT && TT[today] && TT[today].length) {
       TT[today].forEach(function (x) { var n = String(x.p); subj[n] = subj[n] && subj[n] !== x.s ? subj[n] + '/' + x.s : x.s; });
-    } else ttNote = '나이스에 오늘 ' + g + '학년 ' + k + '반 시간표가 없어요';
+    } else if (hasManual(dow)) subj = manualOf(dow);
+    else ttNote = '나이스에 오늘 ' + g + '학년 ' + k + '반 시간표가 없어요';
+    var TCH = ((B.teachers || {})[String(dow)]) || {};
     var tom = nextSchoolDay(today), M = (SCH && SCH.meals) || {};
     var notices = (B.notices || []).filter(function (n) {
       return n && n.text && (!n.start || n.start <= today) && (!n.end || n.end >= today);
@@ -967,22 +1028,22 @@ html,body{background:var(--bg);color:var(--chalk)}
     var Q = B.quote || {};
     return {
       ok: true, now: Date.now(), today: today, label: g + '학년 ' + k + '반', needExt: false,
-      periods: periods.map(function (p) { return { n: p.n, s: p.s, e: p.e, subj: dow === 0 || dow === 6 ? '' : (subj[String(Number(p.n))] || ''), teacher: '' }; }),
+      periods: periods.map(function (p) { var we = dow === 0 || dow === 6, n = String(Number(p.n)); return { n: p.n, s: p.s, e: p.e, subj: we ? '' : (subj[n] || subj[p.n] || ''), teacher: we ? '' : (TCH[n] || TCH[p.n] || '') }; }),
       ttNote: ttNote, lunch: B.lunch || '',
       meal: M[today] || [], mealErr: SCH ? '' : (schAt ? '급식 정보를 불러오지 못했어요' : '급식을 불러오는 중…'),
       mealTomorrow: { date: tom, meals: M[tom] || [] },
-      notices: notices, notes: notesOut(today, sts), birthdays: birthdays(today, sts), suggestOn: !!B.suggestOn,
+      notices: notices, notes: notesOut(today, sts), birthdays: birthdays(today, sts), suggestOn: !VIEW && !!B.suggestOn,
       links: (B.links || []).filter(function (l) { return l && l.url && l.on !== false; }).map(function (l) { return { id: l.id, title: l.title, url: l.url }; }),
       specials: (B.specials || []).filter(function (x) { return x && x.name && x.s && x.e; }),
       events: eventsFor(g, today), layout: layoutIn(B.layout), pbl: null, stat21: null,
       ddays: (B.ddays || []).filter(function (d) { return d && d.label && d.date; }),
       quote: Q.on !== false && Q.list && Q.list.length ? { mode: Q.mode || 'day', list: Q.list } : null,
-      counsel: [], counselOn: false, counselMode: '',
-      surveys: (B.surveys || []).filter(function (s) { return s && (s.open || s.pub); }).map(function (s) { return summary(s, sts); }),
+      counsel: VIEW ? [] : counselToday(today), counselOn: !VIEW && !!B.counselOn, counselMode: B.counselMode || '가린이름',
+      surveys: VIEW ? [] : (B.surveys || []).filter(function (s) { return s && (s.open || s.pub); }).map(function (s) { return summary(s, sts); }),
       students: sts.map(function (s) { return { no: s.no, name: s.name, hasPin: false }; }),
       weather: B.weatherOn !== false ? WX : null,
       shareUrl: '', homeUrl: '', flash: flashOut(), ver: VER, url: location.href,
-      phone: false, phoneJoin: false, needPin: false
+      phone: VIEW, phoneJoin: VIEW, needPin: false
     };
   }
   function soon() { return Promise.reject(new Error('공용판에서는 아직 준비 중인 기능이에요.')); }
@@ -1047,6 +1108,24 @@ html,body{background:var(--bg);color:var(--chalk)}
       return F.addDoc(F.collection(FB.db, 'boards', K, 'suggest'), { text: text, no: st ? st.no : 0, name: st ? st.name : '', at: F.serverTimestamp() })
         .then(function () { return { ok: true }; });
     },
+    apiBoardCounselSlots: function () {
+      needFb();
+      if (VIEW || !B.counselOn) throw new Error('지금은 교실 화면에서 상담 신청을 받지 않습니다.');
+      return { slots: counselFree() };
+    },
+    apiBoardCounselBook: function (no, date, slot) {
+      needFb();
+      if (VIEW || !B.counselOn) throw new Error('지금은 교실 화면에서 상담 신청을 받지 않습니다.');
+      var st = student(no); slot = slot === 'after' ? 'after' : 'lunch'; date = String(date || '');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('날짜가 올바르지 않아요.');
+      var w = dowOf(date); if (w === 0 || w === 6) return { ok: false, reason: 'weekend' };
+      if (offOf(date, slot) || !cslots()[slot].on) return { ok: false, reason: 'off' };
+      if (CNS.some(function (x) { return x.date === date && x.slot === slot; })) return { ok: false, reason: 'taken' };
+      var F = FB.F;
+      return F.setDoc(F.doc(FB.db, 'boards', K, 'counsel', date + '_' + slot), { date: date, slot: slot, no: st.no, name: st.name, at: F.serverTimestamp() })
+        .then(function () { kick(); return { ok: true }; },
+          function (e) { if (/permission/i.test(String(e && (e.code || e.message)))) return { ok: false, reason: 'taken' }; throw e; });
+    },
     apiBoardLayoutAuth: function () {
       if (OWNER) return Promise.resolve({ ok: true });
       return Promise.reject(new Error('화면 배치는 담임 선생님 관리 화면의 [화면 배치 조정]으로 바꿀 수 있어요.'));
@@ -1077,6 +1156,16 @@ html,body{background:var(--bg);color:var(--chalk)}
   window.google = { script: { run: runner(null, null) } };
   /* 자정이 지나거나 화면을 오래 켜 두어도 학교 자료 · 날씨가 새로 들어오게 */
   setInterval(function () { if (B) { loadSchool(); if (B.weatherOn !== false) loadWeather(); } }, 5 * 60e3);
+  /* 새 버전이 올라오면 교실 TV가 스스로 새로고침 (학생이 2분 넘게 안 만졌을 때만) */
+  var lastTouch = 0;
+  document.addEventListener('pointerdown', function () { lastTouch = Date.now(); }, true);
+  setInterval(function () {
+    if (WANT_EDIT || PAIR || Date.now() - lastTouch < 120e3) return;
+    fetch(location.pathname + '?nv=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
+      var m = t.match(/var VER = '([^']+)'/);
+      if (m && m[1] !== VER && m[1] > VER) location.reload();
+    }).catch(function () {});
+  }, 30 * 60e3);
 })();
 </script>
 <script>
@@ -1830,7 +1919,7 @@ function drawOv(){
     el.innerHTML = head(esc(s.q)) + `<div class="ovb"><p class="lead">${s.count} / ${s.total}명 응답 · 결과</p>${resultBars(s)}</div>`;
   } else if (o.kind === 'counsel'){
     if (o.step === 'who'){
-      el.innerHTML = head('상담 신청') + `<div class="ovb"><p class="lead">내 이름을 눌러 주세요 · 하고 싶은 이야기는 휴대폰 상담 신청판에서 적을 수 있어요 (선생님만 봐요)</p>${namesGrid()}</div>`;
+      el.innerHTML = head('상담 신청') + `<div class="ovb"><p class="lead">내 이름을 눌러 주세요 · 하고 싶은 이야기는 상담 때 선생님께 직접 말해 주세요</p>${namesGrid()}</div>`;
     } else if (o.step === 'slot'){
       const by = {};
       (o.slots || []).forEach(x => (by[x.date] = by[x.date] || []).push(x));
@@ -1849,7 +1938,7 @@ function drawOv(){
     } else if (o.step === 'done'){
       el.innerHTML = head('상담 신청') + `<div class="ovb"><div class="done-msg"><div class="big">신청 완료!</div>
         <p>${+o.pick.date.slice(5, 7)}월 ${+o.pick.date.slice(8, 10)}일 ${esc(o.pick.label)} ${esc(o.pick.time)}<br>
-        하고 싶은 이야기가 있으면 휴대폰 상담 신청판에 남겨도 돼요. 선생님만 볼 수 있어요.</p></div></div>`;
+        그 시간에 맞춰 선생님을 찾아와 주세요. 바꾸고 싶으면 선생님께 말해 주세요.</p></div></div>`;
     }
   }
 }
