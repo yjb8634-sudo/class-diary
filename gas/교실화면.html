@@ -202,6 +202,23 @@ button:active:not(:disabled),.go:active,.slot:active,.opt:active,.nm:active,.chi
 .ntxt{font-size:2.4rem;font-weight:700;line-height:1.5;white-space:pre-wrap;word-break:keep-all}
 .ntxt .badge{display:inline-block;font-size:1.3rem;background:#E5533D;color:#fff;border-radius:.5rem;padding:.1rem .6rem;margin-right:.7rem;vertical-align:.3rem}
 .desc{font-size:1.8rem;line-height:1.6;white-space:pre-wrap;word-break:keep-all;color:var(--chalk)}
+.evh{display:flex;align-items:center;gap:.6rem}
+.evadd{all:unset;cursor:pointer;margin-left:auto;font-size:1.05rem;font-weight:700;color:var(--yellow);border:1.5px solid rgba(242,209,107,.55);border-radius:.7rem;padding:.25rem .8rem;letter-spacing:0}
+.evadd[hidden]{display:none}
+.evdays{display:grid;grid-template-columns:repeat(5,1fr);gap:.6rem;margin:.4rem 0 1rem}
+.evdays button,.evps button{all:unset;cursor:pointer;box-sizing:border-box;text-align:center;border-radius:.9rem;border:2px solid var(--line);background:var(--card2);padding:.7rem .3rem;font-size:1.45rem;font-weight:700;line-height:1.25}
+.evdays button:disabled{opacity:.3;cursor:default}
+.evnav{display:flex;align-items:center;gap:.7rem}.evnav .sp{flex:1}.evnav b{font-size:1.3rem;color:var(--chalk)}
+.evnav button{all:unset;cursor:pointer;font-size:1.25rem;font-weight:700;padding:.4rem .9rem;border-radius:.7rem;border:2px solid var(--line);background:var(--card2);color:var(--chalk)}
+.evnav button:disabled{opacity:.3;cursor:default}
+.evdays button small{display:block;font-size:1.05rem;font-weight:500;color:var(--chalk3)}
+.evdays button.on,.evps button.on{border-color:var(--yellow);color:var(--yellow);background:rgba(242,209,107,.1)}
+.evdays button.today small{color:var(--mint)}
+.evps{display:flex;flex-wrap:wrap;gap:.5rem;margin:.4rem 0 1rem}
+.evps button{padding:.6rem 1.1rem;font-size:1.35rem}
+.evlab{font-size:1.3rem;font-weight:700;color:var(--chalk3);margin-top:.6rem}
+.evprev{font-size:2rem;font-weight:800;margin:.8rem 0 0;padding:.9rem 1.2rem;border-radius:1rem;border:2px dashed var(--line);min-height:2.6rem}
+.evprev .ph{color:var(--chalk3);font-weight:500;font-size:1.5rem}
 .sgta{width:100%;min-height:13rem;border-radius:1rem;border:2px solid var(--line);background:var(--card);color:var(--chalk);font:inherit;font-size:1.9rem;line-height:1.5;padding:1rem 1.2rem;box-sizing:border-box;resize:none;user-select:text;-webkit-user-select:text}
 .sgta:focus{outline:none;border-color:var(--yellow)}
 .row2{display:flex;gap:.9rem;align-items:center;flex-wrap:wrap;margin-top:1rem;font-size:1.4rem;color:var(--chalk2)}
@@ -614,7 +631,7 @@ function frame(){
       </section>
       <section class="col">
         <div class="card" data-blk="tt"><h2>오늘 시간표</h2><ol class="tt" id="tt"></ol><div class="note" id="ttNote"></div></div>
-        <div class="card grow" data-blk="sch"><h2>일정</h2><div class="sch" id="schBox"><div id="csPin"></div><div class="evwrap"><div class="evl" id="evl"></div>
+        <div class="card grow" data-blk="sch"><h2 class="evh">일정<button class="evadd press" id="btnEvAdd" hidden>＋ 일정 추가</button></h2><div class="sch" id="schBox"><div id="csPin"></div><div class="evwrap"><div class="evl" id="evl"></div>
           <div class="evnav" id="evnav" hidden>
             <button type="button" data-sc="-1" aria-label="일정 위로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>
             <div class="track"><i id="evThumb"></i></div>
@@ -952,6 +969,7 @@ const dayNum = s => { const [y, m, d] = String(s).split('-').map(Number); return
 const mdS = s => `${+String(s).slice(5, 7)}/${+String(s).slice(8, 10)}`;
 function paintSchedule(){
   const t = nowParts(), today = Date.UTC(t.y, t.mo - 1, t.d) / 864e5;
+  const ea = $('btnEvAdd'); if (ea) ea.hidden = !(D.eventAddOn && (!D.phone || D.phoneJoin) && (D.students || []).length);
   const cl = D.counsel || [];
   const cs = cl.length ? `<div class="r"><span class="d cs">오늘 상담</span><span class="w">${cl.map(c =>
     `${c.who ? esc(c.who) : '예약'} <span class="tm">${esc(c.label === '방과후' ? '방과후' : '점심')} ${esc(String(c.time || '').split('~')[0])}</span>`).join('<span class="tm"> · </span>')}</span><span></span></div>` : '';
@@ -1070,7 +1088,7 @@ function pinView(title, no){
 function drawOv(){
   const o = OV, el = $('ov');
   if (o.step === 'pin'){
-    el.innerHTML = pinView(o.kind === 'counsel' ? '상담 신청' : (o.kind === 'suggest' ? '건의사항' : esc((survey() || {}).q || '조사')), o.no);
+    el.innerHTML = pinView(o.kind === 'counsel' ? '상담 신청' : (o.kind === 'suggest' ? '건의사항' : (o.kind === 'event' ? '일정 추가' : esc((survey() || {}).q || '조사'))), o.no);
     return;
   }
   if (o.kind === 'pw'){
@@ -1162,6 +1180,29 @@ function drawOv(){
   }
   if (o.kind === 'files'){
     el.innerHTML = head('첨부파일') + `<div class="ovb">${filesView(o.files, '68vh', o.fi || 0)}</div>`;
+    return;
+  }
+  if (o.kind === 'event'){
+    if (o.step === 'who'){
+      el.innerHTML = head('일정 추가') + `<div class="ovb"><p class="lead">우리 반 일정을 교실 화면에 올려요. 먼저 내 이름을 눌러 주세요.</p>${namesGrid()}</div>`;
+    } else if (o.step === 'write'){
+      const days = evDays(), ps = evPeriods();
+      el.innerHTML = head('일정 추가', true) + `<div class="ovb">
+        <div class="evlab evnav">① 날짜 <span class="sp"></span><button data-ov="evwk" data-v="-1" ${(o.wk || 0) <= 0 ? 'disabled' : ''}>◀ 앞 2주</button>
+          <b>${days[0].md} ~ ${days[days.length - 1].md}</b><button data-ov="evwk" data-v="1" ${(o.wk || 0) >= 3 ? 'disabled' : ''}>다음 2주 ▶</button></div>
+        <div class="evdays">${days.map(d => `<button data-ov="evd" data-d="${d.ymd}" class="${o.date === d.ymd ? 'on' : ''}${d.today ? ' today' : ''}" ${d.past ? 'disabled' : ''}>${d.md}<small>${d.dow}요일${d.today ? ' · 오늘' : ''}</small></button>`).join('')}</div>
+        <div class="evlab">② 언제 <span style="font-weight:500">(고르지 않아도 돼요)</span></div>
+        <div class="evps">${ps.map(p => `<button data-ov="evp" data-p="${esc(p)}" class="${o.per === p ? 'on' : ''}">${esc(p)}</button>`).join('')}</div>
+        <div class="evlab">③ 무슨 일정인가요? <span style="font-weight:500">(30자까지)</span></div>
+        ${etcBox()}
+        <div class="evprev" id="evPrev">${evPreview()}</div>
+        <button class="go" data-ov="evgo" id="evGo" disabled>교실 화면에 올리기</button></div>`;
+      submitState();
+    } else if (o.step === 'done'){
+      el.innerHTML = head('일정 추가') + `<div class="ovb"><div class="done-msg"><div class="big">올렸어요!</div><p>${esc(o.doneText || '')}<br>일정 칸에 곧 나와요. 잘못 올렸으면 선생님께 말해 주세요.</p></div></div>`;
+    } else {
+      el.innerHTML = head('일정 추가') + `<div class="ovb"><p class="lead">올리는 중…</p></div>`;
+    }
     return;
   }
   if (o.kind === 'suggest'){
@@ -1476,16 +1517,17 @@ function kbHtml(){
 }
 function etcShowHtml(){
   const K = OV.kb, t = K.txt + hgCompose(K.st);
-  return t ? esc(t) + '<span class="caret"></span>' : '<span class="ph">여기에 책 제목(과 지은이)을 적어 주세요</span><span class="caret"></span>';
+  return t ? esc(t) + '<span class="caret"></span>' : `<span class="ph">${OV && OV.kind === 'event' ? '예) 영어 단어 시험' : '여기에 책 제목(과 지은이)을 적어 주세요'}</span><span class="caret"></span>`;
 }
 function etcBox(){
   const K = OV.kb || (OV.kb = {txt: '', st: null, mode: 'ko', shift: false, native: false});
   if (BOOT.phone || K.native){
-    return `<div class="etcbox" id="etcBox"><p class="lead">목록에 없는 답을 적어 주세요 (100자까지)</p>
-      <input class="etcin" id="etcIn" maxlength="100" autocomplete="off" value="${esc(K.txt + hgCompose(K.st))}" placeholder="예) 코스모스 — 칼 세이건">
+    const ev = OV && OV.kind === 'event';
+    return `<div class="etcbox" id="etcBox"><p class="lead">${ev ? '일정 내용을 적어 주세요 (30자까지)' : '목록에 없는 답을 적어 주세요 (100자까지)'}</p>
+      <input class="etcin" id="etcIn" maxlength="${ev ? 30 : 100}" autocomplete="off" value="${esc(K.txt + hgCompose(K.st))}" placeholder="${ev ? '예) 영어 단어 시험' : '예) 코스모스 — 칼 세이건'}">
       ${BOOT.phone ? '' : '<button class="etcsw" data-ov="kbx" data-k="screen">화면 자판으로 쓰기</button>'}</div>`;
   }
-  return `<div class="etcbox" id="etcBox"><p class="lead">목록에 없는 답을 아래 자판으로 적어 주세요 (100자까지)</p>
+  return `<div class="etcbox" id="etcBox"><p class="lead">${OV && OV.kind === 'event' ? '일정 내용을 아래 자판으로 적어 주세요 (30자까지)' : '목록에 없는 답을 아래 자판으로 적어 주세요 (100자까지)'}</p>
     <div class="etcshow" id="etcShow">${etcShowHtml()}</div>${kbHtml()}
     <button class="etcsw" data-ov="kbx" data-k="native">기기 키보드로 쓰기</button></div>`;
 }
@@ -1499,7 +1541,37 @@ document.addEventListener('input', ev => {
   if (ev.target.id !== 'etcIn' || !OV || !OV.kb) return;
   OV.kb.txt = ev.target.value; OV.kb.st = null; poke(); submitState();
 });
+/* ---- 학생 일정 추가 ---- */
+/* 날짜: 이번 주 월요일부터 2주씩 (월~금), 8주까지 */
+function evDays(){
+  const t = nowParts(), DW = ['일', '월', '화', '수', '목', '금', '토'], out = [];
+  const today = Date.UTC(t.y, t.mo - 1, t.d), w0 = new Date(today).getUTCDay() || 7;
+  let mon = today - (w0 - 1) * 864e5;
+  if (w0 >= 6) mon += 7 * 864e5;   /* 주말에는 다음 주부터 */
+  mon += (OV.wk || 0) * 14 * 864e5;
+  for (let i = 0; i < 14; i++){
+    const ms = mon + i * 864e5, d = new Date(ms), w = d.getUTCDay();
+    if (w === 0 || w === 6) continue;
+    out.push({ymd: d.toISOString().slice(0, 10), md: `${d.getUTCMonth() + 1}/${d.getUTCDate()}`, dow: DW[w], today: ms === today, past: ms < today});
+  }
+  return out;
+}
+function evPeriods(){
+  const ns = (D.periods || []).map(p => String(p.n || '').trim()).filter(n => /^\d{1,2}$/.test(n)).map(n => n + '교시');
+  return ['아침'].concat(ns.length ? ns : ['1교시', '2교시', '3교시', '4교시', '5교시', '6교시', '7교시'], ['점심시간', '방과후']);
+}
+function evTitle(){ return ((OV.per ? OV.per + ' ' : '') + etcText()).slice(0, 40); }
+function evPreview(){
+  if (!OV.date && !etcText()) return '<span class="ph">여기에 올라갈 모습이 보여요</span>';
+  const DW = ['일', '월', '화', '수', '목', '금', '토'], d = OV.date ? new Date(OV.date + 'T00:00:00Z') : null;
+  return (d ? `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일(${DW[d.getUTCDay()]}) ` : '') + esc(evTitle());
+}
 function submitState(){
+  if (OV && OV.kind === 'event'){
+    const pv = $('evPrev'); if (pv) pv.innerHTML = evPreview();
+    const g = $('evGo'); if (g) g.disabled = !(OV.date && etcText());
+    return;
+  }
   const s = survey(), g = document.querySelector('#ov [data-ov="submit"]');
   if (!s || !g) return;
   const ei = s.etc ? s.options.length - 1 : -1;
@@ -1520,6 +1592,7 @@ function afterWho(){
     return;
   }
   if (OV.kind === 'suggest'){ OV.step = 'write'; drawOv(); return; }
+  if (OV.kind === 'event'){ OV.step = 'write'; OV.kb = null; drawOv(); return; }
   if (OV.kind === 'survey'){ OV.sel = []; OV.kb = null; OV.step = survey().kind === '체크' ? 'check' : 'pick'; drawOv(); return; }
   OV.step = 'slot'; OV.slots = null; drawOv();
   call('apiBoardCounselSlots').then(r => { if (OV && OV.kind === 'counsel'){ OV.slots = r.slots; drawOv(); } })
@@ -1583,6 +1656,7 @@ document.addEventListener('click', ev => {
   if (b.id === 'btnSuggest'){ openOv({kind: 'suggest', step: 'write', text: '', no: 0}); return; }
   if (b.dataset.rs){ openOv({kind: 'result', id: b.dataset.rs}); return; }
   if (b.id === 'btnCounsel'){ openOv({kind: 'counsel', step: 'who'}); return; }
+  if (b.id === 'btnEvAdd'){ openOv({kind: 'event', step: 'who'}); return; }
   const a = b.dataset.ov;
   if (!a || !OV) return;
   if (a === 'close'){ closeOv(); return; }
@@ -1599,6 +1673,7 @@ document.addEventListener('click', ev => {
     if (OV.kind === 'mine'){ OV.step = 'who'; OV.open = ''; drawOv(); return; }
     if (OV.kind === 'survey') OV.step = (OV.step === 'who' && OV.intro) ? 'intro' : 'who';
     else if (OV.kind === 'suggest') OV.step = 'write';
+    else if (OV.kind === 'event') OV.step = 'who';
     else OV.step = OV.step === 'confirm' ? 'slot' : 'who';
     drawOv(); return;
   }
@@ -1612,6 +1687,24 @@ document.addEventListener('click', ev => {
   }
   if (a === 'sganon'){ OV.no = 0; drawOv(); return; }
   if (a === 'sgname'){ OV.step = 'who'; drawOv(); return; }
+  if (a === 'evwk'){
+    OV.wk = Math.max(0, Math.min(3, (OV.wk || 0) + Number(b.dataset.v)));
+    const K = OV.kb; if (K) hgFlush(K);
+    const box = document.querySelector('#ov .ovb'), y = box ? box.scrollTop : 0; drawOv(); const nb = document.querySelector('#ov .ovb'); if (nb) nb.scrollTop = y;
+    return;
+  }
+  if (a === 'evd'){ OV.date = b.dataset.d; document.querySelectorAll('#ov [data-ov="evd"]').forEach(x => x.classList.toggle('on', x === b)); submitState(); return; }
+  if (a === 'evp'){ OV.per = OV.per === b.dataset.p ? '' : b.dataset.p; document.querySelectorAll('#ov [data-ov="evp"]').forEach(x => x.classList.toggle('on', x.dataset.p === OV.per)); submitState(); return; }
+  if (a === 'evgo'){
+    const text = etcText().slice(0, 30);
+    if (!OV.date || !text){ toast('날짜와 내용을 넣어 주세요.', true); return; }
+    OV.doneText = $('evPrev') ? $('evPrev').textContent : '';
+    if (BOOT.preview){ OV.step = 'done'; drawOv(); toast('미리보기: 실제로는 올리지 않았어요'); clearTimeout(idleT); idleT = setTimeout(closeOv, 5000); return; }
+    b.disabled = true;
+    call('apiBoardEventAdd', OV.no, OV.date, OV.per || '', text, pinOf(OV.no)).then(() => { OV.step = 'done'; drawOv(); load(); clearTimeout(idleT); idleT = setTimeout(closeOv, 6000); })
+      .catch(e => { b.disabled = false; toast(e.message, true); });
+    return;
+  }
   if (a === 'sgsend'){
     const text = (OV.text || '').trim();
     if (text.length < 2){ toast('건의할 내용을 적어 주세요.', true); return; }
@@ -1668,7 +1761,7 @@ document.addEventListener('click', ev => {
   }
   if (a === 'kb'){
     const K = OV.kb, k = b.dataset.k;
-    if (!K || (K.txt + hgCompose(K.st)).length >= 100) return;
+    if (!K || (K.txt + hgCompose(K.st)).length >= (OV.kind === 'event' ? 30 : 100)) return;
     if (K.mode === 'ko' && (HG.cho.indexOf(k) >= 0 || isVowel(k))) hgKey(K, k);
     else { hgFlush(K); K.txt += k; }
     if (K.shift){ K.shift = false; etcPaint(true); } else etcPaint(false);

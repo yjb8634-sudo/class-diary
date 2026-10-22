@@ -66,6 +66,7 @@ function board준비_() {
   boardHead_(ss.getSheetByName(BOARD.NOTICE), 7, ['첨부ID', '첨부이름', '첨부종류']);
   boardHead_(ss.getSheetByName(BOARD.SURVEY), 10, ['종류', '설명', '첨부ID', '첨부이름', '첨부종류', '기타입력']);
   boardHead_(ss.getSheetByName(BOARD.RESP), 6, ['기타내용']);
+  boardHead_(ss.getSheetByName(BOARD.EVENT), 6, ['등록한 학생']);
   boardHead_(stuSheetW_(), 9, ['생일']);
   var cur = getConfig_();
   BOARD_CONF.forEach(function (kv) { if (!(kv[0] in cur)) sheet_(SHEETS.CONFIG).appendRow([kv[0], kv[1]]); });
@@ -104,6 +105,7 @@ function boardCfg_() {
     specials: boardJson_(c['교실_특별'], []),
     eventNeis: (c['교실_일정나이스'] || '예') !== '아니오',
     eventDays: Number(c['교실_일정일수']) || 30,
+    eventAddOn: (c['교실_학생일정'] || '예') !== '아니오',
     layout: boardLayoutGet_(c),
     quote: boardJson_(c['교실_명언'], { on: true, mode: 'day', list: [] }),
     neis: { key: c['NEIS_키'] || '', atpt: c['NEIS_교육청'] || '', code: c['NEIS_학교코드'] || '', name: c['NEIS_학교명'] || '' },
@@ -645,9 +647,9 @@ function boardNeisEvents_(from8, to8) {
   });
 }
 function boardManualEvents_() {
-  return hubRows_(BOARD.EVENT, 5).filter(function (x) { return x.r[0]; }).map(function (x) {
+  return hubRows_(BOARD.EVENT, 6).filter(function (x) { return x.r[0]; }).map(function (x) {
     var st = hubDate_(x.r[1]), en = hubDate_(x.r[2]) || st;
-    return { row: x.row, id: String(x.r[0]), start: st, end: en < st ? st : en, title: String(x.r[3] || '') };
+    return { row: x.row, id: String(x.r[0]), start: st, end: en < st ? st : en, title: String(x.r[3] || ''), by: String(x.r[5] || '') };
   }).sort(function (a, b) { return a.start < b.start ? -1 : 1; });
 }
 /* 오늘부터 정한 기간 안의 일정 (학교 + 학급) */
@@ -857,7 +859,7 @@ function boardBuildData_(mode) {
     notices: boardNotices_(false).map(function (n) { return { id: n.id, text: n.text, level: n.level, important: n.important, file: n.file, files: n.files }; }),
     notes: noteBoardList_(sts),
     birthdays: boardWeekBirthdays_(now, sts),
-    suggestOn: c.suggestOn,
+    suggestOn: c.suggestOn, eventAddOn: c.eventAddOn,
     links: (Array.isArray(c.links) ? c.links : []).filter(function (l) { return l && l.url && l.on !== false; })
       .map(function (l) { return { id: l.id, title: l.title, url: l.url }; }),
     specials: (c.specials || []).filter(function (x) { return x && x.name && x.s && x.e; }),
@@ -1015,6 +1017,34 @@ function apiBoardSuggest(t, text, no, pin) {
   return { ok: true };
 }
 
+/* 학생이 교실 TV에서 일정 올리기 (예: 11월 13일 3교시 영어 단어 시험) */
+function apiBoardEventAdd(t, no, date, per, text, pin) {
+  boardBust_();
+  var mode = boardAuthWrite_(t);
+  if (!boardCfg_().eventAddOn) throw new Error('지금은 교실 화면에서 일정을 올릴 수 없어요.');
+  board준비_();
+  var st = boardStudent_(mode, no, pin);
+  date = String(date || '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('날짜를 골라 주세요.');
+  var today = today_(), last = ymd_(new Date(new Date().getTime() + 60 * 86400000));
+  if (date < today || date > last) throw new Error('오늘부터 두 달 안의 날짜만 올릴 수 있어요.');
+  per = String(per || '').replace(/[^0-9가-힣 ]/g, '').trim().slice(0, 8);
+  text = String(text || '').replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 30);
+  if (text.length < 2) throw new Error('일정 내용을 적어 주세요.');
+  var title = (per ? per + ' ' : '') + text;
+  var mine = boardManualEvents_().filter(function (e) { return e.by && e.end >= today && Number(String(e.by).split('.')[0]) === Number(st.no); });
+  if (mine.length >= 5) throw new Error('한 사람이 올린 일정이 너무 많아요. 지난 일정이 지나거나 선생님이 정리한 뒤 다시 올려 주세요.');
+  if (boardManualEvents_().some(function (e) { return e.start === date && String(e.title).replace(/\s+/g, '') === title.replace(/\s+/g, ''); }))
+    throw new Error('같은 날 같은 일정이 이미 있어요.');
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    ss_().getSheetByName(BOARD.EVENT).appendRow(['e_' + Utilities.getUuid().slice(0, 8), date, date, boardTxt_(title), new Date(), st.no + '. ' + st.name]);
+  } finally { lock.releaseLock(); }
+  boardBust_();
+  return { ok: true };
+}
+
 function apiBoardCounselSlots(t) {
   boardAuthWrite_(t);
   if (!boardCfg_().counselOn) throw new Error('지금은 교실 화면에서 상담 신청을 받지 않습니다.');
@@ -1059,7 +1089,7 @@ function apiBoardAdminGet(pw) {
     students: sts.map(function (s) { return { no: s.no, name: s.name }; }),
     birthdays: boardBirthdays_(),
     weekBirthdays: boardWeekBirthdays_(new Date()),
-    events: boardManualEvents_().map(function (e) { return { id: e.id, start: e.start, end: e.end, title: e.title }; }),
+    events: boardManualEvents_().map(function (e) { return { id: e.id, start: e.start, end: e.end, title: e.title, by: e.by }; }),
     eventsShown: (function () { try { return boardEvents_(new Date()); } catch (e) { return { events: [], err: String(e.message || e) }; } })(),
     suggestions: hubRows_(BOARD.SUGGEST, 5).filter(function (x) { return x.r[0]; }).map(function (x) {
       return { id: String(x.r[0]), text: String(x.r[1] || ''), name: String(x.r[2] || ''), at: hubTime_(x.r[3]), read: String(x.r[4]) === '확인' };
@@ -1100,6 +1130,7 @@ function apiBoardSaveSettings(pw, o) {
     }).filter(function (x) { return x.name && /^\d{1,2}:\d{2}$/.test(x.s) && /^\d{1,2}:\d{2}$/.test(x.e); }).slice(0, 8)));
   }
   if ('eventNeis' in o) setConfigValue_('교실_일정나이스', o.eventNeis ? '예' : '아니오');
+  if ('eventAddOn' in o) setConfigValue_('교실_학생일정', o.eventAddOn ? '예' : '아니오');
   if ('eventDays' in o) setConfigValue_('교실_일정일수', String(Math.max(7, Math.min(90, Number(o.eventDays) || 30))));
   if ('layout' in o) boardLayoutSet_(boardCleanLayout_(o.layout));
   if ('quote' in o) {

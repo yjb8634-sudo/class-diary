@@ -1782,7 +1782,7 @@ function btInit(){
     timetable: JSON.parse(JSON.stringify(c.timetable || {})),
     teachers: JSON.parse(JSON.stringify(c.teachers || {})),
     specials: (c.specials || []).map(x => ({name: x.name, s: x.s, e: x.e})),
-    eventNeis: c.eventNeis !== false, eventDays: c.eventDays || 30,
+    eventNeis: c.eventNeis !== false, eventDays: c.eventDays || 30, eventAddOn: c.eventAddOn !== false,
     ddays: (c.ddays || []).concat([{label: '', date: ''}, {label: '', date: ''}, {label: '', date: ''}]).slice(0, 3),
     counselMode: c.counselMode, counselOn: c.counselOn, suggestOn: c.suggestOn !== false, neisKey: c.neis.key,
     quote: {on: (c.quote || {}).on !== false, mode: (c.quote || {}).mode || 'day',
@@ -1797,6 +1797,7 @@ function btCollect(){
   document.querySelectorAll('[data-btc]').forEach(el => { const [d, i] = el.dataset.btc.split('|'); (B.teachers[d] = B.teachers[d] || [])[i] = el.value.trim(); });
   document.querySelectorAll('[data-bsp]').forEach(el => { const [i, k] = el.dataset.bsp.split('|'); if (B.specials[i]) B.specials[i][k] = el.value.trim(); });
   const en = $('evNeis'); if (en){ B.eventNeis = en.checked; B.eventDays = Number($('evDays').value) || 30; }
+  const es = $('evStu'); if (es) B.eventAddOn = es.checked;
   const et = $('evTitle'); if (et) S.evDraft = {title: et.value, start: $('evStart').value, end: $('evEnd').value};
   document.querySelectorAll('[data-bdd]').forEach(el => { const [i, k] = el.dataset.bdd.split('|'); B.ddays[i][k] = el.value.trim(); });
   const l = $('bLunch'); if (l) B.lunch = l.value.trim();
@@ -2136,18 +2137,20 @@ function vSurveyEdit(s){
 function vEventBox(){
   const B = S.B, T = S.bt, list = B.events || [], shown = B.eventsShown || {events: [], err: ''}, dr = S.evDraft || {};
   const md = s => `${+s.slice(5, 7)}/${+s.slice(8, 10)}`;
-  return `<section class="box"><h2>학교 일정</h2>
+  return `<section class="box"><h2>학교 · 학급 일정</h2>
     <p class="small muted">교실 TV '일정' 칸에 가까운 일정이 날짜순으로 짧게 뜹니다. 나이스 학사일정을 자동으로 가져오고, 학급 행사는 직접 넣을 수 있습니다.</p>
     <div class="row" style="margin-top:8px"><label class="small row" style="gap:5px"><input type="checkbox" id="evNeis" ${T.eventNeis ? 'checked' : ''}> 나이스 학사일정 자동 표시</label>
       <span class="small muted">앞으로</span><select class="in" id="evDays">${[14, 30, 60].map(v => `<option value="${v}" ${T.eventDays === v ? 'selected' : ''}>${v}일</option>`).join('')}</select>
-      <span class="small muted">안의 일정</span><span class="grow"></span><button class="btn sm" data-bact="evsave">저장</button></div>
+      <span class="small muted">안의 일정</span></div>
+    <div class="row" style="margin-top:6px"><label class="small row" style="gap:5px"><input type="checkbox" id="evStu" ${T.eventAddOn ? 'checked' : ''}> 학생이 교실 TV에서 일정 올리기 (일정 칸의 [＋ 일정 추가])</label>
+      <span class="grow"></span><button class="btn sm" data-bact="evsave">저장</button></div>
     ${shown.err ? `<p class="small" style="color:var(--neg);margin-top:6px">나이스 학사일정: ${esc(shown.err)}</p>` : ''}
     <div class="row" style="margin-top:12px"><input class="in grow" id="evTitle" maxlength="60" placeholder="직접 넣기 — 예) 학급 단합대회" value="${esc(dr.title || '')}">
       <input class="in" type="date" id="evStart" value="${esc(dr.start || '')}"><span class="small muted">~</span><input class="in" type="date" id="evEnd" value="${esc(dr.end || '')}">
       <button class="btn pri sm" data-bact="evadd">추가</button></div>
     ${list.length ? `<ul class="log" style="margin-top:8px">${list.map(e => `<li class="it" style="grid-template-columns:110px 1fr">
       <span class="small muted">${md(e.start)}${e.end !== e.start ? '~' + md(e.end) : ''}${e.end < B.today ? ' · 지남' : ''}</span>
-      <div class="row sb"><span>${esc(e.title)}</span><button class="btn txt sm neg" data-bact="evdel" data-id="${esc(e.id)}">지우기</button></div></li>`).join('')}</ul>` : ''}
+      <div class="row sb"><span>${esc(e.title)}${e.by ? ` <span class="tg">학생 · ${esc(e.by)}</span>` : ''}</span><button class="btn txt sm neg" data-bact="evdel" data-id="${esc(e.id)}">지우기</button></div></li>`).join('')}</ul>` : ''}
     <div class="lbl" style="margin-top:12px">지금 TV에 나오는 일정</div>
     ${shown.events.length ? `<ul class="log">${shown.events.slice(0, 10).map(e => `<li class="it" style="grid-template-columns:110px 1fr">
       <span class="small muted">${md(e.start)}${e.end !== e.start ? '~' + md(e.end) : ''}</span>
@@ -2753,7 +2756,7 @@ document.addEventListener('click', ev => {
       toast(n ? `${n}칸을 채웠습니다. 확인하고 [시간표 저장]을 누르세요.` : '채울 칸이 없습니다. 과목 칸이 비어 있으면 먼저 [나이스에서 이번 주 시간표를 표로 가져오기]를 눌러 주세요.', !n);
       return;
     }
-    case 'evsave': boardSave({eventNeis: S.bt.eventNeis, eventDays: S.bt.eventDays}, '일정 설정을 저장했습니다.', true); return;
+    case 'evsave': boardSave({eventNeis: S.bt.eventNeis, eventDays: S.bt.eventDays, eventAddOn: S.bt.eventAddOn}, '일정 설정을 저장했습니다.', true); return;
     case 'evadd': {
       const d = S.evDraft || {};
       if (!(d.title || '').trim()) return toast('일정 이름을 적어 주세요.', true);
