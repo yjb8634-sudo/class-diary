@@ -310,6 +310,7 @@ nav.tabs button .dot{position:absolute;top:6px;right:8px;min-width:18px;height:1
 .foot{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-top:6px}
 .foot .credit{margin:0;margin-left:auto}
 .privacy{margin:0;font-size:13px;color:var(--chalk2);line-height:1.6}
+.sedit{margin:10px 0;padding:12px 14px;border:1.5px dashed var(--yellow);border-radius:10px}
 .viewbox{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line2)}
 .tt td{padding:3px}.tt .in{width:100%;min-width:70px;padding:6px 8px;font-size:14px}.tt th{font-weight:600;color:var(--chalk2);font-size:13.5px}
 .ttwrap{overflow-x:auto}
@@ -996,7 +997,8 @@ function vSurvey(){
         ${s.kind === '체크' && !s.anon ? `<div class="small muted" style="margin-top:8px">체크한 학생</div><div class="nos">${stu.map(t => `<button class="${R.done.indexOf(t.no) >= 0 ? 'on' : ''}" disabled>${t.no}. ${esc(t.name)}</button>`).join('')}</div>` : ''}
         ${R.missing.length ? `<div class="small" style="margin-top:10px;color:var(--pink)">아직 안 한 학생 ${R.missing.length}명: ${s.anon ? '(익명 조사라 이름은 보이지 않아요)' : esc(R.missing.map(t => t.no + '. ' + t.name).join(', '))}</div>` : (stu.length ? '<div class="small" style="margin-top:10px;color:var(--mint)">모두 참여했어요</div>' : '')}
       </div>` : ''}</div>
-      <div class="row"><button class="b sm" data-a="svopen" data-id="${esc(s.id)}">${open ? '결과 닫기' : '결과 보기'}</button>
+      ${S.svEdit === s.id ? svEditForm(s) : ''}
+      <div class="row"><button class="b sm" data-a="svedit" data-id="${esc(s.id)}">${S.svEdit === s.id ? '고치기 닫기' : '수정'}</button><button class="b sm" data-a="svopen" data-id="${esc(s.id)}">${open ? '결과 닫기' : '결과 보기'}</button>
         <button class="b sm" data-a="svtog" data-id="${esc(s.id)}">${s.open ? '마감하기' : '다시 열기'}</button>
         <button class="b sm" data-a="svpub" data-id="${esc(s.id)}">${s.pub ? '결과 숨기기' : 'TV에 결과 공개'}</button>
         <button class="b sm" data-a="svcsv" data-id="${esc(s.id)}">CSV 받기</button>
@@ -1029,8 +1031,10 @@ function vLinkForm(){
 }
 
 /* ---------- 알림 종 ---------- */
-const APP_VER = '2026-10-22b';
+const APP_VER = '2026-10-22c';
 const UPDATES = [
+  { v: '2026-10-22c', title: '10월 22일 오후 업데이트', items: [
+    '✏️ 설문·투표·조사: 올린 조사도 [수정]으로 질문 · 설명 · 보기 · 옵션을 고칠 수 있어요 (같은 보기를 고른 응답은 그대로 남아요)'] },
   { v: '2026-10-22b', title: '10월 22일 업데이트', items: [
     '🔔 알림 종: 새 상담 신청 · 조사 응답 · 알림장 마감 · 건의를 한눈에',
     '💬 상담 신청: 학생이 교실 TV에서 빈 시간을 골라 신청 (쉬는 날 · 시간 설정)',
@@ -1144,6 +1148,19 @@ function vCounsel(){
     <p class="lead">출장 · 행사 등으로 상담이 어려운 날을 넣으면 TV에서 그 시간은 고를 수 없어요. (주말은 자동으로 빠져요)</p>
     <div class="row"><input class="in" type="date" id="coDate" data-keep value="${today}"><select class="in" id="coSlot" data-keep><option value="all">하루 종일</option><option value="lunch">점심시간만</option><option value="after">방과후만</option></select><button class="b y" data-a="coffadd">추가</button></div>
     ${off.filter(o => o.split('|')[0] >= today).length ? `<ul class="list">${off.filter(o => o.split('|')[0] >= today).map(o => { const [d, k] = o.split('|'); return `<li><div class="t">${dlab(d)} · ${k === 'all' ? '하루 종일' : CSL[k]}</div><button class="b sm r" data-a="coffdel" data-id="${esc(o)}">빼기</button></li>`; }).join('')}</ul>` : '<p class="small muted">쉬는 날이 없어요.</p>'}</section></div>`;
+}
+
+function svEditForm(s){
+  const base = s.etc ? s.options.slice(0, -1) : s.options;
+  return `<div class="sedit"><div class="small muted" style="margin-bottom:6px">조사 고치기</div>
+    <input class="in" id="seQ" data-keep style="width:100%" maxlength="100" value="${esc(s.q)}" placeholder="질문">
+    <input class="in" id="seDesc" data-keep style="width:100%;margin-top:8px" maxlength="200" value="${esc(s.desc || '')}" placeholder="설명 (선택)">
+    ${s.kind === '체크' ? '' : `<textarea class="in" id="seOpts" data-keep rows="${Math.min(14, Math.max(4, base.length + 1))}" style="margin-top:8px">${esc(base.join('\n'))}</textarea>
+    <p class="small muted" style="margin:4px 0 0">보기 순서를 바꾸거나 새 보기를 더해도 받은 응답은 그대로 남아요. <b>보기 글자를 고치거나 지우면</b> 그 보기를 고른 응답만 사라져요.</p>
+    <div class="row" style="margin-top:6px"><label class="chk"><input type="checkbox" id="seMulti" data-keep ${s.multi ? 'checked' : ''}> 여러 개 고를 수 있음</label>
+      <label class="chk"><input type="checkbox" id="seEtc" data-keep ${s.etc ? 'checked' : ''}> '기타 — 직접 쓰기' 보기</label></div>`}
+    <div class="row" style="margin-top:6px"><label class="chk"><input type="checkbox" id="seAnon" data-keep ${s.anon ? 'checked' : ''}> 익명</label><span class="grow"></span>
+      <button class="b sm" data-a="svedit" data-id="${esc(s.id)}">취소</button><button class="b sm y" data-a="svesave" data-id="${esc(s.id)}">고친 내용 저장</button></div></div>`;
 }
 
 /* ---------- 건의함 ---------- */
@@ -1487,6 +1504,39 @@ document.addEventListener('click', async ev => {
         ['svQ', 'svDesc', 'svOpts'].forEach(k => { if ($(k)) $(k).value = ''; }); ['svMulti', 'svEtc', 'svAnon', 'svPub'].forEach(k => { if ($(k)) $(k).checked = false; });
       }
       return;
+    }
+    case 'svedit': S.svEdit = S.svEdit === id ? '' : id; ['seQ', 'seDesc', 'seOpts', 'seMulti', 'seEtc', 'seAnon'].forEach(k => { if ($(k)) $(k).remove(); }); render(); return;
+    case 'svesave': {
+      const s = (B.surveys || []).find(x => x.id === id); if (!s) return;
+      const q = $('seQ').value.trim().slice(0, 100);
+      if (!q) return toast('질문을 적어 주세요.', true);
+      let options = s.options, multi = !!s.multi, etc = !!s.etc;
+      if (s.kind !== '체크'){
+        options = $('seOpts').value.split('\n').map(x => x.trim()).filter(Boolean).map(x => x.slice(0, 80)).filter(x => x !== '기타');
+        options = options.filter((x, i) => options.indexOf(x) === i);
+        etc = $('seEtc').checked; multi = $('seMulti').checked;
+        if (options.length + (etc ? 1 : 0) < 2) return toast('보기를 두 개 이상 적어 주세요.', true);
+        if (options.length > 150) return toast('보기는 150개까지예요.', true);
+        if (etc) options.push('기타');
+      }
+      /* 응답 옮기기: 보기 글자가 같은 것만 남김 */
+      const map = s.options.map(o => options.indexOf(o)), A = S.ANS[id] || {}, ops = [];
+      let lost = 0;
+      Object.keys(A).forEach(no => {
+        let ch = []; (A[no].ch || []).forEach(i => { const j = map[i]; if (j != null && j >= 0 && ch.indexOf(j) < 0) ch.push(j); });
+        if (!multi) ch = ch.slice(0, 1);
+        const same = JSON.stringify(ch) === JSON.stringify(A[no].ch || []);
+        const etcTxt = etc && ch.indexOf(options.length - 1) >= 0 ? (A[no].etc || '') : '';
+        if (!ch.length){ lost++; ops.push(['del', no]); } else if (!same || etcTxt !== (A[no].etc || '')) ops.push(['set', no, ch, etcTxt]);
+      });
+      if (lost && !confirm('고치거나 지운 보기를 고른 응답 ' + lost + '개가 사라져요. 계속할까요?')) return;
+      const ns = Object.assign({}, s, { q, desc: $('seDesc').value.trim().slice(0, 200), options, multi, etc, anon: $('seAnon').checked });
+      if (!await save({ surveys: (B.surveys || []).map(x => x.id === id ? ns : x) }, '조사를 고쳤어요.')) return;
+      try {
+        await Promise.all(ops.map(o => o[0] === 'del' ? F.deleteDoc(F.doc(db, 'boards', S.key, 'answers', id + '_' + o[1]))
+          : F.setDoc(F.doc(db, 'boards', S.key, 'answers', id + '_' + o[1]), { sid: id, no: +o[1], ch: o[2], etc: o[3], at: F.serverTimestamp() })));
+      } catch (e) { fail(e); }
+      S.svEdit = ''; render(); return;
     }
     case 'svopen': S.openSv = S.openSv === id ? '' : id; render(); return;
     case 'svtog': return save({ surveys: (B.surveys || []).map(s => s.id === id ? Object.assign({}, s, { open: !s.open }) : s) }, '바꿨어요.');
