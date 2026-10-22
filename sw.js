@@ -1,4 +1,4 @@
-var C = 'diary-site-v5';
+var C = 'diary-site-v6';
 var FILES = ['./', 'index.html', 'app.html', 'gas.js', 'config.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-180.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(C).then(function (c) { return Promise.all(FILES.map(function (f) { return c.add(f).catch(function () {}); })); }));
@@ -11,6 +11,8 @@ self.addEventListener('activate', function (e) {
 self.addEventListener('fetch', function (e) {
   var u = new URL(e.request.url);
   if (u.origin !== location.origin || e.request.method !== 'GET') return;
+  /* 교실 화면 공용판(classroom/ · tv/)은 늘 새 파일을 받도록 저장하지 않습니다 */
+  if (/\/(classroom|tv)\//.test(u.pathname)) return;
   if (u.pathname.indexOf('/fonts/') >= 0) {
     e.respondWith(caches.open('diary-font').then(function (c) {
       return c.match(e.request).then(function (r) {
