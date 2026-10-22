@@ -1,0 +1,146 @@
+rules_version = '2';
+// 교실 화면 공용판 보안 규칙
+// 이 파일(firebase/firestore.rules)을 GitHub에서 고치면, GitHub Actions가 먼저 시험(tests/)을 돌리고
+// 통과하면 Firebase에 자동으로 게시합니다. (급할 때는 Firebase 콘솔 > Firestore > 규칙 에 통째로 붙여 넣어도 됩니다)
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function google() { return signedIn() && request.auth.token.firebase.sign_in_provider == 'google.com'; }
+    function isOperator() {
+      return google() && request.auth.token.email == 'yjb8634@gmail.com' && request.auth.token.email_verified == true;
+    }
+    function me() { return get(/databases/$(database)/documents/teachers/$(request.auth.uid)).data; }
+    function approved() {
+      return google() && exists(/databases/$(database)/documents/teachers/$(request.auth.uid)) && me().status == 'ok';
+    }
+    function okName(n) { return n is string && n.size() >= 2 && n.size() <= 20; }
+    function okGrade(g) { return g in ['1', '2', '3']; }
+    function okClass(k) { return k is string && k.matches('^[1-9][0-9]?$'); }
+
+    // 선생님 명단: 본인과 운영자만 봅니다.
+    match /teachers/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || isOperator());
+      allow list: if isOperator();
+      allow create: if google() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['email', 'name', 'grade', 'klass', 'status', 'at'])
+        && request.resource.data.status == 'pending'
+        && request.resource.data.email == request.auth.token.email
+        && okName(request.resource.data.name) && okGrade(request.resource.data.grade) && okClass(request.resource.data.klass);
+      allow update: if (isOperator() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'name', 'grade', 'klass']))
+        || (request.auth.uid == uid && resource.data.status == 'ok'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['boardKey', 'name', 'grade', 'klass'])
+            && okName(request.resource.data.name) && okGrade(request.resource.data.grade) && okClass(request.resource.data.klass));
+      allow delete: if isOperator();
+    }
+
+    // 우리 반 TV 열쇠: 선생님 본인만 읽고 씁니다. (운영자도 못 봄 → 운영자는 다른 반 게시판을 열 수 없음)
+    match /keys/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow create, update: if approved() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['boardKey']) && request.resource.data.boardKey is string;
+      allow list, delete: if false;
+    }
+
+    // 반별 교실 화면 자료 (운영자도 고치거나 지울 수 없음): 문서 이름(긴 무작위 TV 키)을 아는 화면만 읽을 수 있고, 목록 보기는 막습니다.
+    match /boards/{key} {
+      allow get: if key.size() >= 20;
+      allow list: if false;
+      allow create: if approved() && request.resource.data.owner == request.auth.uid && key.size() >= 20;
+      allow update: if approved() && resource.data.owner == request.auth.uid && request.resource.data.owner == request.auth.uid;
+      allow delete: if approved() && resource.data.owner == request.auth.uid;
+
+      function boardPath() { return /databases/$(database)/documents/boards/$(key); }
+      function ownsBoard() { return signedIn() && get(boardPath()).data.owner == request.auth.uid; }
+
+      // 조사 · 투표 응답: 교실 TV(로그인 없음)가 씁니다. 학생 번호마다 한 문서.
+      match /answers/{aid} {
+        allow read: if key.size() >= 20;
+        allow create, update: if exists(boardPath())
+          && request.resource.data.keys().hasOnly(['sid', 'no', 'ch', 'etc', 'at'])
+          && request.resource.data.sid is string && request.resource.data.sid.size() <= 20
+          && request.resource.data.no is int && request.resource.data.no >= 1 && request.resource.data.no <= 99
+          && request.resource.data.ch is list && request.resource.data.ch.size() <= 160
+          && request.resource.data.etc is string && request.resource.data.etc.size() <= 100
+          && aid == request.resource.data.sid + '_' + string(request.resource.data.no);
+        allow delete: if exists(boardPath());
+      }
+
+      // 상담 신청: 교실 TV가 '날짜_때' 이름으로 한 번만 만들 수 있어요(먼저 신청한 사람 우선). 고치기는 안 되고, 취소는 담임 선생님만.
+      match /counsel/{cid} {
+        allow read: if key.size() >= 20;
+        // 담임 선생님이 백업을 되살릴 때
+        allow create: if ownsBoard() && request.resource.data.keys().hasOnly(['date', 'slot', 'no', 'name', 'at'])
+          && request.resource.data.slot in ['lunch', 'after'] && cid == request.resource.data.date + '_' + request.resource.data.slot;
+        allow create: if exists(boardPath()) && get(boardPath()).data.get('counselOn', false) == true
+          && request.resource.data.keys().hasOnly(['date', 'slot', 'no', 'name', 'at'])
+          && request.resource.data.date is string && request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && request.resource.data.slot in ['lunch', 'after']
+          && cid == request.resource.data.date + '_' + request.resource.data.slot
+          && request.resource.data.no is int && request.resource.data.no >= 1 && request.resource.data.no <= 99
+          && request.resource.data.name is string && request.resource.data.name.size() <= 20
+          && request.resource.data.at == request.time;
+        allow delete: if ownsBoard();
+      }
+
+      // 학생이 교실 TV에서 올린 일정: TV는 넣기만, 지우기는 담임 선생님만.
+      match /sevents/{eid} {
+        allow read: if key.size() >= 20;
+        allow create: if ownsBoard() && request.resource.data.keys().hasOnly(['date', 'title', 'no', 'name', 'at'])
+          && request.resource.data.title is string && request.resource.data.title.size() <= 40;
+        allow create: if exists(boardPath()) && get(boardPath()).data.get('eventAddOn', true) == true
+          && request.resource.data.keys().hasOnly(['date', 'title', 'no', 'name', 'at'])
+          && request.resource.data.date is string && request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && request.resource.data.title is string && request.resource.data.title.size() >= 2 && request.resource.data.title.size() <= 40
+          && request.resource.data.no is int && request.resource.data.no >= 0 && request.resource.data.no <= 99
+          && request.resource.data.name is string && request.resource.data.name.size() <= 20
+          && request.resource.data.at == request.time;
+        allow delete: if ownsBoard();
+      }
+
+      // 건의함: 교실 TV는 넣기만, 읽기 · 지우기는 담임 선생님만.
+      match /suggest/{sid} {
+        allow create: if ownsBoard() && request.resource.data.keys().hasOnly(['text', 'no', 'name', 'at'])
+          && request.resource.data.text is string && request.resource.data.text.size() <= 300;
+        allow create: if exists(boardPath()) && get(boardPath()).data.suggestOn == true
+          && request.resource.data.keys().hasOnly(['text', 'no', 'name', 'at'])
+          && request.resource.data.text is string && request.resource.data.text.size() >= 2 && request.resource.data.text.size() <= 300
+          && request.resource.data.no is int && request.resource.data.name is string && request.resource.data.name.size() <= 20;
+        allow read, delete: if ownsBoard();
+      }
+    }
+
+    // 학생 휴대폰용 보기 주소: 이름을 가린 읽기 전용 사본. 주소(긴 무작위 이름)를 아는 사람만 읽고, 쓰기는 담임 선생님만.
+    match /views/{vk} {
+      allow get: if vk.size() >= 20;
+      allow list: if false;
+      allow create: if approved() && request.resource.data.owner == request.auth.uid && vk.size() >= 20;
+      allow update: if approved() && resource.data.owner == request.auth.uid && request.resource.data.owner == request.auth.uid;
+      allow delete: if approved() && resource.data.owner == request.auth.uid;
+    }
+
+    // TV 연결 숫자: TV(로그인 없음)가 만들고, 승인된 선생님만 숫자로 찾아봅니다.
+    match /pair/{code} {
+      allow create: if code.matches('^[1-9][0-9]{5}$')
+        && request.resource.data.keys().hasOnly(['sid', 'at'])
+        && request.resource.data.sid is string && request.resource.data.sid.size() >= 24 && request.resource.data.sid.size() <= 40
+        && request.resource.data.at == request.time;
+      allow get, delete: if approved();
+      allow list: if false;
+    }
+    // TV 연결 답장: 선생님이 자기 반 TV 키를 넣고, 그 TV만(긴 무작위 이름) 읽고 지웁니다.
+    match /pairResp/{sid} {
+      allow create: if approved()
+        && request.resource.data.keys().hasOnly(['key', 'at'])
+        && request.resource.data.key is string && request.resource.data.key.size() >= 20
+        && get(/databases/$(database)/documents/boards/$(request.resource.data.key)).data.owner == request.auth.uid
+        && request.resource.data.at == request.time;
+      allow get, delete: if sid.size() >= 24;
+      allow list: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

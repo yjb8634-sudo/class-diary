@@ -11,8 +11,8 @@ self.addEventListener('activate', function (e) {
 self.addEventListener('fetch', function (e) {
   var u = new URL(e.request.url);
   if (u.origin !== location.origin || e.request.method !== 'GET') return;
-  /* 교실 화면 공용판(classroom/ · tv/)은 늘 새 파일을 받도록 저장하지 않습니다 */
-  if (/\/(classroom|tv)\//.test(u.pathname)) return;
+  /* 교실 화면 공용판(classroom/ · classroom-beta/ · tv/)은 늘 새 파일을 받도록 저장하지 않습니다 */
+  if (/\/(classroom|classroom-beta|tv)\//.test(u.pathname)) return;
   if (u.pathname.indexOf('/fonts/') >= 0) {
     e.respondWith(caches.open('diary-font').then(function (c) {
       return c.match(e.request).then(function (r) {
