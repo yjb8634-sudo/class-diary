@@ -1,4 +1,5 @@
-# 시험판(classroom-beta)에서 확인이 끝나면 정식판(classroom)으로 옮깁니다. 문제가 생기면 바로 전 정식판으로 되돌립니다.
+# 시험판(classroom-beta)에서 확인이 끝나면 정식판(classroom)으로 옮깁니다. 옮기기 전 정식판은 classroom-prev(예전 버전)에 보관합니다.
+# 문제가 생기면 바로 전 정식판으로 되돌립니다.
 # 저장소의 [Actions] → 왼쪽 '교실 화면 정식판 옮기기 · 되돌리기' → [Run workflow] 에서 고르고 실행하세요.
 
 name: 교실 화면 정식판 옮기기 · 되돌리기
@@ -39,6 +40,11 @@ jobs:
           NOW=$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M')
           if [ "$WHAT" = "시험판을 정식판으로 옮기기" ]; then
             test -f classroom-beta/index.html && test -f classroom-beta/tv.html
+            # 지금 정식판을 '예전 버전'(classroom-prev)으로 보관 — 선생님이 업데이트 창에서 [예전 버전 쓰기]를 고르면 여기로 열립니다
+            if ! cmp -s classroom/index.html classroom-beta/index.html || ! cmp -s classroom/tv.html classroom-beta/tv.html; then
+              mkdir -p classroom-prev
+              find classroom -maxdepth 1 -type f -exec cp -f {} classroom-prev/ \;
+            fi
             find classroom-beta -maxdepth 1 -type f -exec cp -f {} classroom/ \;
             MSG="정식판 옮기기: 시험판을 정식판으로 ($NOW)"
           else
@@ -47,7 +53,7 @@ jobs:
             git checkout "$PREV" -- classroom
             MSG="정식판 되돌리기: $(git log -1 --format=%h "$PREV") 상태로 ($NOW)"
           fi
-          git add classroom
+          git add classroom classroom-prev 2>/dev/null || git add classroom
           if git diff --cached --quiet; then echo "바뀐 것이 없어요. (시험판과 정식판이 같아요)"; exit 0; fi
           git diff --cached --stat
           git commit -m "$MSG"
