@@ -859,7 +859,7 @@ function vTime(){
       <span class="small muted" style="margin-left:10px">TV에 보일 기간</span><select class="in" id="evDays" data-a="evdays">${[7, 14, 30, 60, 90].map(n => `<option value="${n}" ${(+B.eventDays || 30) === n ? 'selected' : ''}>앞으로 ${n}일</option>`).join('')}</select></div>
     <div class="row"><input class="in grow" id="evTitle" data-keep placeholder="일정 이름"><input class="in" type="date" id="evStart" data-keep>~<input class="in" type="date" id="evEnd" data-keep><button class="b y" data-a="evadd">추가</button></div>
     ${ev.length ? `<ul class="list">${ev.map(e => `<li><div class="t">${esc(e.title)} <span class="small muted">${esc(e.start)}${e.end && e.end !== e.start ? ' ~ ' + esc(e.end) : ''}${(e.end || e.start) < today ? ' · 지남' : ''}</span></div><button class="b sm r" data-a="evdel" data-id="${esc(e.id)}">지우기</button></li>`).join('')}</ul>` : ''}
-  ${(S.SEV || []).length ? `<h3 style="margin:16px 0 6px;font-size:15px">학생이 올린 일정 <span class="small muted">잘못 올라온 것은 지워 주세요</span></h3><ul class="list">${S.SEV.map(e => `<li><div class="t">${esc(e.title)} <span class="small muted">${esc(e.date)}${e.date < today ? ' · 지남' : ''} · ${esc(e.no + '. ' + (e.name || ''))}</span></div><button class="b sm r" data-a="sevdel" data-id="${esc(e.id)}">지우기</button></li>`).join('')}</ul>` : ''}
+  ${(S.SEV || []).length ? `<h3 style="margin:16px 0 6px;font-size:15px">학생이 올린 일정 <span class="small muted">잘못 올라온 것은 지워 주세요</span></h3><ul class="list">${S.SEV.map(e => `<li><div class="t">${esc(e.title)} <span class="small muted">${esc(e.date)}${e.date < today ? ' · 지남' : ''}</span></div><button class="b sm r" data-a="sevdel" data-id="${esc(e.id)}">지우기</button></li>`).join('')}</ul>` : ''}
   </section>
   <section class="card"><h2>TV 주소 바꾸기</h2>
     <p class="lead">TV 주소가 학생들에게 퍼졌을 때 새 주소로 바꿉니다. 예전 주소는 바로 막히고, 공지 · 명단 등 내용은 그대로 옮겨집니다. (조사 응답 · 건의는 새로 시작돼요)</p>
@@ -1049,7 +1049,7 @@ function vLinkForm(){
 const APP_VER = '2026-10-22e';
 const UPDATES = [
   { v: '2026-10-22e', title: '10월 22일 오후 업데이트 (3)', items: [
-    '🗓 학생이 교실 TV 일정 칸의 [＋ 일정 추가]로 일정을 올릴 수 있어요 (예: 11/13 3교시 영어 단어 시험). 시간표 설정 탭에서 끄거나, 잘못 올라온 일정을 지울 수 있어요'] },
+    '🗓 학생이 교실 TV 일정 칸의 [＋ 일정 추가]로 일정을 올릴 수 있어요 (이름 없이) (예: 11/13 3교시 영어 단어 시험). 시간표 설정 탭에서 끄거나, 잘못 올라온 일정을 지울 수 있어요'] },
   { v: '2026-10-22d', title: '10월 22일 오후 업데이트 (2)', items: [
     '📺 화면 꾸미기 탭 맨 위에 TV 화면 미리보기가 생겼어요 (눌러 봐도 저장되지 않아요)'] },
   { v: '2026-10-22c', title: '10월 22일 오후 업데이트', items: [

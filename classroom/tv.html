@@ -214,9 +214,9 @@ button:active:not(:disabled),.go:active,.slot:active,.opt:active,.nm:active,.chi
 .evdays{display:grid;grid-template-columns:repeat(5,1fr);gap:.6rem;margin:.4rem 0 1rem}
 .evdays button,.evps button{all:unset;cursor:pointer;box-sizing:border-box;text-align:center;border-radius:.9rem;border:2px solid var(--line);background:var(--card2);padding:.7rem .3rem;font-size:1.45rem;font-weight:700;line-height:1.25}
 .evdays button:disabled{opacity:.3;cursor:default}
-.evnav{display:flex;align-items:center;gap:.7rem}.evnav .sp{flex:1}.evnav b{font-size:1.3rem;color:var(--chalk)}
-.evnav button{all:unset;cursor:pointer;font-size:1.25rem;font-weight:700;padding:.4rem .9rem;border-radius:.7rem;border:2px solid var(--line);background:var(--card2);color:var(--chalk)}
-.evnav button:disabled{opacity:.3;cursor:default}
+.evpg{display:flex;align-items:center;gap:.7rem}.evpg .gap{flex:1}.evpg b{font-size:1.3rem;color:var(--chalk)}
+.evpg button{all:unset;cursor:pointer;white-space:nowrap;font-size:1.25rem;font-weight:700;padding:.4rem .9rem;border-radius:.7rem;border:2px solid var(--line);background:var(--card2);color:var(--chalk)}
+.evpg button:disabled{opacity:.3;cursor:default}
 .evdays button small{display:block;font-size:1.05rem;font-weight:500;color:var(--chalk3)}
 .evdays button.on,.evps button.on{border-color:var(--yellow);color:var(--yellow);background:rgba(242,209,107,.1)}
 .evdays button.today small{color:var(--mint)}
@@ -1136,7 +1136,7 @@ html,body{background:var(--bg);color:var(--chalk)}
     apiBoardEventAdd: function (no, date, per, text) {
       needFb();
       if (VIEW || B.eventAddOn === false) throw new Error('지금은 교실 화면에서 일정을 올릴 수 없어요.');
-      var st = student(no), today = ymd(kst());
+      var today = ymd(kst());
       date = String(date || '');
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('날짜를 골라 주세요.');
       if (date < today || date > addDays(today, 60)) throw new Error('오늘부터 두 달 안의 날짜만 올릴 수 있어요.');
@@ -1144,10 +1144,10 @@ html,body{background:var(--bg);color:var(--chalk)}
       text = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 30);
       if (text.length < 2) throw new Error('일정 내용을 적어 주세요.');
       var title = (per ? per + ' ' : '') + text;
-      if (SEV.filter(function (e) { return e.no === st.no && e.date >= today; }).length >= 5) throw new Error('한 사람이 올린 일정이 너무 많아요. 지난 일정이 지나거나 선생님이 정리한 뒤 다시 올려 주세요.');
+      if (SEV.filter(function (e) { return e.date >= today; }).length >= 30) throw new Error('학생이 올린 일정이 너무 많아요. 선생님이 정리한 뒤 다시 올려 주세요.');
       if (SEV.some(function (e) { return e.date === date && e.title.replace(/\s+/g, '') === title.replace(/\s+/g, ''); })) throw new Error('같은 날 같은 일정이 이미 있어요.');
       var F = FB.F;
-      return F.addDoc(F.collection(FB.db, 'boards', K, 'sevents'), { date: date, title: title, no: st.no, name: st.name, at: F.serverTimestamp() })
+      return F.addDoc(F.collection(FB.db, 'boards', K, 'sevents'), { date: date, title: title, no: 0, name: '', at: F.serverTimestamp() })
         .then(function () { return { ok: true }; });
     },
     apiBoardCounselSlots: function () {
@@ -1700,7 +1700,7 @@ const dayNum = s => { const [y, m, d] = String(s).split('-').map(Number); return
 const mdS = s => `${+String(s).slice(5, 7)}/${+String(s).slice(8, 10)}`;
 function paintSchedule(){
   const t = nowParts(), today = Date.UTC(t.y, t.mo - 1, t.d) / 864e5;
-  const ea = $('btnEvAdd'); if (ea) ea.hidden = !(D.eventAddOn && (!D.phone || D.phoneJoin) && (D.students || []).length);
+  const ea = $('btnEvAdd'); if (ea) ea.hidden = !(D.eventAddOn && (!D.phone || D.phoneJoin));
   const cl = D.counsel || [];
   const cs = cl.length ? `<div class="r"><span class="d cs">오늘 상담</span><span class="w">${cl.map(c =>
     `${c.who ? esc(c.who) : '예약'} <span class="tm">${esc(c.label === '방과후' ? '방과후' : '점심')} ${esc(String(c.time || '').split('~')[0])}</span>`).join('<span class="tm"> · </span>')}</span><span></span></div>` : '';
@@ -1918,8 +1918,8 @@ function drawOv(){
       el.innerHTML = head('일정 추가') + `<div class="ovb"><p class="lead">우리 반 일정을 교실 화면에 올려요. 먼저 내 이름을 눌러 주세요.</p>${namesGrid()}</div>`;
     } else if (o.step === 'write'){
       const days = evDays(), ps = evPeriods();
-      el.innerHTML = head('일정 추가', true) + `<div class="ovb">
-        <div class="evlab evnav">① 날짜 <span class="sp"></span><button data-ov="evwk" data-v="-1" ${(o.wk || 0) <= 0 ? 'disabled' : ''}>◀ 앞 2주</button>
+      el.innerHTML = head('일정 추가') + `<div class="ovb">
+        <div class="evlab evpg">① 날짜 <span class="gap"></span><button data-ov="evwk" data-v="-1" ${(o.wk || 0) <= 0 ? 'disabled' : ''}>◀ 앞 2주</button>
           <b>${days[0].md} ~ ${days[days.length - 1].md}</b><button data-ov="evwk" data-v="1" ${(o.wk || 0) >= 3 ? 'disabled' : ''}>다음 2주 ▶</button></div>
         <div class="evdays">${days.map(d => `<button data-ov="evd" data-d="${d.ymd}" class="${o.date === d.ymd ? 'on' : ''}${d.today ? ' today' : ''}" ${d.past ? 'disabled' : ''}>${d.md}<small>${d.dow}요일${d.today ? ' · 오늘' : ''}</small></button>`).join('')}</div>
         <div class="evlab">② 언제 <span style="font-weight:500">(고르지 않아도 돼요)</span></div>
@@ -2387,7 +2387,7 @@ document.addEventListener('click', ev => {
   if (b.id === 'btnSuggest'){ openOv({kind: 'suggest', step: 'write', text: '', no: 0}); return; }
   if (b.dataset.rs){ openOv({kind: 'result', id: b.dataset.rs}); return; }
   if (b.id === 'btnCounsel'){ openOv({kind: 'counsel', step: 'who'}); return; }
-  if (b.id === 'btnEvAdd'){ openOv({kind: 'event', step: 'who'}); return; }
+  if (b.id === 'btnEvAdd'){ openOv({kind: 'event', step: 'write'}); return; }
   const a = b.dataset.ov;
   if (!a || !OV) return;
   if (a === 'close'){ closeOv(); return; }
@@ -2432,7 +2432,7 @@ document.addEventListener('click', ev => {
     OV.doneText = $('evPrev') ? $('evPrev').textContent : '';
     if (BOOT.preview){ OV.step = 'done'; drawOv(); toast('미리보기: 실제로는 올리지 않았어요'); clearTimeout(idleT); idleT = setTimeout(closeOv, 5000); return; }
     b.disabled = true;
-    call('apiBoardEventAdd', OV.no, OV.date, OV.per || '', text, pinOf(OV.no)).then(() => { OV.step = 'done'; drawOv(); load(); clearTimeout(idleT); idleT = setTimeout(closeOv, 6000); })
+    call('apiBoardEventAdd', 0, OV.date, OV.per || '', text, '').then(() => { OV.step = 'done'; drawOv(); load(); clearTimeout(idleT); idleT = setTimeout(closeOv, 6000); })
       .catch(e => { b.disabled = false; toast(e.message, true); });
     return;
   }
