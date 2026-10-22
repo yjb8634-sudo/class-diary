@@ -1,0 +1,77 @@
+# 보안 규칙(firebase/firestore.rules)을 고치면: ① 에뮬레이터로 시험 → ② 통과하면 Firebase에 자동 게시
+#
+# 처음 한 번 설정: Firebase 콘솔 → 프로젝트 설정 ⚙ → 서비스 계정 → [새 비공개 키 생성] 으로 받은 JSON 파일 내용 전체를
+#   GitHub 저장소 Settings → Secrets and variables → Actions → New repository secret
+#   이름 FIREBASE_SERVICE_ACCOUNT 에 붙여 넣으세요. (없으면 시험만 하고 게시는 건너뜁니다)
+
+name: 보안 규칙 시험 · 게시
+
+on:
+  push:
+    branches: [main]
+    paths: ['firebase/**', '.github/workflows/firestore-rules.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: firestore-rules
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: 규칙 시험
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: firebase
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      - name: 도구 설치
+        run: npm install --no-audit --no-fund
+      - name: 에뮬레이터로 규칙 시험
+        run: npx firebase emulators:exec --only firestore --project demo-yclass "npm test"
+
+  deploy:
+    name: Firebase에 게시
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: firebase
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: 서비스 계정 확인
+        id: sa
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$SA" ]; then
+            echo "ok=no" >> "$GITHUB_OUTPUT"
+            echo "::warning::FIREBASE_SERVICE_ACCOUNT 비밀값이 없어 게시는 건너뜁니다. (시험은 통과했어요)"
+          else
+            printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+            echo "ok=yes" >> "$GITHUB_OUTPUT"
+          fi
+      - name: 도구 설치
+        if: steps.sa.outputs.ok == 'yes'
+        run: npm install --no-audit --no-fund
+      - name: 규칙 게시
+        if: steps.sa.outputs.ok == 'yes'
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+        run: npx firebase deploy --only firestore:rules --project yclassdiary --non-interactive
+      - name: 비밀 파일 지우기
+        if: always()
+        run: rm -f "$RUNNER_TEMP/sa.json"
