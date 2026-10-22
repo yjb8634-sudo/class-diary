@@ -287,6 +287,11 @@ nav.tabs button .dot{position:absolute;top:6px;right:8px;min-width:18px;height:1
 .kc.k0{background:#E6CD7E}.kc.k1{background:#8CC6B6}.kc.k2{background:#9BB6DA}.kc.k3{background:#DDA29A}
 .tvbox{border-color:rgba(230,205,126,.35)}
 .tvbox .in{font-size:14px}
+.pairsteps{margin:10px 0 8px;padding-left:22px;line-height:1.75}
+.pairsteps .addr{color:#F2D16B;word-break:break-all}
+.pairrow #pairIn{font-size:26px;letter-spacing:.18em;width:220px;text-align:center;font-weight:700}
+.pairrow #pairIn::placeholder{font-size:16px;letter-spacing:0;font-weight:400}
+.pairrow .b{font-size:18px;padding:10px 22px}
 details.past{margin-top:12px;border:1px dashed var(--line2);border-radius:10px;padding:8px 12px}
 details.past summary{cursor:pointer;font-size:14.5px;color:var(--chalk2)}
 table.t{border-collapse:collapse;width:100%}
@@ -496,6 +501,7 @@ async function save(patch, msg){
     return true;
   } catch (e) { fail(e); return false; }
 }
+const TV_SHORT = 'is.gd/jeiltv';
 const tvUrl = edit => new URL('tv.html?k=' + S.key + (edit ? '&edit=1' : ''), location.href).href;
 
 /* ================= 구글 드라이브 첨부 (선생님 드라이브에 저장, 링크 있는 사람 보기) ================= */
@@ -590,12 +596,15 @@ function render(){
   const openSv = (B.surveys || []).filter(s => s.open).length;
   $('app').innerHTML = `<header class="top"><h1>${esc(B.grade)}학년 ${esc(B.klass)}반 교실 화면<small>${esc(S.me.name)} 선생님 · ${esc(S.user.email)}</small></h1>
       <span class="pill">학생 <b>${nStu}</b>명</span>${openSv ? `<span class="pill">진행 중 조사 <b>${openSv}</b></span>` : ''}<button class="b sm" id="btnOut">로그아웃</button></header>
-    <section class="card tvbox"><div class="row"><h2 style="margin:0;flex:1;font-size:21px">교실 TV 주소</h2>
-      <a class="b y" href="${esc(tvUrl())}" target="_blank" rel="noopener">TV 화면 열기</a>
-      <a class="b" href="${esc(tvUrl(true))}" target="_blank" rel="noopener">화면 배치 조정</a>
-      <button class="b" data-a="copytv">주소 복사</button></div>
-      <input class="in" readonly value="${esc(tvUrl())}" style="width:100%;margin-top:10px" id="tvUrlIn">
-      <p class="lead" style="margin:8px 0 0">교실 TV(전자칠판) 브라우저에서 이 주소를 열고 즐겨찾기 · 전체 화면으로 두세요. 여기서 고치면 TV에 몇 초 안에 바로 바뀝니다. 학생 단톡방 등에는 올리지 마세요.</p></section>
+    <section class="card tvbox"><div class="row"><h2 style="margin:0;flex:1;font-size:21px">📺 TV 연결</h2>
+      <a class="b" href="${esc(tvUrl())}" target="_blank" rel="noopener">TV 화면 미리 보기</a>
+      <a class="b" href="${esc(tvUrl(true))}" target="_blank" rel="noopener">화면 배치 조정</a></div>
+      <ol class="pairsteps"><li>교실 TV 브라우저에서 <b class="addr">${esc(TV_SHORT)}</b> 를 엽니다.</li>
+        <li>TV에 뜬 <b>숫자 6자리</b>를 아래에 넣고 [연결]을 누르면 끝! 다음부터는 TV에서 같은 주소만 열면 우리 반 화면이 바로 나와요.</li></ol>
+      <div class="row pairrow"><input class="in" id="pairIn" data-keep inputmode="numeric" autocomplete="off" maxlength="7" placeholder="TV의 숫자 6자리"><button class="b y" data-a="pair">연결</button></div>
+      <details style="margin-top:10px"><summary class="lead" style="cursor:pointer;margin:0">긴 TV 주소 직접 쓰기</summary>
+        <div class="row" style="margin-top:8px"><input class="in" readonly value="${esc(tvUrl())}" style="flex:1" id="tvUrlIn"><button class="b" data-a="copytv">주소 복사</button></div>
+        <p class="lead" style="margin:8px 0 0">이 주소를 TV에서 바로 열어도 됩니다. 학생 단톡방 등에는 올리지 마세요.</p></details></section>
     <nav class="tabs">${T.map(([v, ic, l]) => `<button data-tab="${v}" class="${S.tab === v ? 'on' : ''}"><span class="ic">${ic}</span>${l}${v === 'survey' && openSv ? `<span class="dot">${openSv}</span>` : ''}</button>`).join('')}</nav>
     <div id="body">${({ flash: vFlash, notice: vNotice, look: vLook, time: vTime, roster: vRoster, survey: vSurvey, suggest: vSuggest, op: () => '<div id="opBox"></div>' })[S.tab]()}</div>
     <p class="credit">제작자 : 강릉제일고 유준배 선생님</p>`;
@@ -604,6 +613,7 @@ function render(){
   if (S.tab === 'op') loadTeachers();
   if (S.tab === 'suggest' && S.sugg === null) loadSuggest();
 }
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target && e.target.id === 'pairIn'){ e.preventDefault(); const b = document.querySelector('[data-a="pair"]'); if (b) b.click(); } });
 function captureDrafts(){ const o = {}; document.querySelectorAll('[data-keep]').forEach(el => { o[el.id] = el.type === 'checkbox' ? { c: el.checked } : el.value; }); return o; }
 function restoreDrafts(o){ Object.keys(o).forEach(id => { const el = $(id); if (!el) return; const v = o[id]; if (v && typeof v === 'object') el.checked = v.c; else if (v) el.value = v; }); }
 
@@ -1016,6 +1026,22 @@ document.addEventListener('click', async ev => {
   const a = t.dataset.a, id = t.dataset.id, B = S.B;
   const { db, F } = S.fb;
   switch (a){
+    case 'pair': {
+      const code = ($('pairIn').value || '').replace(/\D/g, '');
+      if (code.length !== 6) return toast('TV 화면의 숫자 6자리를 넣어 주세요.', true);
+      busy('TV와 연결하는 중…');
+      try {
+        const ps = await F.getDoc(F.doc(db, 'pair', code));
+        if (!ps.exists()){ busy(''); return toast('그 숫자를 찾지 못했어요. TV 화면의 숫자를 다시 확인해 주세요.', true); }
+        const d = ps.data(), at = d.at && d.at.toMillis ? d.at.toMillis() : (Date.parse(d.at) || 0);
+        if (Date.now() - at > 11 * 60e3){ busy(''); return toast('시간이 지난 숫자예요. TV 화면의 새 숫자를 넣어 주세요.', true); }
+        await F.setDoc(F.doc(db, 'pairResp', d.sid), { key: S.key, at: F.serverTimestamp() });
+        await F.deleteDoc(F.doc(db, 'pair', code)).catch(() => {});
+        busy(''); $('pairIn').value = '';
+        toast('TV와 연결했어요! 몇 초 안에 TV에 우리 반 화면이 나와요.');
+      } catch (e) { fail(e); }
+      return;
+    }
     case 'copytv': { const i = $('tvUrlIn'); i.select(); try { await navigator.clipboard.writeText(i.value); } catch (e) { document.execCommand('copy'); } toast('TV 주소를 복사했어요.'); return; }
     case 'unpend': S.pend[t.dataset.k].splice(+t.dataset.i, 1); render(); return;
     case 'ecancel': S.edit = ''; render(); return;
@@ -1126,7 +1152,7 @@ document.addEventListener('click', async ev => {
     }
     case 'evdel': return save({ events: (B.events || []).filter(e => e.id !== id) }, '지웠어요.');
     case 'rekey': {
-      if (!confirm('새 TV 주소를 만들까요? 예전 주소로 열어 둔 TV는 더 이상 보이지 않으니, TV에서 새 주소로 다시 열어야 해요.')) return;
+      if (!confirm('새 TV 주소를 만들까요? 예전 주소로 열어 둔 TV는 연결 숫자 화면으로 바뀌니, 숫자를 넣어 다시 연결해 주세요.')) return;
       try {
         const old = S.key, data = Object.assign({}, B); delete data.updatedAt;
         stopWatch();

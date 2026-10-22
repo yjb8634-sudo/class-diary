@@ -686,7 +686,7 @@ html,body{background:var(--bg);color:var(--chalk)}
   var QS = new URLSearchParams(location.search);
   var K = (QS.get('k') || '').replace(/[^a-z0-9]/g, '');
   var WANT_EDIT = QS.get('edit') === '1';
-  var VER = 'fb-2026-11-05a';
+  var VER = 'fb-2026-11-06a';
   window.__BOOT = { t: K, preview: 0, phone: false, ver: VER };
   var FB = null, B = null, gone = false, SCH = null, schAt = 0, schBusy = false, WX = null, wxAt = 0, wxBusy = false;
   var ANS = {}, USER = null, OWNER = false, editDone = false;
@@ -729,23 +729,84 @@ html,body{background:var(--bg);color:var(--chalk)}
     }
   }, true);
 
+  /* ---- TV 연결: 주소에 키가 없으면 이 TV가 기억한 반으로, 없으면 연결 숫자 화면 ---- */
+  var LSK = 'cr_tv_key';
+  function lsGet() { try { return (localStorage.getItem(LSK) || '').replace(/[^a-z0-9]/g, ''); } catch (e) { return ''; } }
+  function lsSet(v) { try { if (v) localStorage.setItem(LSK, v); else localStorage.removeItem(LSK); } catch (e) {} }
+  function goKey(k) { location.replace(location.pathname + '?k=' + k); }
+  function onBody(fn) { if (document.body) fn(); else document.addEventListener('DOMContentLoaded', fn); }
+  var PAIR = false;
+  if (!K) {
+    var saved = lsGet();
+    if (saved.length >= 16) { goKey(saved); }
+    else { PAIR = true; startPair(); }
+  }
+  function startPair() {
+    var ov, codeEl, msgEl, btn, FBp = null, unsub = null, timer = null, rounds = 0, tries = 0;
+    onBody(function () {
+      ov = document.createElement('div'); ov.id = 'crPair';
+      ov.style.cssText = 'position:fixed;inset:0;z-index:100;background:#1D2A25;color:#E4E0D3;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:3vh 4vw;gap:2.4vh;font-family:inherit';
+      ov.innerHTML = '<div style="font-size:4.2vh;opacity:.85">강릉제일고 · 교실 화면 연결</div>'
+        + '<div id="crPairCode" style="font-size:19vh;font-weight:800;letter-spacing:.12em;color:#F2D16B;line-height:1.1;font-variant-numeric:tabular-nums">······</div>'
+        + '<div style="font-size:3.4vh;line-height:1.7;max-width:70rem">담임 선생님 휴대폰(또는 PC)에서 <b>교실 화면 관리</b>에 들어가<br><b style="color:#F2D16B">[TV 연결]</b> 칸에 위 숫자 6자리를 넣어 주세요.</div>'
+        + '<div id="crPairMsg" style="font-size:2.6vh;opacity:.7">숫자를 받는 중…</div>'
+        + '<button id="crPairBtn" style="display:none;font-size:3vh;padding:1.4vh 3vw;border-radius:1.2vh;border:2px solid #F2D16B;background:transparent;color:#F2D16B">새 숫자 받기</button>';
+      document.body.appendChild(ov);
+      codeEl = document.getElementById('crPairCode'); msgEl = document.getElementById('crPairMsg'); btn = document.getElementById('crPairBtn');
+      btn.onclick = function () { rounds = 0; tries = 0; btn.style.display = 'none'; fresh(); };
+      FBp = import('./fb.js').then(function (m) { return m.fb(); });
+      fresh();
+    });
+    function rnd(n, abc) { var a = new Uint8Array(n); crypto.getRandomValues(a); return Array.from(a, function (b) { return abc[b % abc.length]; }).join(''); }
+    function fresh() {
+      if (unsub) { unsub(); unsub = null; } clearTimeout(timer);
+      if (rounds >= 6) { codeEl.textContent = '······'; msgEl.textContent = '시간이 지나 숫자를 멈췄어요. 리모컨으로 [새 숫자 받기]를 눌러 주세요.'; btn.style.display = ''; return; }
+      var code = String(1 + (crypto.getRandomValues(new Uint32Array(1))[0] % 9)) + rnd(5, '0123456789');
+      var sid = rnd(32, 'abcdefghijkmnpqrstuvwxyz23456789');
+      FBp.then(function (F) {
+        return F.F.setDoc(F.F.doc(F.db, 'pair', code), { sid: sid, at: F.F.serverTimestamp() }).then(function () {
+          rounds++; tries = 0;
+          codeEl.textContent = code.slice(0, 3) + ' ' + code.slice(3);
+          msgEl.textContent = '이 숫자는 10분 동안 쓸 수 있어요. 시간이 지나면 새 숫자로 바뀝니다.';
+          unsub = F.F.onSnapshot(F.F.doc(F.db, 'pairResp', sid), function (snap) {
+            var k = snap.exists() && String(snap.data().key || '').replace(/[^a-z0-9]/g, '');
+            if (!k || k.length < 16) return;
+            if (unsub) { unsub(); unsub = null; } clearTimeout(timer);
+            codeEl.textContent = '연결됐어요!'; msgEl.textContent = '우리 반 화면을 여는 중…';
+            lsSet(k);
+            F.F.deleteDoc(F.F.doc(F.db, 'pairResp', sid)).catch(function () {}).then(function () { goKey(k); });
+          }, function () {});
+          timer = setTimeout(fresh, 10 * 60e3);
+        });
+      }).catch(function () {
+        if (++tries < 5) { timer = setTimeout(fresh, 1500); return; }
+        msgEl.textContent = '인터넷 연결을 확인해 주세요. (학교 망에서 막혔다면 담임 선생님께 알려 주세요)';
+        btn.style.display = '';
+      });
+    }
+  }
+
   /* ---- Firestore: 우리 반 자료 · 조사 응답을 실시간으로 ---- */
-  if (!K || K.length < 16) { failMsg = 'TV 주소가 올바르지 않아요. 관리 화면에서 [TV 화면 열기]로 다시 열어 주세요.'; readyNo(new Error(failMsg)); }
+  if (PAIR) { failMsg = ' '; readyNo(new Error(failMsg)); }
+  else if (!K || K.length < 16) { failMsg = 'TV 주소가 올바르지 않아요. 관리 화면에서 [TV 화면 열기]로 다시 열어 주세요.'; readyNo(new Error(failMsg)); }
   else {
     import('./fb.js').then(function (m) { return m.fb(); }).then(function (F) {
       FB = F;
       F.F.onSnapshot(F.F.doc(F.db, 'boards', K), function (snap) {
         if (!snap.exists()) {
           gone = true; B = null;
-          failMsg = '이 TV 주소는 더 이상 쓰지 않아요. 담임 선생님 관리 화면의 새 TV 주소로 열어 주세요.';
+          failMsg = '이 TV 주소는 더 이상 쓰지 않아요. 잠시 뒤 연결 숫자 화면으로 바뀝니다.';
           readyNo(new Error(failMsg));
           var ov = document.getElementById('crGone') || document.body.appendChild(document.createElement('div'));
           ov.id = 'crGone';
           ov.style.cssText = 'position:fixed;inset:0;z-index:99;background:#1D2A25;color:#E4E0D3;display:flex;align-items:center;justify-content:center;text-align:center;padding:2rem;font-size:1.8rem;line-height:1.7';
           ov.textContent = failMsg;
+          if (lsGet() === K) lsSet('');
+          setTimeout(function () { if (gone) location.replace(location.pathname); }, 6000);
           return;
         }
         gone = false; failMsg = ''; B = snap.data();
+        if (!WANT_EDIT && lsGet() !== K) lsSet(K);
         var g0 = document.getElementById('crGone'); if (g0) g0.remove();
         readyOk(); checkOwner(); kick();
       }, function (e) {
