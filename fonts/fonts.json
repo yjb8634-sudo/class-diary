@@ -1,9 +1,804 @@
 {
-  "note": "교실 TV 글꼴 목록. 글꼴 파일을 fonts/ 폴더에 올리고 여기에 한 줄 더하면 선생님들 [화면 꾸미기 → TV 글꼴]에 나타납니다. id는 영어 소문자로, 한 번 정하면 바꾸지 마세요.",
-  "fonts": [
-    { "id": "bunpil", "name": "분필체 (기본)", "family": "Bunpil", "woff2": "Bunpil-R.woff2", "woff": "Bunpil-R.woff" },
-    { "id": "badasseugi-b", "name": "받아쓰기 굵게", "family": "Badasseugi", "woff2": "Badasseugi-Bold.woff2", "woff": "Badasseugi-Bold.woff" },
-    { "id": "badasseugi-l", "name": "받아쓰기 가늘게", "family": "Badasseugi", "woff2": "Badasseugi-Light.woff2", "woff": "Badasseugi-Light.woff" },
-    { "id": "system", "name": "깔끔한 기본 글꼴", "family": "" }
-  ]
+ "note": "교실 TV 글꼴 목록 (학교안심 글꼴, 한국교육학술정보원). 글꼴 파일을 fonts/ 폴더에 올리고 여기에 한 줄 더하면 선생님들 [화면 꾸미기 → TV 글꼴]에 나타납니다. id는 한 번 정하면 바꾸지 마세요.",
+ "fonts": [
+  {
+   "id": "bunpil",
+   "name": "분필 보통 (기본)",
+   "group": "분필",
+   "w": "보통",
+   "family": "Bunpil",
+   "woff2": "Bunpil-R.woff2",
+   "woff": "Bunpil-R.woff"
+  },
+  {
+   "id": "hs-bareondotumr",
+   "name": "바른돋움 보통",
+   "group": "바른돋움",
+   "w": "보통",
+   "family": "학교안심 바른돋움",
+   "woff": "hs-bareondotumr.woff",
+   "kb": 195
+  },
+  {
+   "id": "hs-bareondotumb",
+   "name": "바른돋움 굵게",
+   "group": "바른돋움",
+   "w": "굵게",
+   "family": "학교안심 바른돋움",
+   "woff": "hs-bareondotumb.woff",
+   "kb": 177
+  },
+  {
+   "id": "hs-santteutdotuml",
+   "name": "산뜻돋움 가늘게",
+   "group": "산뜻돋움",
+   "w": "가늘게",
+   "family": "학교안심 산뜻돋움",
+   "woff": "hs-santteutdotuml.woff",
+   "kb": 141
+  },
+  {
+   "id": "hs-santteutdotumm",
+   "name": "산뜻돋움 중간",
+   "group": "산뜻돋움",
+   "w": "중간",
+   "family": "학교안심 산뜻돋움",
+   "woff": "hs-santteutdotumm.woff",
+   "kb": 126
+  },
+  {
+   "id": "hs-malgeunnalm",
+   "name": "맑은날 중간",
+   "group": "맑은날",
+   "w": "중간",
+   "family": "학교안심 맑은날",
+   "woff": "hs-malgeunnalm.woff",
+   "kb": 118
+  },
+  {
+   "id": "hs-malgeunnalb",
+   "name": "맑은날 굵게",
+   "group": "맑은날",
+   "w": "굵게",
+   "family": "학교안심 맑은날",
+   "woff": "hs-malgeunnalb.woff",
+   "kb": 117
+  },
+  {
+   "id": "hs-godeunjemokm",
+   "name": "곧은제목 중간",
+   "group": "곧은제목",
+   "w": "중간",
+   "family": "학교안심 곧은제목",
+   "woff": "hs-godeunjemokm.woff",
+   "kb": 167
+  },
+  {
+   "id": "hs-godeunjemokb",
+   "name": "곧은제목 굵게",
+   "group": "곧은제목",
+   "w": "굵게",
+   "family": "학교안심 곧은제목",
+   "woff": "hs-godeunjemokb.woff",
+   "kb": 178
+  },
+  {
+   "id": "hs-allimjang-ttf-r",
+   "name": "알림장 보통",
+   "group": "알림장",
+   "w": "보통",
+   "family": "학교안심 알림장",
+   "woff": "hs-allimjang-ttf-r.woff",
+   "kb": 137
+  },
+  {
+   "id": "hs-allimjang-ttf-b",
+   "name": "알림장 굵게",
+   "group": "알림장",
+   "w": "굵게",
+   "family": "학교안심 알림장",
+   "woff": "hs-allimjang-ttf-b.woff",
+   "kb": 137
+  },
+  {
+   "id": "hs-dunggeunmiso-ttf-r",
+   "name": "둥근미소 보통",
+   "group": "둥근미소",
+   "w": "보통",
+   "family": "학교안심 둥근미소",
+   "woff": "hs-dunggeunmiso-ttf-r.woff",
+   "kb": 213
+  },
+  {
+   "id": "hs-dunggeunmiso-ttf-b",
+   "name": "둥근미소 굵게",
+   "group": "둥근미소",
+   "w": "굵게",
+   "family": "학교안심 둥근미소",
+   "woff": "hs-dunggeunmiso-ttf-b.woff",
+   "kb": 277
+  },
+  {
+   "id": "hs-chilpanjiugae-ttf-l",
+   "name": "칠판지우개 가늘게",
+   "group": "칠판지우개",
+   "w": "가늘게",
+   "family": "학교안심 칠판지우개",
+   "woff": "hs-chilpanjiugae-ttf-l.woff",
+   "kb": 242
+  },
+  {
+   "id": "hs-chilpanjiugae-ttf-b",
+   "name": "칠판지우개 굵게",
+   "group": "칠판지우개",
+   "w": "굵게",
+   "family": "학교안심 칠판지우개",
+   "woff": "hs-chilpanjiugae-ttf-b.woff",
+   "kb": 245
+  },
+  {
+   "id": "hs-chulseokbu-ttf-l",
+   "name": "출석부 가늘게",
+   "group": "출석부",
+   "w": "가늘게",
+   "family": "학교안심 출석부",
+   "woff": "hs-chulseokbu-ttf-l.woff",
+   "kb": 128
+  },
+  {
+   "id": "hs-chulseokbu-ttf-b",
+   "name": "출석부 굵게",
+   "group": "출석부",
+   "w": "굵게",
+   "family": "학교안심 출석부",
+   "woff": "hs-chulseokbu-ttf-b.woff",
+   "kb": 128
+  },
+  {
+   "id": "hs-siganpyor",
+   "name": "시간표 보통",
+   "group": "시간표",
+   "w": "보통",
+   "family": "학교안심 시간표",
+   "woff": "hs-siganpyor.woff",
+   "kb": 218
+  },
+  {
+   "id": "hs-boardmarkerr",
+   "name": "보드마카 보통",
+   "group": "보드마카",
+   "w": "보통",
+   "family": "학교안심 보드마카",
+   "woff": "hs-boardmarkerr.woff",
+   "kb": 161
+  },
+  {
+   "id": "hs-nadeuri-ttf-l",
+   "name": "나들이 가늘게",
+   "group": "나들이",
+   "w": "가늘게",
+   "family": "학교안심 나들이",
+   "woff": "hs-nadeuri-ttf-l.woff",
+   "kb": 153
+  },
+  {
+   "id": "hs-nadeuri-ttf-b",
+   "name": "나들이 굵게",
+   "group": "나들이",
+   "w": "굵게",
+   "family": "학교안심 나들이",
+   "woff": "hs-nadeuri-ttf-b.woff",
+   "kb": 164
+  },
+  {
+   "id": "badasseugi-l",
+   "name": "받아쓰기 가늘게",
+   "group": "받아쓰기",
+   "w": "가늘게",
+   "family": "Badasseugi",
+   "woff2": "Badasseugi-Light.woff2",
+   "woff": "Badasseugi-Light.woff"
+  },
+  {
+   "id": "badasseugi-b",
+   "name": "받아쓰기 굵게",
+   "group": "받아쓰기",
+   "w": "굵게",
+   "family": "Badasseugi",
+   "woff2": "Badasseugi-Bold.woff2",
+   "woff": "Badasseugi-Bold.woff"
+  },
+  {
+   "id": "hs-mondangbunfilr",
+   "name": "몽당분필 보통",
+   "group": "몽당분필",
+   "w": "보통",
+   "family": "학교안심 몽당분필",
+   "woff": "hs-mondangbunfilr.woff",
+   "kb": 501
+  },
+  {
+   "id": "hs-gaeulsopungl",
+   "name": "가을소풍 가늘게",
+   "group": "가을소풍",
+   "w": "가늘게",
+   "family": "학교안심 가을소풍",
+   "woff": "hs-gaeulsopungl.woff",
+   "kb": 514
+  },
+  {
+   "id": "hs-gaeulsopungb",
+   "name": "가을소풍 굵게",
+   "group": "가을소풍",
+   "w": "굵게",
+   "family": "학교안심 가을소풍",
+   "woff": "hs-gaeulsopungb.woff",
+   "kb": 626
+  },
+  {
+   "id": "hs-gongryongalr",
+   "name": "공룡알 보통",
+   "group": "공룡알",
+   "w": "보통",
+   "family": "학교안심 공룡알",
+   "woff": "hs-gongryongalr.woff",
+   "kb": 188
+  },
+  {
+   "id": "hs-gureumr",
+   "name": "구름 보통",
+   "group": "구름",
+   "w": "보통",
+   "family": "학교안심 구름",
+   "woff": "hs-gureumr.woff",
+   "kb": 126
+  },
+  {
+   "id": "hs-geurimilgi-ttf-r",
+   "name": "그림일기 보통",
+   "group": "그림일기",
+   "w": "보통",
+   "family": "학교안심 그림일기",
+   "woff": "hs-geurimilgi-ttf-r.woff",
+   "kb": 226
+  },
+  {
+   "id": "hs-kkokkomar",
+   "name": "꼬꼬마 보통",
+   "group": "꼬꼬마",
+   "w": "보통",
+   "family": "학교안심 꼬꼬마",
+   "woff": "hs-kkokkomar.woff",
+   "kb": 265
+  },
+  {
+   "id": "hs-kkwabaegir",
+   "name": "꽈배기 보통",
+   "group": "꽈배기",
+   "w": "보통",
+   "family": "학교안심 꽈배기",
+   "woff": "hs-kkwabaegir.woff",
+   "kb": 203
+  },
+  {
+   "id": "hs-ggooreogir",
+   "name": "꾸러기 보통",
+   "group": "꾸러기",
+   "w": "보통",
+   "family": "학교안심 꾸러기",
+   "woff": "hs-ggooreogir.woff",
+   "kb": 285
+  },
+  {
+   "id": "hs-namul",
+   "name": "나무 가늘게",
+   "group": "나무",
+   "w": "가늘게",
+   "family": "학교안심 나무",
+   "woff": "hs-namul.woff",
+   "kb": 125
+  },
+  {
+   "id": "hs-namur",
+   "name": "나무 보통",
+   "group": "나무",
+   "w": "보통",
+   "family": "학교안심 나무",
+   "woff": "hs-namur.woff",
+   "kb": 123
+  },
+  {
+   "id": "hs-nalgaer",
+   "name": "날개 보통",
+   "group": "날개",
+   "w": "보통",
+   "family": "학교안심 날개",
+   "woff": "hs-nalgaer.woff",
+   "kb": 239
+  },
+  {
+   "id": "hs-dotbogir",
+   "name": "돋보기 보통",
+   "group": "돋보기",
+   "w": "보통",
+   "family": "학교안심 돋보기",
+   "woff": "hs-dotbogir.woff",
+   "kb": 113
+  },
+  {
+   "id": "hs-doldaml",
+   "name": "돌담 가늘게",
+   "group": "돌담",
+   "w": "가늘게",
+   "family": "학교안심 돌담",
+   "woff": "hs-doldaml.woff",
+   "kb": 387
+  },
+  {
+   "id": "hs-doldamm",
+   "name": "돌담 중간",
+   "group": "돌담",
+   "w": "중간",
+   "family": "학교안심 돌담",
+   "woff": "hs-doldamm.woff",
+   "kb": 361
+  },
+  {
+   "id": "hs-doldamb",
+   "name": "돌담 굵게",
+   "group": "돌담",
+   "w": "굵게",
+   "family": "학교안심 돌담",
+   "woff": "hs-doldamb.woff",
+   "kb": 440
+  },
+  {
+   "id": "hs-tteokbokkib",
+   "name": "떡볶이 굵게",
+   "group": "떡볶이",
+   "w": "굵게",
+   "family": "학교안심 떡볶이",
+   "woff": "hs-tteokbokkib.woff",
+   "kb": 184
+  },
+  {
+   "id": "hs-ttwimteulr",
+   "name": "뜀틀 보통",
+   "group": "뜀틀",
+   "w": "보통",
+   "family": "학교안심 뜀틀",
+   "woff": "hs-ttwimteulr.woff",
+   "kb": 148
+  },
+  {
+   "id": "hs-rikodeor",
+   "name": "리코더 보통",
+   "group": "리코더",
+   "w": "보통",
+   "family": "학교안심 리코더",
+   "woff": "hs-rikodeor.woff",
+   "kb": 117
+  },
+  {
+   "id": "hs-manitor",
+   "name": "마니또 보통",
+   "group": "마니또",
+   "w": "보통",
+   "family": "학교안심 마니또",
+   "woff": "hs-manitor.woff",
+   "kb": 241
+  },
+  {
+   "id": "hs-mabeopsar",
+   "name": "마법사 보통",
+   "group": "마법사",
+   "w": "보통",
+   "family": "학교안심 마법사",
+   "woff": "hs-mabeopsar.woff",
+   "kb": 185
+  },
+  {
+   "id": "hs-moheomgar",
+   "name": "모험가 보통",
+   "group": "모험가",
+   "w": "보통",
+   "family": "학교안심 모험가",
+   "woff": "hs-moheomgar.woff",
+   "kb": 119
+  },
+  {
+   "id": "hs-moheomgab",
+   "name": "모험가 굵게",
+   "group": "모험가",
+   "w": "굵게",
+   "family": "학교안심 모험가",
+   "woff": "hs-moheomgab.woff",
+   "kb": 127
+  },
+  {
+   "id": "hs-monggeulmonggeulr",
+   "name": "몽글몽글 보통",
+   "group": "몽글몽글",
+   "w": "보통",
+   "family": "학교안심 몽글몽글",
+   "woff": "hs-monggeulmonggeulr.woff",
+   "kb": 162
+  },
+  {
+   "id": "hs-mulgyeolr",
+   "name": "물결 보통",
+   "group": "물결",
+   "w": "보통",
+   "family": "학교안심 물결",
+   "woff": "hs-mulgyeolr.woff",
+   "kb": 111
+  },
+  {
+   "id": "hs-mulgyeolb",
+   "name": "물결 굵게",
+   "group": "물결",
+   "w": "굵게",
+   "family": "학교안심 물결",
+   "woff": "hs-mulgyeolb.woff",
+   "kb": 111
+  },
+  {
+   "id": "hs-mindeulleholssir",
+   "name": "민들레홀씨 보통",
+   "group": "민들레홀씨",
+   "w": "보통",
+   "family": "학교안심 민들레홀씨",
+   "woff": "hs-mindeulleholssir.woff",
+   "kb": 260
+  },
+  {
+   "id": "hs-bareonbatangr",
+   "name": "바른바탕 보통",
+   "group": "바른바탕",
+   "w": "보통",
+   "family": "학교안심 바른바탕",
+   "woff": "hs-bareonbatangr.woff",
+   "kb": 300
+  },
+  {
+   "id": "hs-bareonbatangb",
+   "name": "바른바탕 굵게",
+   "group": "바른바탕",
+   "w": "굵게",
+   "family": "학교안심 바른바탕",
+   "woff": "hs-bareonbatangb.woff",
+   "kb": 283
+  },
+  {
+   "id": "hs-bandall",
+   "name": "반달 가늘게",
+   "group": "반달",
+   "w": "가늘게",
+   "family": "학교안심 반달",
+   "woff": "hs-bandall.woff",
+   "kb": 132
+  },
+  {
+   "id": "hs-byeolbichhaneul-ttf-l",
+   "name": "별빛하늘 가늘게",
+   "group": "별빛하늘",
+   "w": "가늘게",
+   "family": "학교안심 별빛하늘",
+   "woff": "hs-byeolbichhaneul-ttf-l.woff",
+   "kb": 105
+  },
+  {
+   "id": "hs-byeolbichhaneul-ttf-b",
+   "name": "별빛하늘 굵게",
+   "group": "별빛하늘",
+   "w": "굵게",
+   "family": "학교안심 별빛하늘",
+   "woff": "hs-byeolbichhaneul-ttf-b.woff",
+   "kb": 113
+  },
+  {
+   "id": "hs-byeoljari-ttf-l",
+   "name": "별자리 가늘게",
+   "group": "별자리",
+   "w": "가늘게",
+   "family": "학교안심 별자리",
+   "woff": "hs-byeoljari-ttf-l.woff",
+   "kb": 115
+  },
+  {
+   "id": "hs-byeoljari-ttf-b",
+   "name": "별자리 굵게",
+   "group": "별자리",
+   "w": "굵게",
+   "family": "학교안심 별자리",
+   "woff": "hs-byeoljari-ttf-b.woff",
+   "kb": 133
+  },
+  {
+   "id": "hs-bombanghakr",
+   "name": "봄방학 보통",
+   "group": "봄방학",
+   "w": "보통",
+   "family": "학교안심 봄방학",
+   "woff": "hs-bombanghakr.woff",
+   "kb": 238
+  },
+  {
+   "id": "hs-butpenl",
+   "name": "붓펜 가늘게",
+   "group": "붓펜",
+   "w": "가늘게",
+   "family": "학교안심 붓펜",
+   "woff": "hs-butpenl.woff",
+   "kb": 410
+  },
+  {
+   "id": "hs-butpenm",
+   "name": "붓펜 중간",
+   "group": "붓펜",
+   "w": "중간",
+   "family": "학교안심 붓펜",
+   "woff": "hs-butpenm.woff",
+   "kb": 353
+  },
+  {
+   "id": "hs-butpenb",
+   "name": "붓펜 굵게",
+   "group": "붓펜",
+   "w": "굵게",
+   "family": "학교안심 붓펜",
+   "woff": "hs-butpenb.woff",
+   "kb": 421
+  },
+  {
+   "id": "hs-samulhamr",
+   "name": "사물함 보통",
+   "group": "사물함",
+   "w": "보통",
+   "family": "학교안심 사물함",
+   "woff": "hs-samulhamr.woff",
+   "kb": 136
+  },
+  {
+   "id": "hs-santteutbatangl",
+   "name": "산뜻바탕 가늘게",
+   "group": "산뜻바탕",
+   "w": "가늘게",
+   "family": "학교안심 산뜻바탕",
+   "woff": "hs-santteutbatangl.woff",
+   "kb": 289
+  },
+  {
+   "id": "hs-santteutbatangm",
+   "name": "산뜻바탕 중간",
+   "group": "산뜻바탕",
+   "w": "중간",
+   "family": "학교안심 산뜻바탕",
+   "woff": "hs-santteutbatangm.woff",
+   "kb": 304
+  },
+  {
+   "id": "hs-sangjangr",
+   "name": "상장 보통",
+   "group": "상장",
+   "w": "보통",
+   "family": "학교안심 상장",
+   "woff": "hs-sangjangr.woff",
+   "kb": 260
+  },
+  {
+   "id": "hs-saekyeonpilr",
+   "name": "색연필 보통",
+   "group": "색연필",
+   "w": "보통",
+   "family": "학교안심 색연필",
+   "woff": "hs-saekyeonpilr.woff",
+   "kb": 3702
+  },
+  {
+   "id": "hs-sonagir",
+   "name": "소나기 보통",
+   "group": "소나기",
+   "w": "보통",
+   "family": "학교안심 소나기",
+   "woff": "hs-sonagir.woff",
+   "kb": 126
+  },
+  {
+   "id": "hs-susukkangl",
+   "name": "수수깡 가늘게",
+   "group": "수수깡",
+   "w": "가늘게",
+   "family": "학교안심 수수깡",
+   "woff": "hs-susukkangl.woff",
+   "kb": 188
+  },
+  {
+   "id": "hs-sketchbookr",
+   "name": "스케치북 보통",
+   "group": "스케치북",
+   "w": "보통",
+   "family": "학교안심 스케치북",
+   "woff": "hs-sketchbookr.woff",
+   "kb": 146
+  },
+  {
+   "id": "hs-eohangkkumigib",
+   "name": "어항꾸미기 굵게",
+   "group": "어항꾸미기",
+   "w": "굵게",
+   "family": "학교안심 어항꾸미기",
+   "woff": "hs-eohangkkumigib.woff",
+   "kb": 149
+  },
+  {
+   "id": "hs-yeohaengr",
+   "name": "여행 보통",
+   "group": "여행",
+   "w": "보통",
+   "family": "학교안심 여행",
+   "woff": "hs-yeohaengr.woff",
+   "kb": 108
+  },
+  {
+   "id": "hs-ocarinar",
+   "name": "오카리나 보통",
+   "group": "오카리나",
+   "w": "보통",
+   "family": "학교안심 오카리나",
+   "woff": "hs-ocarinar.woff",
+   "kb": 107
+  },
+  {
+   "id": "hs-usanr",
+   "name": "우산 보통",
+   "group": "우산",
+   "w": "보통",
+   "family": "학교안심 우산",
+   "woff": "hs-usanr.woff",
+   "kb": 189
+  },
+  {
+   "id": "hs-woojur",
+   "name": "우주 보통",
+   "group": "우주",
+   "w": "보통",
+   "family": "학교안심 우주",
+   "woff": "hs-woojur.woff",
+   "kb": 155
+  },
+  {
+   "id": "hs-undongjangl",
+   "name": "운동장 가늘게",
+   "group": "운동장",
+   "w": "가늘게",
+   "family": "학교안심 운동장",
+   "woff": "hs-undongjangl.woff",
+   "kb": 112
+  },
+  {
+   "id": "hs-eunhasur",
+   "name": "은하수 보통",
+   "group": "은하수",
+   "w": "보통",
+   "family": "학교안심 은하수",
+   "woff": "hs-eunhasur.woff",
+   "kb": 159
+  },
+  {
+   "id": "hs-yieodalligil",
+   "name": "이어달리기 가늘게",
+   "group": "이어달리기",
+   "w": "가늘게",
+   "family": "학교안심 이어달리기",
+   "woff": "hs-yieodalligil.woff",
+   "kb": 90
+  },
+  {
+   "id": "hs-jayeonr",
+   "name": "자연 보통",
+   "group": "자연",
+   "w": "보통",
+   "family": "학교안심 자연",
+   "woff": "hs-jayeonr.woff",
+   "kb": 95
+  },
+  {
+   "id": "hs-jayusiganr",
+   "name": "자유시간 보통",
+   "group": "자유시간",
+   "w": "보통",
+   "family": "학교안심 자유시간",
+   "woff": "hs-jayusiganr.woff",
+   "kb": 181
+  },
+  {
+   "id": "hs-jeomsimsiganb",
+   "name": "점심시간 굵게",
+   "group": "점심시간",
+   "w": "굵게",
+   "family": "학교안심 점심시간",
+   "woff": "hs-jeomsimsiganb.woff",
+   "kb": 147
+  },
+  {
+   "id": "hs-jiugaer",
+   "name": "지우개 보통",
+   "group": "지우개",
+   "w": "보통",
+   "family": "학교안심 지우개",
+   "woff": "hs-jiugaer.woff",
+   "kb": 134
+  },
+  {
+   "id": "hs-chaekgalpir",
+   "name": "책갈피 보통",
+   "group": "책갈피",
+   "w": "보통",
+   "family": "학교안심 책갈피",
+   "woff": "hs-chaekgalpir.woff",
+   "kb": 212
+  },
+  {
+   "id": "hs-kossuyeomr",
+   "name": "콧수염 보통",
+   "group": "콧수염",
+   "w": "보통",
+   "family": "학교안심 콧수염",
+   "woff": "hs-kossuyeomr.woff",
+   "kb": 171
+  },
+  {
+   "id": "hs-kidaripungseonl",
+   "name": "키다리풍선 가늘게",
+   "group": "키다리풍선",
+   "w": "가늘게",
+   "family": "학교안심 키다리풍선",
+   "woff": "hs-kidaripungseonl.woff",
+   "kb": 122
+  },
+  {
+   "id": "hs-tuhor",
+   "name": "투호 보통",
+   "group": "투호",
+   "w": "보통",
+   "family": "학교안심 투호",
+   "woff": "hs-tuhor.woff",
+   "kb": 176
+  },
+  {
+   "id": "hs-puzzle-ttf-black",
+   "name": "퍼즐 채움",
+   "group": "퍼즐",
+   "w": "채움",
+   "family": "학교안심 퍼즐",
+   "woff": "hs-puzzle-ttf-black.woff",
+   "kb": 153
+  },
+  {
+   "id": "hs-puzzle-ttf-outline",
+   "name": "퍼즐 외곽선",
+   "group": "퍼즐",
+   "w": "외곽선",
+   "family": "학교안심 퍼즐",
+   "woff": "hs-puzzle-ttf-outline.woff",
+   "kb": 314
+  },
+  {
+   "id": "hs-posterb",
+   "name": "포스터 굵게",
+   "group": "포스터",
+   "w": "굵게",
+   "family": "학교안심 포스터",
+   "woff": "hs-posterb.woff",
+   "kb": 143
+  },
+  {
+   "id": "system",
+   "name": "깔끔한 기본 글꼴",
+   "group": "기본 글꼴",
+   "w": "보통",
+   "family": ""
+  }
+ ]
 }
