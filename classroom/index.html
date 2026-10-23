@@ -262,7 +262,10 @@ select.in{padding-right:28px}
 .b[disabled]{opacity:.45;pointer-events:none}
 .b svg{width:18px;height:18px}
 /* 탭 */
-nav.tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;margin:0 0 16px}
+nav.tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;margin:0 0 18px;background:transparent!important;padding:0;border:0}
+nav.tabs button{background:#1F2D27!important;border:1px solid rgba(232,228,214,.16)!important;color:#D9D5C7!important;box-shadow:0 1px 0 rgba(0,0,0,.25)}
+nav.tabs button:hover{background:#26372F!important;border-color:rgba(242,209,107,.45)!important;color:#F3F1E7!important}
+nav.tabs button.on{background:#F2D16B!important;border-color:#F2D16B!important;color:#1D2A25!important;font-weight:700;box-shadow:0 2px 10px rgba(242,209,107,.18)}
 nav.tabs button{all:unset;box-sizing:border-box;cursor:pointer;text-align:center;padding:12px 6px;border-radius:var(--shape);background:var(--card);border:1.5px solid var(--line);
   color:var(--chalk2);font-size:15.5px;line-height:1.25;position:relative}
 nav.tabs button:hover{background:var(--card2)}
@@ -310,11 +313,42 @@ nav.tabs button .dot{position:absolute;top:6px;right:8px;min-width:18px;height:1
 .foot{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-top:6px}
 .foot .credit{margin:0;margin-left:auto}
 .privacy{margin:0;font-size:13px;color:var(--chalk2);line-height:1.6}
+.fontgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:10px;max-height:560px;overflow:auto;padding-right:4px}
+.fontopt{cursor:pointer;box-sizing:border-box;border:1.5px solid rgba(255,255,255,.18);border-radius:12px;padding:12px 14px;background:rgba(0,0,0,.12);display:flex;flex-direction:column;gap:8px}
+.fontopt:hover{border-color:rgba(242,209,107,.6)}
+.fontopt.on{border-color:#F2D16B;background:rgba(242,209,107,.1)}
+.fontopt .fs{font-size:22px;line-height:1.3;color:#F3F1E7;font-weight:400!important}
+.fontopt .fn{font-size:13px;opacity:.85;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.fontopt.on .fn{color:#F2D16B;opacity:1}
+.fontopt .fw{display:inline-flex;gap:4px;margin-left:auto}
+.fontopt .fwb{all:unset;cursor:pointer;font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.25);color:#E4E0D3}
+.fontopt .fwb.on{background:#F2D16B;border-color:#F2D16B;color:#2A2108}
 .sedit{margin:10px 0;padding:12px 14px;border:1.5px dashed var(--yellow);border-radius:10px}
 .pvslot{margin-top:12px;width:100%;aspect-ratio:16/9;border-radius:12px;background:#14201B;border:1px solid var(--line)}
 #pvHost{position:absolute;z-index:1;overflow:hidden;border-radius:12px;display:none}
 #pvHost iframe{border:0;width:1600px;height:900px;transform-origin:0 0;display:block;background:#1D2A25}
 #betaBar{position:sticky;top:0;z-index:60;background:#E0705F;color:#fff;font-size:13.5px;padding:7px 14px;text-align:center;line-height:1.5}
+#mobModal{position:fixed;inset:0;z-index:210;background:rgba(10,16,13,.72);display:flex;align-items:center;justify-content:center;padding:16px}
+#mobModal .mc{background:#F4F7F5;color:#1D2A25;border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.5);width:min(460px,100%);max-height:92vh;overflow:auto}
+#mobModal .mh{display:flex;gap:12px;align-items:center;padding:16px 18px;background:#E3EEE8;border-bottom:1px solid #D2E0D8}
+#mobModal .mh .ic{width:44px;height:44px;border-radius:12px;background:#2F6B55;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
+#mobModal .mh b{display:block;font-size:18px}#mobModal .mh span{font-size:13.5px;color:#4B5F56}
+#mobModal .mx{all:unset;cursor:pointer;margin-left:auto;font-size:22px;color:#4B5F56;padding:4px 8px}
+#mobModal .mb{padding:18px}
+#mobModal .qr{background:#fff;border:1px solid #D2E0D8;border-radius:16px;padding:14px;width:220px;margin:0 auto}
+#mobModal .qr svg{display:block;width:100%;height:auto}
+#mobModal .url{margin:14px 0 10px;background:#fff;border:1px solid #D2E0D8;border-radius:10px;padding:10px 12px;font-size:13.5px;word-break:break-all;text-align:center;color:#24453A}
+#mobModal .bt{display:flex;gap:8px;flex-wrap:wrap}
+#mobModal .bt a,#mobModal .bt button{all:unset;cursor:pointer;flex:1;min-width:120px;text-align:center;padding:10px 8px;border-radius:10px;font-size:14.5px;font-weight:700;border:1.5px solid #B9CFC4;background:#fff;color:#24453A;box-sizing:border-box}
+#mobModal .bt .pri{background:#2F6B55;border-color:#2F6B55;color:#fff}
+#mobModal .bt .ins{background:#E6B84A;border-color:#E6B84A;color:#2A2108}
+#mobModal .how{margin-top:14px;font-size:13.5px;line-height:1.7;color:#33493F;background:#fff;border:1px solid #D2E0D8;border-radius:12px;padding:10px 14px}
+#mobModal .how b{color:#1D2A25}#mobModal .how p{margin:6px 0}
+#mobModal .ok{margin-top:12px;text-align:center;font-weight:700;color:#2F6B55}
+#mobTip{position:fixed;left:12px;right:12px;bottom:12px;z-index:150;background:#F4F7F5;color:#1D2A25;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.4);padding:12px 14px;display:flex;gap:10px;align-items:center;font-size:14px}
+#mobTip button{all:unset;cursor:pointer;font-weight:700;padding:6px 10px;border-radius:8px}
+#mobTip .y{background:#2F6B55;color:#fff}
+@media (max-width:640px){.mobbtn{padding:6px 9px}}
 #updModal{position:fixed;inset:0;z-index:200;background:rgba(10,16,13,.72);display:flex;align-items:center;justify-content:center;padding:16px}
 #updModal .updc{background:#22312B;border:1px solid var(--line2);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.5);width:min(560px,100%);max-height:86vh;display:flex;flex-direction:column;padding:22px 22px 18px}
 #updModal h2{margin:0 0 10px;font-size:21px}
@@ -388,9 +422,9 @@ function friendly(e){
   if (/network|unavailable|offline|Failed to fetch/i.test(m)) return '인터넷 연결을 확인해 주세요.';
   return (e && e.message ? e.message : m).replace(/^Firebase:\s*/, '');
 }
-const S = { SEV: [], sevUnsub: null, CNS: [], cnsUnsub: null, ANSL: [], SUGL: [], sugUnsub: null, bellOpen: false, bellPrev: 0, newVer: '', fb: null, user: null, me: null, B: null, key: '', tab: 'flash', unsub: null, ansUnsub: null, ANS: {}, teachers: null,
+const S = { SEV: [], sevUnsub: null, CNS: [], cnsUnsub: null, ANSL: [], SUGL: [], sugUnsub: null, bellOpen: false, bellPrev: 0, newVer: '', fb: null, user: null, me: null, B: null, key: '', tab: 'notice', unsub: null, ansUnsub: null, ANS: {}, teachers: null,
   nf: { level: 0 }, edit: '', pend: { notice: [], note: [], survey: [] }, pickFor: '', sugg: null, rost: null, openSv: '' };
-try { S.tab = localStorage.getItem('cr_tab') || 'flash'; } catch (e) {}
+try { S.tab = localStorage.getItem('cr_tab2') || 'notice'; } catch (e) {}
 
 /* ================= 시작 · 로그인 ================= */
 async function start(){
@@ -537,7 +571,7 @@ function watchBoard(){
   S.unsub = F.onSnapshot(F.doc(db, 'boards', S.key), snap => {
     if (!snap.exists()){ S.B = null; makeBoard().then(watchBoard).catch(fail); return; }
     S.B = snap.data();
-    if (!S.updChecked){ S.updChecked = true; setTimeout(updOnOpen, 600); }
+    if (!S.updChecked){ S.updChecked = true; setTimeout(updOnOpen, 600); setTimeout(mobTip, 2500); }
     render(); syncView();
   }, fail);
   /* 조사 · 투표 응답 (TV에서 학생들이 누른 것) */
@@ -575,7 +609,7 @@ function maskName(name){
   return name.charAt(0) + new Array(name.length - 1).join('○') + name.charAt(name.length - 1);
 }
 function viewDoc(B){
-  const pick = ['grade', 'klass', 'notices', 'notes', 'events', 'ddays', 'links', 'quote', 'weatherOn', 'birthdayOn', 'periods', 'specials', 'lunch',
+  const pick = ['font', 'grade', 'klass', 'notices', 'notes', 'events', 'ddays', 'links', 'quote', 'weatherOn', 'birthdayOn', 'periods', 'specials', 'lunch',
     'layout', 'ttSource', 'timetable', 'teachers', 'eventDays', 'eventNeis'];
   const o = { owner: S.user.uid, ver: 1 };
   pick.forEach(k => { if (B[k] !== undefined) o[k] = B[k]; });
@@ -687,18 +721,67 @@ function pendBox(kind, label){
 }
 
 /* ================= 그리기 ================= */
-const TABS = [['flash', '📣', '긴급 호출 · 쪽지'], ['notice', '📌', '공지 · 알림장'], ['look', '🎨', '화면 꾸미기'], ['time', '🕘', '시간표 설정'],
-  ['roster', '👥', '학급 명단'], ['survey', '🗳', '설문·투표·조사'], ['counsel', '💬', '상담 신청'], ['suggest', '✉️', '건의함']];
+const TABS = [['notice', '📌', '공지 · 알림장'], ['survey', '🗳', '설문·투표·조사'], ['look', '🎨', '화면 꾸미기'], ['time', '🕘', '시간표 설정'],
+  ['roster', '👥', '학급 명단'], ['counsel', '💬', '상담 신청'], ['suggest', '✉️', '건의함'], ['tv', '📺', 'TV 연결'], ['flash', '📣', '긴급 호출 · 쪽지']];
 function render(){
   const B = S.B; if (!B) return;
   const keep = captureDrafts();
   const T = TABS.slice(); if (isOperator()) T.push(['op', '🛡', '운영자']);
-  if (!T.some(t => t[0] === S.tab)) S.tab = 'flash';
+  if (!T.some(t => t[0] === S.tab)) S.tab = 'notice';
   const nStu = (B.students || []).length;
   const openSv = (B.surveys || []).filter(s => s.open).length, upC = (S.CNS || []).filter(c => c.date >= kstToday()).length;
   $('app').innerHTML = `<header class="top"><h1>${esc(B.grade)}학년 ${esc(B.klass)}반 교실 화면<small>${esc(S.me.name)} 선생님 · ${esc(S.user.email)}</small></h1>
-      <span class="pill">학생 <b>${nStu}</b>명</span>${openSv ? `<span class="pill">진행 중 조사 <b>${openSv}</b></span>` : ''}${bellHtml()}<button class="b sm" id="btnOut">로그아웃</button></header>
-    <section class="card tvbox"><div class="row"><h2 style="margin:0;flex:1;font-size:21px">📺 TV 연결</h2>
+      <span class="pill">학생 <b>${nStu}</b>명</span>${openSv ? `<span class="pill">진행 중 조사 <b>${openSv}</b></span>` : ''}<button class="b sm mobbtn" data-a="mobile" title="휴대폰에서 쓰기 · 앱 설치">📱 모바일</button>${bellHtml()}<button class="b sm" id="btnOut">로그아웃</button></header>
+    <nav class="tabs">${T.map(([v, ic, l]) => `<button data-tab="${v}" class="${S.tab === v ? 'on' : ''}"><span class="ic">${ic}</span>${l}${v === 'survey' && openSv ? `<span class="dot">${openSv}</span>` : ''}${v === 'counsel' && upC ? `<span class="dot">${upC}</span>` : ''}</button>`).join('')}</nav>
+    <div id="body">${({ flash: vFlash, notice: vNotice, look: vLook, time: vTime, roster: vRoster, survey: vSurvey, counsel: vCounsel, suggest: vSuggest, tv: vTvConnect, op: () => '<div id="opBox"></div>' })[S.tab]()}</div>
+    <div class="foot"><p class="privacy">🔒 우리 반 자료는 담임 선생님만 관리하며, 운영자는 열람할 수 없습니다.</p><p class="credit"><button class="updlink" data-a="updhist">📋 업데이트 내역</button>제작자 : 강릉제일고 유준배 선생님</p></div>`;
+  $('btnOut').onclick = logout;
+  { const bb = $('btnBell'); if (bb) bb.onclick = ev => { ev.stopPropagation(); bellToggle(); }; }
+  restoreDrafts(keep);
+  if (S.tab === 'op') loadTeachers();
+  if (S.tab === 'look' && !FONTL) fontLoadList(() => { if (S.tab === 'look') render(); });
+  if (S.tab === 'suggest' && S.sugg === null) loadSuggest();
+}
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target && e.target.id === 'pairIn'){ e.preventDefault(); const b = document.querySelector('[data-a="pair"]'); if (b) b.click(); } });
+function captureDrafts(){ const o = {}; document.querySelectorAll('[data-keep]').forEach(el => { o[el.id] = el.type === 'checkbox' ? { c: el.checked } : el.value; }); return o; }
+function restoreDrafts(o){ Object.keys(o).forEach(id => { const el = $(id); if (!el) return; const v = o[id]; if (v && typeof v === 'object') el.checked = v.c; else if (v) el.value = v; }); }
+
+/* ---------- TV 글꼴 고르기 (학교안심 글꼴) ---------- */
+const FONT_BASE = 'https://yjb8634-sudo.github.io/class-diary/fonts/';
+let FONTL = null, FONTLOADING = false;
+function fontLoadList(after){
+  if (FONTL || FONTLOADING) return;
+  FONTLOADING = true;
+  const j1 = fetch(FONT_BASE + 'fonts.json?h=' + Date.now(), { cache: 'no-cache' }).then(r => r.json());
+  const j2 = fetch(FONT_BASE + 'preview.json?h=' + Math.floor(Date.now() / 36e5)).then(r => r.json()).catch(() => ({}));
+  Promise.all([j1, j2]).then(([j, pv]) => {
+    FONTL = j.fonts || j;
+    const css = FONTL.filter(f => f.family && pv[f.id]).map(f => `@font-face{font-family:'PvF-${f.id}';font-display:block;src:url(data:font/woff;base64,${pv[f.id]}) format('woff')}`).join('\n');
+    const st = document.createElement('style'); st.id = 'pvFonts'; st.textContent = css; document.head.appendChild(st);
+    after();
+  }).catch(() => { FONTL = []; after(); });
+}
+function fontPickHtml(cur, act){
+  cur = cur || 'bunpil';
+  if (!FONTL) return '<p class="small muted">글꼴 목록을 불러오는 중…</p>';
+  if (!FONTL.length) return '<p class="small muted">글꼴 목록을 불러오지 못했어요. 잠시 뒤 다시 열어 주세요.</p>';
+  const G = [], by = {};
+  FONTL.forEach(f => { const g = f.group || f.name; if (!by[g]){ by[g] = []; G.push(g); } by[g].push(f); });
+  const now = FONTL.find(f => f.id === cur) || FONTL[0];
+  return `<p class="small" style="margin:4px 0 0">지금 글꼴: <b>${esc(now.name)}</b> · 학교안심 글꼴 ${G.length - 1}종</p>
+    <div class="fontgrid">${G.map(g => {
+      const L = by[g], sel = L.find(f => f.id === cur), show = sel || L[0];
+      const ff = show.family ? `'PvF-${esc(show.id)}',` : '';
+      return `<div class="fontopt${sel ? ' on' : ''}" data-${act}="font" data-id="${esc(show.id)}" role="button" tabindex="0">
+        <span class="fs" style="font-family:${ff}'Pretendard','Malgun Gothic',sans-serif!important">1학년 2반 · 오늘 급식 12:40</span>
+        <span class="fn">${sel ? '✓ ' : ''}${esc(g)}${L.length > 1 ? ` <span class="fw">${L.map(f => `<button class="fwb${f.id === cur ? ' on' : ''}" data-${act}="font" data-id="${esc(f.id)}">${esc(f.w || '')}</button>`).join('')}</span>` : ''}</span></div>`;
+    }).join('')}</div>`;
+}
+
+/* ---------- TV 연결 (탭) ---------- */
+function vTvConnect(){
+  const B = S.B;
+  return `    <section class="card tvbox"><div class="row"><h2 style="margin:0;flex:1;font-size:21px">📺 TV 연결</h2>
       <a class="b" href="${esc(tvUrl())}" target="_blank" rel="noopener">TV 화면 미리 보기</a>
       <a class="b" href="${esc(tvUrl(true))}" target="_blank" rel="noopener">화면 배치 조정</a></div>
       <ol class="pairsteps"><li>교실 TV 브라우저에서 <b class="addr">${esc(TV_SHORT)}</b> 를 엽니다.</li>
@@ -708,21 +791,10 @@ function render(){
         <div class="row" style="margin-top:8px"><input class="in" readonly value="${esc(tvUrl())}" style="flex:1" id="tvUrlIn"><button class="b" data-a="copytv">주소 복사</button></div>
         <p class="lead" style="margin:8px 0 0">이 주소를 TV에서 바로 열어도 됩니다. 이 주소로는 투표 · 호출 끄기 · 건의가 되니 <b>학생 단톡방에는 아래 학생용 주소</b>를 올려 주세요.</p></details>
       <div class="viewbox"><div class="row"><b style="flex:1">📱 학생 휴대폰용 주소 <span class="small muted" style="font-weight:400">단톡방 공유용 · 보기만 됨 · 이름은 가려서 보여요</span></b>
-        ${B.viewKey ? `<button class="b sm" data-a="copyview">주소 복사</button><button class="b sm" data-a="viewnew">새 주소로 바꾸기</button><button class="b sm r" data-a="viewoff">끄기</button>` : `<button class="b sm y" data-a="viewmake">학생용 주소 만들기</button>`}</div>
+        ${B.viewKey ? `<button class="b sm" data-a="viewqr">QR 보기</button><button class="b sm" data-a="copyview">주소 복사</button><button class="b sm" data-a="viewnew">새 주소로 바꾸기</button><button class="b sm r" data-a="viewoff">끄기</button>` : `<button class="b sm y" data-a="viewmake">학생용 주소 만들기</button>`}</div>
         ${B.viewKey ? `<input class="in" readonly value="${esc(viewUrl())}" style="width:100%;margin-top:8px" id="viewUrlIn">
-        <p class="lead" style="margin:6px 0 0">시간표 · 급식 · 일정 · 공지 · 알림장 · 링크 조사를 휴대폰에서 볼 수 있어요. 투표 · 상담 신청 · 건의는 교실 TV에서만 됩니다.</p>` : ''}</div></section>
-    <nav class="tabs">${T.map(([v, ic, l]) => `<button data-tab="${v}" class="${S.tab === v ? 'on' : ''}"><span class="ic">${ic}</span>${l}${v === 'survey' && openSv ? `<span class="dot">${openSv}</span>` : ''}${v === 'counsel' && upC ? `<span class="dot">${upC}</span>` : ''}</button>`).join('')}</nav>
-    <div id="body">${({ flash: vFlash, notice: vNotice, look: vLook, time: vTime, roster: vRoster, survey: vSurvey, counsel: vCounsel, suggest: vSuggest, op: () => '<div id="opBox"></div>' })[S.tab]()}</div>
-    <div class="foot"><p class="privacy">🔒 우리 반 자료는 담임 선생님만 관리하며, 운영자는 열람할 수 없습니다.</p><p class="credit"><button class="updlink" data-a="updhist">📋 업데이트 내역</button>제작자 : 강릉제일고 유준배 선생님</p></div>`;
-  $('btnOut').onclick = logout;
-  { const bb = $('btnBell'); if (bb) bb.onclick = ev => { ev.stopPropagation(); bellToggle(); }; }
-  restoreDrafts(keep);
-  if (S.tab === 'op') loadTeachers();
-  if (S.tab === 'suggest' && S.sugg === null) loadSuggest();
+        <p class="lead" style="margin:6px 0 0">시간표 · 급식 · 일정 · 공지 · 알림장 · 링크 조사를 휴대폰에서 볼 수 있어요. 투표 · 상담 신청 · 건의는 교실 TV에서만 됩니다.</p>` : ''}</div></section>`;
 }
-document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target && e.target.id === 'pairIn'){ e.preventDefault(); const b = document.querySelector('[data-a="pair"]'); if (b) b.click(); } });
-function captureDrafts(){ const o = {}; document.querySelectorAll('[data-keep]').forEach(el => { o[el.id] = el.type === 'checkbox' ? { c: el.checked } : el.value; }); return o; }
-function restoreDrafts(o){ Object.keys(o).forEach(id => { const el = $(id); if (!el) return; const v = o[id]; if (v && typeof v === 'object') el.checked = v.c; else if (v) el.value = v; }); }
 
 /* ---------- 긴급 호출 ---------- */
 function vFlash(){
@@ -807,6 +879,9 @@ function vLook(){
       <button class="b sm" data-a="pvreload">새로고침</button><a class="b sm" href="${esc(tvUrl())}" target="_blank" rel="noopener">새 탭에서 열기</a></div>
     <div id="pvSlot" class="pvslot"></div>
     <p class="lead" style="margin:8px 0 0">교실 TV와 같은 모습이에요. 눌러 봐도 실제로 저장되지 않아요. 여기서 고친 내용은 몇 초 안에 미리보기에도 바뀝니다.</p></section>
+  <section class="card"><h2>🔤 TV 글꼴</h2>
+    <p class="lead">교실 TV 화면 전체의 글꼴을 바꿉니다. 누르면 몇 초 안에 TV와 위 미리보기에 바뀌어요.</p>
+    ${fontPickHtml(S.B.font, 'a')}</section>
   <section class="card"><h2>화면 배치 조정</h2>
     <p class="lead">TV 화면에서 칸(시계 · 지금 수업 · 시간표 · 일정 · 급식 · 공지)의 위치를 옮기고, 칸 크기 · 너비 · 전체 크기 · 여백을 바꿉니다.
     아래 단추를 누르면 TV 화면이 조절 모드로 열려요. 칸 왼쪽 위 [✥ 옮기기]를 끌어 자리를 바꾸고, 노란 손잡이로 크기를 바꾼 뒤 [저장]을 누르세요.</p>
@@ -1059,8 +1134,11 @@ function vLinkForm(){
 }
 
 /* ---------- 알림 종 ---------- */
-const APP_VER = '2026-10-22g';
+const APP_VER = '2026-10-23a';
 const UPDATES = [
+  { v: '2026-10-23a', title: '10월 23일 업데이트', items: [
+    '📱 위쪽 [📱 모바일] 단추: QR 코드로 휴대폰에서 바로 열고, 홈 화면에 앱처럼 설치할 수 있어요',
+    '🔳 학생 휴대폰용 주소에 [QR 보기]가 생겼어요. 교실 TV에 띄워 두면 학생들이 찍어 가요'] },
   { v: '2026-10-22g', title: '10월 22일 업데이트 (5)', items: [
     '🆕 새 버전이 나오면 알림 종 대신 이렇게 창으로 알려 드려요. [이번엔 예전 버전 쓰기]를 고르면 바로 전 버전으로 열 수 있어요',
     '📋 업데이트 내역은 화면 맨 아래 [업데이트 내역]에서 언제든 볼 수 있어요'] },
@@ -1142,6 +1220,171 @@ function bellToggle(){
   lss(seenKey(), String(Date.now())); lss(seenKey() + '_day', kstToday()); lss(updKey(), APP_VER);
   render();
 }
+/* ---------- 휴대폰에서 쓰기 · 앱 설치 (홈 화면에 추가) ---------- */
+function qrMatrix(text){
+  const data = Array.from(new TextEncoder().encode(text));
+  const TBL = [null,[10,[[1,16]]],[16,[[1,28]]],[26,[[1,44]]],[18,[[2,32]]],[24,[[2,43]]],[16,[[4,27]]],[18,[[4,31]]],[22,[[2,38],[2,39]]],[22,[[3,36],[2,37]]],[26,[[4,43],[1,44]]]];
+  const ALN = [null,[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50]];
+  let ver = 0, cap = 0;
+  for (let v = 1; v <= 10; v++){
+    cap = TBL[v][1].reduce((s, g) => s + g[0] * g[1], 0);
+    const need = 4 + (v < 10 ? 8 : 16) + data.length * 8;
+    if (need <= cap * 8){ ver = v; break; }
+  }
+  if (!ver) return null;
+  /* 비트 만들기 */
+  const bits = [];
+  const put = (val, n) => { for (let i = n - 1; i >= 0; i--) bits.push((val >>> i) & 1); };
+  put(4, 4); put(data.length, ver < 10 ? 8 : 16); data.forEach(b => put(b, 8));
+  for (let i = 0; i < 4 && bits.length < cap * 8; i++) bits.push(0);
+  while (bits.length % 8) bits.push(0);
+  const cw = [];
+  for (let i = 0; i < bits.length; i += 8){ let b = 0; for (let j = 0; j < 8; j++) b = (b << 1) | bits[i + j]; cw.push(b); }
+  for (let p = 0; cw.length < cap; p++) cw.push(p % 2 ? 0x11 : 0xEC);
+  /* 리드-솔로몬 */
+  const EXP = new Array(512), LOG = new Array(256);
+  for (let i = 0, x = 1; i < 255; i++){ EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 256) x ^= 0x11D; }
+  for (let i = 255; i < 512; i++) EXP[i] = EXP[i - 255];
+  const mul = (a, b) => (a && b) ? EXP[LOG[a] + LOG[b]] : 0;
+  const ecn = TBL[ver][0];
+  let gen = [1];
+  for (let i = 0; i < ecn; i++){
+    const ng = new Array(gen.length + 1).fill(0);
+    gen.forEach((g, j) => { ng[j] ^= g; ng[j + 1] ^= mul(g, EXP[i]); });
+    gen = ng;
+  }
+  const blocks = [], ecb = [];
+  let k = 0;
+  TBL[ver][1].forEach(([n, len]) => { for (let i = 0; i < n; i++){ const d = cw.slice(k, k + len); k += len; blocks.push(d);
+    const r = d.concat(new Array(ecn).fill(0));
+    for (let a = 0; a < d.length; a++){ const f = r[a]; if (f) for (let b = 0; b < gen.length; b++) r[a + b] ^= mul(gen[b], f); }
+    ecb.push(r.slice(d.length)); } });
+  const out = [];
+  const maxLen = Math.max(...blocks.map(b => b.length));
+  for (let i = 0; i < maxLen; i++) blocks.forEach(b => { if (i < b.length) out.push(b[i]); });
+  for (let i = 0; i < ecn; i++) ecb.forEach(b => out.push(b[i]));
+  /* 판 그리기 */
+  const N = ver * 4 + 17;
+  const M = Array.from({length: N}, () => new Array(N).fill(0));
+  const F = Array.from({length: N}, () => new Array(N).fill(false));
+  const set = (r, c, v) => { M[r][c] = v ? 1 : 0; F[r][c] = true; };
+  const finder = (r, c) => { for (let i = -1; i <= 7; i++) for (let j = -1; j <= 7; j++){ const y = r + i, x = c + j; if (y < 0 || x < 0 || y >= N || x >= N) continue;
+    const on = i >= 0 && i <= 6 && j >= 0 && j <= 6 && (i === 0 || i === 6 || j === 0 || j === 6 || (i >= 2 && i <= 4 && j >= 2 && j <= 4)); set(y, x, on); } };
+  finder(0, 0); finder(0, N - 7); finder(N - 7, 0);
+  for (let i = 8; i < N - 8; i++){ set(6, i, i % 2 === 0); set(i, 6, i % 2 === 0); }
+  const al = ALN[ver];
+  al.forEach(r => al.forEach(c => { if ((r < 9 && c < 9) || (r < 9 && c > N - 10) || (r > N - 10 && c < 9)) return; for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) set(r + i, c + j, Math.max(Math.abs(i), Math.abs(j)) !== 1); }));
+  set(N - 8, 8, 1);
+  /* 형식 · 버전 정보 자리 비워 두기 */
+  for (let i = 0; i < 9; i++){ if (!F[8][i]) F[8][i] = true; if (!F[i][8]) F[i][8] = true; }
+  for (let i = 0; i < 8; i++){ F[8][N - 1 - i] = true; F[N - 1 - i][8] = true; }
+  if (ver >= 7) for (let i = 0; i < 6; i++) for (let j = 0; j < 3; j++){ F[i][N - 11 + j] = true; F[N - 11 + j][i] = true; }
+  /* 자료 넣기 */
+  const db = [];
+  out.forEach(b => { for (let i = 7; i >= 0; i--) db.push((b >>> i) & 1); });
+  let bi = 0, up = true;
+  for (let c = N - 1; c > 0; c -= 2){
+    if (c === 6) c--;
+    for (let t = 0; t < N; t++){
+      const r = up ? N - 1 - t : t;
+      for (let d = 0; d < 2; d++){ const x = c - d; if (F[r][x]) continue; M[r][x] = bi < db.length ? db[bi] : 0; bi++; }
+    }
+    up = !up;
+  }
+  const MASKS = [(r,c)=>(r+c)%2===0,(r)=>r%2===0,(r,c)=>c%3===0,(r,c)=>(r+c)%3===0,(r,c)=>(Math.floor(r/2)+Math.floor(c/3))%2===0,
+    (r,c)=>(r*c)%2+(r*c)%3===0,(r,c)=>((r*c)%2+(r*c)%3)%2===0,(r,c)=>((r+c)%2+(r*c)%3)%2===0];
+  const bch = (v, poly, bitsN) => { let x = v << bitsN; const deg = Math.floor(Math.log2(poly)); while (Math.floor(Math.log2(x || 1)) >= deg && x){ x ^= poly << (Math.floor(Math.log2(x)) - deg); } return (v << bitsN) | x; };
+  const place = (G, mask) => {
+    const fmt = bch((0 << 3) | mask, 0x537, 10) ^ 0x5412;   /* M = 00 */
+    const fb = i => (fmt >>> i) & 1;
+    for (let i = 0; i <= 5; i++) G[8][i] = fb(14 - i);
+    G[8][7] = fb(8); G[8][8] = fb(7); G[7][8] = fb(6);
+    for (let i = 9; i < 15; i++) G[14 - i][8] = fb(14 - i);
+    for (let i = 0; i < 8; i++) G[N - 1 - i][8] = fb(14 - i);
+    for (let i = 8; i < 15; i++) G[8][N - 15 + i] = fb(14 - i);
+    G[N - 8][8] = 1;
+    if (ver >= 7){
+      const vb = bch(ver, 0x1F25, 12);
+      for (let i = 0; i < 18; i++){ const b = (vb >>> i) & 1, a = Math.floor(i / 3), c = i % 3; G[a][N - 11 + c] = b; G[N - 11 + c][a] = b; }
+    }
+  };
+  const penalty = G => {
+    let p = 0;
+    for (let r = 0; r < N; r++){ let run = 1; for (let c = 1; c < N; c++){ if (G[r][c] === G[r][c-1]){ run++; if (run === 5) p += 3; else if (run > 5) p++; } else run = 1; } }
+    for (let c = 0; c < N; c++){ let run = 1; for (let r = 1; r < N; r++){ if (G[r][c] === G[r-1][c]){ run++; if (run === 5) p += 3; else if (run > 5) p++; } else run = 1; } }
+    for (let r = 0; r < N - 1; r++) for (let c = 0; c < N - 1; c++){ const v = G[r][c]; if (v === G[r][c+1] && v === G[r+1][c] && v === G[r+1][c+1]) p += 3; }
+    let dark = 0; G.forEach(row => row.forEach(v => dark += v)); p += Math.floor(Math.abs(dark * 20 / (N * N) - 10)) * 10;
+    return p;
+  };
+  let best = null, bestP = Infinity;
+  for (let m = 0; m < 8; m++){
+    const G = M.map(row => row.slice());
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (!F[r][c] && MASKS[m](r, c)) G[r][c] ^= 1;
+    place(G, m);
+    const p = penalty(G);
+    if (p < bestP){ bestP = p; best = G; }
+  }
+  return best;
+}
+function qrSvg(text, dark, light){
+  const G = qrMatrix(text); if (!G) return '';
+  const N = G.length, q = 4; let d = '';
+  G.forEach((row, r) => row.forEach((v, c) => { if (v) d += 'M' + (c + q) + ' ' + (r + q) + 'h1v1h-1z'; }));
+  return '<svg viewBox="0 0 ' + (N + 2 * q) + ' ' + (N + 2 * q) + '" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="' + (light || '#fff') + '"/><path d="' + d + '" fill="' + (dark || '#000') + '"/></svg>';
+}
+
+let DEFP = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); DEFP = e; const b = document.querySelector('#mobModal [data-m="install"]'); if (b) b.hidden = false; });
+window.addEventListener('appinstalled', () => { DEFP = null; toast('홈 화면에 설치했어요. 이제 앱처럼 열 수 있어요.'); const m = $('mobModal'); if (m) m.remove(); });
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+const UA = navigator.userAgent || '';
+const isPhone = () => /Android|iPhone|iPad|iPod/i.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isIOS = () => /iPhone|iPad|iPod/i.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const inApp = () => /KAKAOTALK|NAVER\(inapp|Instagram|FBAN|FBAV|Line\//i.test(UA);
+const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+function mobModal(kind){
+  const old = $('mobModal'); if (old) old.remove();
+  const view = kind === 'view', url = view ? viewUrl() : new URL('./', location.href).href;
+  const phone = isPhone(), ios = isIOS(), kakao = inApp(), alone = isStandalone();
+  const how = `<div class="how">
+      ${kakao ? '<p>⚠ <b>카카오톡 · 네이버 앱 안에서 열린 화면</b>은 설치가 안 돼요. 오른쪽 위(또는 아래) <b>⋮</b> → <b>다른 브라우저로 열기</b>를 누른 뒤 설치해 주세요.</p>' : ''}
+      <p><b>안드로이드</b> (크롬 · 삼성 인터넷): 주소를 연 뒤 오른쪽 위 <b>⋮</b> → <b>앱 설치</b> 또는 <b>홈 화면에 추가</b></p>
+      <p><b>아이폰</b> (사파리): 주소를 연 뒤 아래쪽 <b>공유(□↑)</b> → <b>홈 화면에 추가</b> → <b>추가</b></p>
+      ${view ? '' : '<p>설치하면 홈 화면에 <b>교실 화면</b> 아이콘이 생기고, 주소창 없이 앱처럼 열려요. 처음 한 번만 로그인하면 됩니다.</p>'}</div>`;
+  const box = document.createElement('div'); box.id = 'mobModal';
+  box.innerHTML = `<div class="mc" role="dialog" aria-modal="true" aria-labelledby="mobT">
+    <div class="mh"><span class="ic">📱</span><div><b id="mobT">${view ? '학생 휴대폰용 주소' : '휴대폰에서 쓰기'}</b><span>${phone && !view ? '이 휴대폰 홈 화면에 앱처럼 설치할 수 있어요.' : '휴대폰 카메라로 QR 코드를 비추세요.'}</span></div>
+      <button class="mx" data-m="close" aria-label="닫기">✕</button></div>
+    <div class="mb">
+      ${phone && !view ? '' : `<div class="qr">${qrSvg(url, '#14201B', '#FFFFFF')}</div>`}
+      <div class="url">${esc(url)}</div>
+      <div class="bt">
+        ${phone && !view ? '' : `<a class="pri" href="${esc(url)}" target="_blank" rel="noopener">${view ? '학생 화면 열어 보기' : '모바일 바로가기'}</a>`}
+        <button data-m="copy">주소 복사</button>
+        ${view || alone ? '' : `<button class="ins" data-m="install" ${DEFP ? '' : 'hidden'}>이 기기에 앱 설치</button>`}</div>
+      ${alone && !view ? '<div class="ok">✓ 지금 앱으로 설치된 화면이에요</div>' : how}
+      ${view ? '<p class="small" style="margin:10px 0 0;color:#4B5F56;text-align:center">교실 TV나 칠판에 이 창을 띄워 두면 학생들이 바로 찍어 갈 수 있어요. 이름은 가려서 보여요.</p>' : ''}
+    </div></div>`;
+  box.addEventListener('click', async ev => {
+    if (ev.target === box){ box.remove(); return; }
+    const b = ev.target.closest('[data-m]'); if (!b) return;
+    const m = b.dataset.m;
+    if (m === 'close'){ box.remove(); return; }
+    if (m === 'copy'){ try { await navigator.clipboard.writeText(url); } catch (e) { const t = document.createElement('textarea'); t.value = url; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); } toast('주소를 복사했어요.'); return; }
+    if (m === 'install' && DEFP){ DEFP.prompt(); try { const r = await DEFP.userChoice; if (r && r.outcome === 'accepted') box.remove(); } catch (e) {} DEFP = null; }
+  });
+  document.body.appendChild(box);
+}
+/* 휴대폰으로 처음 열면 한 번만: 홈 화면에 추가 안내 */
+function mobTip(){
+  if (!isPhone() || isStandalone() || $('mobTip')) return;
+  if (lsg('cr_mobtip')) return;
+  const d = document.createElement('div'); d.id = 'mobTip';
+  d.innerHTML = '<span style="flex:1">📱 <b>홈 화면에 추가</b>하면 앱처럼 바로 열려요</span><button class="y" data-t="how">방법 보기</button><button data-t="x">닫기</button>';
+  d.addEventListener('click', ev => { const t = ev.target.closest('[data-t]'); if (!t) return; lss('cr_mobtip', '1'); d.remove(); if (t.dataset.t === 'how') mobModal('admin'); });
+  document.body.appendChild(d);
+}
+
 /* ---------- 업데이트 팝업 ----------
  * 정식판을 열 때 새 버전이면 바뀐 점을 보여 주고 [업데이트하기] / [이번엔 예전 버전 쓰기] 중에 고릅니다.
  * 예전 버전은 정식판 옮기기 때 classroom-prev/ 에 보관됩니다. 고른 것은 반 자료(verSeen)에 저장돼 다른 기기에서도 같아요. */
@@ -1436,7 +1679,7 @@ document.addEventListener('drop', ev => {
 });
 document.addEventListener('click', async ev => {
   const tb = ev.target.closest('[data-tab]');
-  if (tb){ S.tab = tb.dataset.tab; try { localStorage.setItem('cr_tab', S.tab); } catch (e) {} S.edit = ''; render(); window.scrollTo(0, 0); return; }
+  if (tb){ S.tab = tb.dataset.tab; try { localStorage.setItem('cr_tab2', S.tab); } catch (e) {} S.edit = ''; render(); window.scrollTo(0, 0); return; }
   const pk = ev.target.closest('[data-pick]');
   if (pk){ S.pickFor = pk.dataset.pick; const fp = $('filePick'); fp.multiple = S.pickFor === 'notice'; fp.click(); return; }
   const t = ev.target.closest('[data-a]'); if (!t || t.tagName === 'INPUT') return;
@@ -1472,10 +1715,13 @@ document.addEventListener('click', async ev => {
       return;
     }
     case 'bkpick': $('bkPick').click(); return;
+    case 'font': if (S.B.font === id || (!S.B.font && id === 'bunpil')) return; return save({ font: id }, '글꼴을 바꿨어요. TV에 곧 반영돼요.');
     case 'pvreload': if (PVH){ try { PVH.firstChild.contentWindow.location.reload(); } catch (e) { pvKey = ''; placePv(); } } return;
-    case 'bellgo': S.bellOpen = false; S.tab = t.dataset.v; try { localStorage.setItem('cr_tab', S.tab); } catch (e) {} S.edit = ''; render(); window.scrollTo(0, 0); return;
+    case 'bellgo': S.bellOpen = false; S.tab = t.dataset.v; try { localStorage.setItem('cr_tab2', S.tab); } catch (e) {} S.edit = ''; render(); window.scrollTo(0, 0); return;
     case 'reloadapp': location.reload(); return;
     case 'updhist': updModal('history'); return;
+    case 'mobile': mobModal('admin'); return;
+    case 'viewqr': mobModal('view'); return;
     case 'copyview': { const i = $('viewUrlIn'); i.select(); try { await navigator.clipboard.writeText(i.value); } catch (e) { document.execCommand('copy'); } toast('학생용 주소를 복사했어요. 단톡방에 붙여 넣으세요.'); return; }
     case 'viewmake': case 'viewnew': {
       if (a === 'viewnew' && !confirm('학생용 주소를 새로 만들까요? 예전 주소는 바로 막혀요.')) return;
