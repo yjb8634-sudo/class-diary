@@ -262,7 +262,10 @@ select.in{padding-right:28px}
 .b[disabled]{opacity:.45;pointer-events:none}
 .b svg{width:18px;height:18px}
 /* 탭 */
-nav.tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;margin:0 0 16px}
+nav.tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;margin:0 0 18px;background:transparent!important;padding:0;border:0}
+nav.tabs button{background:#1F2D27!important;border:1px solid rgba(232,228,214,.16)!important;color:#D9D5C7!important;box-shadow:0 1px 0 rgba(0,0,0,.25)}
+nav.tabs button:hover{background:#26372F!important;border-color:rgba(242,209,107,.45)!important;color:#F3F1E7!important}
+nav.tabs button.on{background:#F2D16B!important;border-color:#F2D16B!important;color:#1D2A25!important;font-weight:700;box-shadow:0 2px 10px rgba(242,209,107,.18)}
 nav.tabs button{all:unset;box-sizing:border-box;cursor:pointer;text-align:center;padding:12px 6px;border-radius:var(--shape);background:var(--card);border:1.5px solid var(--line);
   color:var(--chalk2);font-size:15.5px;line-height:1.25;position:relative}
 nav.tabs button:hover{background:var(--card2)}
