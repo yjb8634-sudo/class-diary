@@ -54,6 +54,37 @@ h2{font-size:15px;font-weight:700;letter-spacing:-.01em}
 .row.end{justify-content:flex-end}
 .grow{flex:1}
 .cols{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}
+#mobModal{position:fixed;inset:0;z-index:210;background:rgba(10,16,13,.72);display:flex;align-items:center;justify-content:center;padding:16px}
+#mobModal .mc{background:#F4F7F5;color:#1D2A25;border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.5);width:min(460px,100%);max-height:92vh;overflow:auto}
+#mobModal .mh{display:flex;gap:12px;align-items:center;padding:16px 18px;background:#E3EEE8;border-bottom:1px solid #D2E0D8}
+#mobModal .mh .ic{width:44px;height:44px;border-radius:12px;background:#2F6B55;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
+#mobModal .mh b{display:block;font-size:18px}#mobModal .mh span{font-size:13.5px;color:#4B5F56}
+#mobModal .mx{all:unset;cursor:pointer;margin-left:auto;font-size:22px;color:#4B5F56;padding:4px 8px}
+#mobModal .mb{padding:18px}
+#mobModal .qr{background:#fff;border:1px solid #D2E0D8;border-radius:16px;padding:14px;width:220px;margin:0 auto}
+#mobModal .qr svg{display:block;width:100%;height:auto}
+#mobModal .url{margin:14px 0 10px;background:#fff;border:1px solid #D2E0D8;border-radius:10px;padding:10px 12px;font-size:13.5px;word-break:break-all;text-align:center;color:#24453A}
+#mobModal .bt{display:flex;gap:8px;flex-wrap:wrap}
+#mobModal .bt a,#mobModal .bt button{all:unset;cursor:pointer;flex:1;min-width:120px;text-align:center;padding:10px 8px;border-radius:10px;font-size:14.5px;font-weight:700;border:1.5px solid #B9CFC4;background:#fff;color:#24453A;box-sizing:border-box}
+#mobModal .bt .pri{background:#2F6B55;border-color:#2F6B55;color:#fff}
+#mobModal .bt .ins{background:#E6B84A;border-color:#E6B84A;color:#2A2108}
+#mobModal .how{margin-top:14px;font-size:13.5px;line-height:1.7;color:#33493F;background:#fff;border:1px solid #D2E0D8;border-radius:12px;padding:10px 14px}
+#mobModal .how b{color:#1D2A25}#mobModal .how p{margin:6px 0}
+#mobModal .ok{margin-top:12px;text-align:center;font-weight:700;color:#2F6B55}
+#mobTip{position:fixed;left:12px;right:12px;bottom:12px;z-index:150;background:#F4F7F5;color:#1D2A25;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.4);padding:12px 14px;display:flex;gap:10px;align-items:center;font-size:14px}
+#mobTip button{all:unset;cursor:pointer;font-weight:700;padding:6px 10px;border-radius:8px}
+#mobTip .y{background:#2F6B55;color:#fff}
+#mobModal .mc{font-family:inherit}
+#mobModal .seg2{display:flex;gap:6px;margin-bottom:14px}
+#mobModal .seg2 button{all:unset;cursor:pointer;flex:1;text-align:center;padding:9px 6px;border-radius:10px;border:1.5px solid #B9CFC4;background:#fff;font-size:14px;font-weight:700;color:#24453A}
+#mobModal .seg2 button.on{background:#2F6B55;border-color:#2F6B55;color:#fff}
+.fontgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-top:10px}
+.fontopt{all:unset;cursor:pointer;box-sizing:border-box;border:1.5px solid rgba(255,255,255,.18);border-radius:12px;padding:12px 14px;background:rgba(0,0,0,.12);display:flex;flex-direction:column;gap:6px}
+.fontopt:hover{border-color:rgba(242,209,107,.6)}
+.fontopt.on{border-color:#F2D16B;background:rgba(242,209,107,.1)}
+.fontopt .fs{font-size:22px;line-height:1.3;color:var(--ink,#F3F1E7);font-weight:400!important}
+.fontopt .fn{font-size:13px;opacity:.75}
+.fontopt.on .fn{color:#F2D16B;opacity:1}
 .bsub{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:8px;margin:4px 0 16px;position:sticky;top:0;z-index:5;background:var(--paper,var(--sheet));padding:6px 0}
 .bsub button{all:unset;box-sizing:border-box;cursor:pointer;position:relative;text-align:center;padding:11px 6px;border:1.5px solid var(--rule2);border-radius:10px;background:var(--sheet);font-size:14.5px;line-height:1.3;color:var(--ink2)}
 .bsub button:hover{border-color:var(--ink3,var(--ink2))}
@@ -394,6 +425,186 @@ const S = {
 
 /* ---------- 알림 ---------- */
 let toastT;
+/* ---------- 휴대폰에서 쓰기 · 앱 설치 ----------
+ * 담임 기록실을 GitHub 주소(…github.io/…/?p=teacher)로 열면 '1-2 기록실' 앱으로 설치할 수 있게 설치 정보(manifest)를 붙입니다. */
+function qrMatrix(text){
+  const data = Array.from(new TextEncoder().encode(text));
+  const TBL = [null,[10,[[1,16]]],[16,[[1,28]]],[26,[[1,44]]],[18,[[2,32]]],[24,[[2,43]]],[16,[[4,27]]],[18,[[4,31]]],[22,[[2,38],[2,39]]],[22,[[3,36],[2,37]]],[26,[[4,43],[1,44]]]];
+  const ALN = [null,[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50]];
+  let ver = 0, cap = 0;
+  for (let v = 1; v <= 10; v++){
+    cap = TBL[v][1].reduce((s, g) => s + g[0] * g[1], 0);
+    const need = 4 + (v < 10 ? 8 : 16) + data.length * 8;
+    if (need <= cap * 8){ ver = v; break; }
+  }
+  if (!ver) return null;
+  /* 비트 만들기 */
+  const bits = [];
+  const put = (val, n) => { for (let i = n - 1; i >= 0; i--) bits.push((val >>> i) & 1); };
+  put(4, 4); put(data.length, ver < 10 ? 8 : 16); data.forEach(b => put(b, 8));
+  for (let i = 0; i < 4 && bits.length < cap * 8; i++) bits.push(0);
+  while (bits.length % 8) bits.push(0);
+  const cw = [];
+  for (let i = 0; i < bits.length; i += 8){ let b = 0; for (let j = 0; j < 8; j++) b = (b << 1) | bits[i + j]; cw.push(b); }
+  for (let p = 0; cw.length < cap; p++) cw.push(p % 2 ? 0x11 : 0xEC);
+  /* 리드-솔로몬 */
+  const EXP = new Array(512), LOG = new Array(256);
+  for (let i = 0, x = 1; i < 255; i++){ EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 256) x ^= 0x11D; }
+  for (let i = 255; i < 512; i++) EXP[i] = EXP[i - 255];
+  const mul = (a, b) => (a && b) ? EXP[LOG[a] + LOG[b]] : 0;
+  const ecn = TBL[ver][0];
+  let gen = [1];
+  for (let i = 0; i < ecn; i++){
+    const ng = new Array(gen.length + 1).fill(0);
+    gen.forEach((g, j) => { ng[j] ^= g; ng[j + 1] ^= mul(g, EXP[i]); });
+    gen = ng;
+  }
+  const blocks = [], ecb = [];
+  let k = 0;
+  TBL[ver][1].forEach(([n, len]) => { for (let i = 0; i < n; i++){ const d = cw.slice(k, k + len); k += len; blocks.push(d);
+    const r = d.concat(new Array(ecn).fill(0));
+    for (let a = 0; a < d.length; a++){ const f = r[a]; if (f) for (let b = 0; b < gen.length; b++) r[a + b] ^= mul(gen[b], f); }
+    ecb.push(r.slice(d.length)); } });
+  const out = [];
+  const maxLen = Math.max(...blocks.map(b => b.length));
+  for (let i = 0; i < maxLen; i++) blocks.forEach(b => { if (i < b.length) out.push(b[i]); });
+  for (let i = 0; i < ecn; i++) ecb.forEach(b => out.push(b[i]));
+  /* 판 그리기 */
+  const N = ver * 4 + 17;
+  const M = Array.from({length: N}, () => new Array(N).fill(0));
+  const F = Array.from({length: N}, () => new Array(N).fill(false));
+  const set = (r, c, v) => { M[r][c] = v ? 1 : 0; F[r][c] = true; };
+  const finder = (r, c) => { for (let i = -1; i <= 7; i++) for (let j = -1; j <= 7; j++){ const y = r + i, x = c + j; if (y < 0 || x < 0 || y >= N || x >= N) continue;
+    const on = i >= 0 && i <= 6 && j >= 0 && j <= 6 && (i === 0 || i === 6 || j === 0 || j === 6 || (i >= 2 && i <= 4 && j >= 2 && j <= 4)); set(y, x, on); } };
+  finder(0, 0); finder(0, N - 7); finder(N - 7, 0);
+  for (let i = 8; i < N - 8; i++){ set(6, i, i % 2 === 0); set(i, 6, i % 2 === 0); }
+  const al = ALN[ver];
+  al.forEach(r => al.forEach(c => { if ((r < 9 && c < 9) || (r < 9 && c > N - 10) || (r > N - 10 && c < 9)) return; for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) set(r + i, c + j, Math.max(Math.abs(i), Math.abs(j)) !== 1); }));
+  set(N - 8, 8, 1);
+  /* 형식 · 버전 정보 자리 비워 두기 */
+  for (let i = 0; i < 9; i++){ if (!F[8][i]) F[8][i] = true; if (!F[i][8]) F[i][8] = true; }
+  for (let i = 0; i < 8; i++){ F[8][N - 1 - i] = true; F[N - 1 - i][8] = true; }
+  if (ver >= 7) for (let i = 0; i < 6; i++) for (let j = 0; j < 3; j++){ F[i][N - 11 + j] = true; F[N - 11 + j][i] = true; }
+  /* 자료 넣기 */
+  const db = [];
+  out.forEach(b => { for (let i = 7; i >= 0; i--) db.push((b >>> i) & 1); });
+  let bi = 0, up = true;
+  for (let c = N - 1; c > 0; c -= 2){
+    if (c === 6) c--;
+    for (let t = 0; t < N; t++){
+      const r = up ? N - 1 - t : t;
+      for (let d = 0; d < 2; d++){ const x = c - d; if (F[r][x]) continue; M[r][x] = bi < db.length ? db[bi] : 0; bi++; }
+    }
+    up = !up;
+  }
+  const MASKS = [(r,c)=>(r+c)%2===0,(r)=>r%2===0,(r,c)=>c%3===0,(r,c)=>(r+c)%3===0,(r,c)=>(Math.floor(r/2)+Math.floor(c/3))%2===0,
+    (r,c)=>(r*c)%2+(r*c)%3===0,(r,c)=>((r*c)%2+(r*c)%3)%2===0,(r,c)=>((r+c)%2+(r*c)%3)%2===0];
+  const bch = (v, poly, bitsN) => { let x = v << bitsN; const deg = Math.floor(Math.log2(poly)); while (Math.floor(Math.log2(x || 1)) >= deg && x){ x ^= poly << (Math.floor(Math.log2(x)) - deg); } return (v << bitsN) | x; };
+  const place = (G, mask) => {
+    const fmt = bch((0 << 3) | mask, 0x537, 10) ^ 0x5412;   /* M = 00 */
+    const fb = i => (fmt >>> i) & 1;
+    for (let i = 0; i <= 5; i++) G[8][i] = fb(14 - i);
+    G[8][7] = fb(8); G[8][8] = fb(7); G[7][8] = fb(6);
+    for (let i = 9; i < 15; i++) G[14 - i][8] = fb(14 - i);
+    for (let i = 0; i < 8; i++) G[N - 1 - i][8] = fb(14 - i);
+    for (let i = 8; i < 15; i++) G[8][N - 15 + i] = fb(14 - i);
+    G[N - 8][8] = 1;
+    if (ver >= 7){
+      const vb = bch(ver, 0x1F25, 12);
+      for (let i = 0; i < 18; i++){ const b = (vb >>> i) & 1, a = Math.floor(i / 3), c = i % 3; G[a][N - 11 + c] = b; G[N - 11 + c][a] = b; }
+    }
+  };
+  const penalty = G => {
+    let p = 0;
+    for (let r = 0; r < N; r++){ let run = 1; for (let c = 1; c < N; c++){ if (G[r][c] === G[r][c-1]){ run++; if (run === 5) p += 3; else if (run > 5) p++; } else run = 1; } }
+    for (let c = 0; c < N; c++){ let run = 1; for (let r = 1; r < N; r++){ if (G[r][c] === G[r-1][c]){ run++; if (run === 5) p += 3; else if (run > 5) p++; } else run = 1; } }
+    for (let r = 0; r < N - 1; r++) for (let c = 0; c < N - 1; c++){ const v = G[r][c]; if (v === G[r][c+1] && v === G[r+1][c] && v === G[r+1][c+1]) p += 3; }
+    let dark = 0; G.forEach(row => row.forEach(v => dark += v)); p += Math.floor(Math.abs(dark * 20 / (N * N) - 10)) * 10;
+    return p;
+  };
+  let best = null, bestP = Infinity;
+  for (let m = 0; m < 8; m++){
+    const G = M.map(row => row.slice());
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (!F[r][c] && MASKS[m](r, c)) G[r][c] ^= 1;
+    place(G, m);
+    const p = penalty(G);
+    if (p < bestP){ bestP = p; best = G; }
+  }
+  return best;
+}
+function qrSvg(text, dark, light){
+  const G = qrMatrix(text); if (!G) return '';
+  const N = G.length, q = 4; let d = '';
+  G.forEach((row, r) => row.forEach((v, c) => { if (v) d += 'M' + (c + q) + ' ' + (r + q) + 'h1v1h-1z'; }));
+  return '<svg viewBox="0 0 ' + (N + 2 * q) + ' ' + (N + 2 * q) + '" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="' + (light || '#fff') + '"/><path d="' + d + '" fill="' + (dark || '#000') + '"/></svg>';
+}
+
+let DEFP = null;
+(function(){
+  if (!/github\.io$/.test(location.hostname)) return;
+  const add = (tag, a) => { const e = document.createElement(tag); Object.keys(a).forEach(k => e.setAttribute(k, a[k])); document.head.appendChild(e); };
+  if (/[?&]p=teacher\b/.test(location.search) && !document.querySelector('link[rel="manifest"]')){
+    add('link', { rel: 'manifest', href: 'manifest-teacher.webmanifest' });
+    add('link', { rel: 'apple-touch-icon', href: 'icon-180.png' });
+    add('meta', { name: 'apple-mobile-web-app-title', content: '1-2 기록실' });
+    add('meta', { name: 'apple-mobile-web-app-capable', content: 'yes' });
+  }
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); DEFP = e; const b = document.querySelector('#mobModal [data-m="install"]'); if (b) b.hidden = false; });
+window.addEventListener('appinstalled', () => { DEFP = null; toast('홈 화면에 설치했어요.'); const m = document.getElementById('mobModal'); if (m) m.remove(); });
+const UA_ = navigator.userAgent || '';
+const isPhone = () => /Android|iPhone|iPad|iPod/i.test(UA_) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const inApp = () => /KAKAOTALK|NAVER\(inapp|Instagram|FBAN|FBAV|Line\//i.test(UA_);
+const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+function mobModal(kind){
+  const old = document.getElementById('mobModal'); if (old) old.remove();
+  const D = S.D || {}, U = D.urls || {};
+  const gh = /github\.io$/.test(location.hostname);
+  const teacherUrl = gh ? location.origin + location.pathname + '?p=teacher' : (U.teacher || location.href);
+  const L = {
+    teacher: { url: teacherUrl, name: '선생님용 · 담임 기록실', sub: '선생님 휴대폰에 \'1-2 기록실\' 앱으로 설치해요', canInstall: gh },
+    student: { url: U.home || '', name: '학생용 · 학생 앱', sub: '학생들이 찍으면 학생 앱이 열려요 (\'1-2 다이어리\'로 설치)', canInstall: false },
+    phone: { url: (S.B && S.B.phoneUrl) || '', name: '학부모 · 학생 휴대폰 보기', sub: '이름은 가려서 보여요. 보기만 됩니다', canInstall: false }
+  };
+  const cur = L[kind] || L.teacher, phone = isPhone(), alone = isStandalone(), here = kind === 'teacher' && phone;
+  const how = `<div class="how">
+      ${inApp() ? '<p>⚠ <b>카카오톡 · 네이버 앱 안에서 열린 화면</b>은 설치가 안 돼요. <b>⋮</b> → <b>다른 브라우저로 열기</b>를 누른 뒤 설치해 주세요.</p>' : ''}
+      <p><b>안드로이드</b> (크롬 · 삼성 인터넷): 주소를 연 뒤 오른쪽 위 <b>⋮</b> → <b>앱 설치</b> 또는 <b>홈 화면에 추가</b></p>
+      <p><b>아이폰</b> (사파리): 주소를 연 뒤 아래쪽 <b>공유(□↑)</b> → <b>홈 화면에 추가</b> → <b>추가</b></p>
+      ${kind === 'teacher' ? '<p>설치하면 홈 화면에 <b>1-2 기록실</b> 아이콘이 생기고 주소창 없이 앱처럼 열려요. 처음 한 번만 관리자 비밀번호를 넣으면 됩니다.</p>' : ''}</div>`;
+  const box = document.createElement('div'); box.id = 'mobModal';
+  box.innerHTML = `<div class="mc" role="dialog" aria-modal="true" aria-labelledby="mobT">
+    <div class="mh"><span class="ic">📱</span><div><b id="mobT">휴대폰에서 쓰기</b><span>${esc(cur.sub)}</span></div><button class="mx" data-m="close" aria-label="닫기">✕</button></div>
+    <div class="mb">
+      ${kind === 'phone' ? '' : `<div class="seg2">${['teacher', 'student'].map(k => `<button data-m="k" data-k="${k}" class="${k === kind ? 'on' : ''}">${esc(L[k].name)}</button>`).join('')}</div>`}
+      ${here ? '' : (cur.url ? `<div class="qr">${qrSvg(cur.url, '#14201B', '#FFFFFF')}</div>` : '<p class="small">주소가 아직 없어요. 웹앱 배포 주소를 확인해 주세요.</p>')}
+      <div class="url">${esc(cur.url)}</div>
+      <div class="bt">
+        ${here ? '' : `<a class="pri" href="${esc(cur.url)}" target="_blank" rel="noopener">모바일 바로가기</a>`}
+        <button data-m="copy">주소 복사</button>
+        ${cur.canInstall && !alone ? `<button class="ins" data-m="install" ${DEFP ? '' : 'hidden'}>이 기기에 앱 설치</button>` : ''}</div>
+      ${alone && kind === 'teacher' ? '<div class="ok">✓ 지금 앱으로 설치된 화면이에요</div>' : how}
+    </div></div>`;
+  box.addEventListener('click', async ev => {
+    if (ev.target === box){ box.remove(); return; }
+    const b = ev.target.closest('[data-m]'); if (!b) return;
+    const m = b.dataset.m;
+    if (m === 'close'){ box.remove(); return; }
+    if (m === 'k'){ mobModal(b.dataset.k); return; }
+    if (m === 'copy'){ copyText(cur.url); return; }
+    if (m === 'install' && DEFP){ DEFP.prompt(); try { const r = await DEFP.userChoice; if (r && r.outcome === 'accepted') box.remove(); } catch (e) {} DEFP = null; }
+  });
+  document.body.appendChild(box);
+}
+function mobTip(){
+  if (!isPhone() || isStandalone() || document.getElementById('mobTip') || !/github\.io$/.test(location.hostname)) return;
+  try { if (localStorage.getItem('hub_mobtip')) return; } catch (e) {}
+  const d = document.createElement('div'); d.id = 'mobTip';
+  d.innerHTML = '<span style="flex:1">📱 <b>홈 화면에 추가</b>하면 담임 기록실이 앱처럼 바로 열려요</span><button class="y" data-t="how">방법 보기</button><button data-t="x">닫기</button>';
+  d.addEventListener('click', ev => { const t = ev.target.closest('[data-t]'); if (!t) return; try { localStorage.setItem('hub_mobtip', '1'); } catch (e) {} d.remove(); if (t.dataset.t === 'how') mobModal('teacher'); });
+  document.body.appendChild(d);
+}
 function toast(msg, bad){
   const t = $('toast'); t.textContent = msg; t.className = 'show' + (bad ? ' bad' : '');
   clearTimeout(toastT); toastT = setTimeout(() => t.className = '', 3600);
@@ -637,7 +848,7 @@ document.addEventListener('click', ev => {
       if (u) window.open(u, '_blank', 'noopener'); else toast('주소를 찾지 못했어요. 웹앱 배포 주소를 확인해 주세요.', true);
       if (o.url === 'p21' || o.url === 'pbl') toast('새 창에서 아래쪽 [담임] 탭을 누르면 확인할 수 있어요.');
     } else {
-      if (o.go === 'board'){ S.bsub = o.sub || 'flash'; try { sessionStorage.setItem('hub_bsub', S.bsub); } catch (e) {} }
+      if (o.go === 'board'){ S.bsub = o.sub || 'notice'; try { sessionStorage.setItem('hub_bsub', S.bsub); } catch (e) {} }
       S.view = o.go; render(); window.scrollTo(0, 0);
     }
     bellClose();
@@ -665,11 +876,12 @@ function render(){
         : `<button data-view="${v[0]}" ${S.view === v[0] ? 'aria-current="page"' : ''}>${v[1]}</button>`).join('')}</nav>
       <div class="foot">
         ${isSolo() ? '' : `<a href="${esc(D.urls.home)}">학생 화면</a>`}<a href="${esc(D.urls.counsel)}">상담 신청판</a>
-        <button data-act="reload">새로고침</button><button data-act="logout">나가기</button></div>
+        <button data-act="mobile">📱 모바일 · 앱 설치</button><button data-act="reload">새로고침</button><button data-act="logout">나가기</button></div>
     </aside>
     <main>${body}</main></div>`;
   after();
   paintBell();
+  if (!S.mobTipped){ S.mobTipped = true; setTimeout(mobTip, 2500); }
 }
 function after(){
   if (S.view === 'board') fitPreview();
@@ -1598,6 +1810,7 @@ document.addEventListener('click', ev => {
   switch (act){
     case 'login': S.pw = $('pw').value; if (S.pw) load(); return;
     case 'logout': hubLogout(); return;
+    case 'mobile': mobModal('teacher'); return;
     case 'reload': toast('다시 불러오는 중…'); load(true); return;
     case 'goview': S.view = t.dataset.v; render(); return;
     case 'clearText': if (confirm('입력창을 비울까요?')){ $('recText').value = ''; store.set('draft', ''); $('savedMark').textContent = ''; } return;
@@ -1825,7 +2038,7 @@ function vBoard(){
   const V = {
     flash: () => vFlashBox(),
     notice: () => vNoticeBox() + vNoteBox(),
-    look: () => vPreview() + `<div class="g2">${vQuoteBox()}${vLookSetBox()}</div>` + vWeatherBox(),
+    look: () => vPreview() + vFontBox() + `<div class="g2">${vQuoteBox()}${vLookSetBox()}</div>` + vWeatherBox(),
     time: () => vTimetableBox() + `<div class="g2">${vEventBox()}${vNeisBox()}</div>`,
     roster: () => vBirthdayBox() + `<section class="box"><h2>학급 명단</h2><p class="small muted">학생 명단(번호 · 이름 · 학번)은 왼쪽 메뉴 <b>명단 · 설정</b>에서 고칩니다. 여기서 고친 명단이 교실 TV에도 그대로 쓰입니다.</p>
       <div class="row" style="margin-top:8px"><button class="btn sm" data-view="roster">명단 · 설정 열기</button></div></section>`,
@@ -1836,11 +2049,8 @@ function vBoard(){
   };
   return `<div class="head"><div><h1>교실 화면</h1>
       <p>교실 TV(전자칠판)에 시계 · 지금 교시 · 시간표 · 급식 · 알림 · 오늘 상담을 띄우고, 학생은 화면을 터치해 조사에 답하거나 상담을 신청합니다.</p></div></div>
-  <section class="box tvbar"><div class="row"><b style="font-size:16px">📺 교실 TV 주소</b><input class="in grow" readonly value="${esc(B.url)}" style="min-width:240px" aria-label="교실 TV 주소">
-    <a class="btn pri sm" href="${esc(B.url)}" target="_blank" rel="noopener">TV 화면 열기</a><button class="btn sm" data-bact="copyurl">복사</button>
-    <button class="btn txt sm" data-bact="bsub" data-v="setup">휴대폰 주소 · 새 주소</button></div></section>
   ${bsubBar()}
-  ${(V[sub] || V.flash)()}`;
+  ${(V[sub] || V.notice)()}`;
 }
 function vTvAddrBox(){
   const B = S.B;
@@ -1898,6 +2108,38 @@ function vTimetableBox(){
     <div class="row" style="margin-top:8px"><button class="btn sm" data-bact="spadd">특별 시간 추가</button>
       <span class="grow"></span><button class="btn pri" data-bact="savett">시간표 저장</button></div></section>`;
 }
+/* ---------- TV 글꼴 고르기 ---------- */
+const FONT_BASE = 'https://yjb8634-sudo.github.io/class-diary/fonts/';
+let FONTL = null, FONTLOADING = false;
+function fontLoadList(after){
+  if (FONTL || FONTLOADING) return;
+  FONTLOADING = true;
+  fetch(FONT_BASE + 'fonts.json?h=' + Date.now(), { cache: 'no-cache' }).then(r => r.json()).then(j => {
+    FONTL = j.fonts || j;
+    FONTL.forEach(f => {
+      if (!f.family || document.getElementById('pvf-' + f.id)) return;
+      const src = [['woff2', 'woff2'], ['woff', 'woff'], ['ttf', 'truetype'], ['otf', 'opentype']].filter(([k]) => f[k]).map(([k, fm]) => `url('${FONT_BASE + encodeURI(f[k])}') format('${fm}')`).join(',');
+      const st = document.createElement('style'); st.id = 'pvf-' + f.id;
+      st.textContent = `@font-face{font-family:'PvF-${f.id}';font-display:swap;src:${src}}`;
+      document.head.appendChild(st);
+    });
+    after();
+  }).catch(() => { FONTL = []; after(); });
+}
+function fontPickHtml(cur, act){
+  cur = cur || 'bunpil';
+  if (!FONTL) return '<p class="small muted">글꼴 목록을 불러오는 중…</p>';
+  if (!FONTL.length) return '<p class="small muted">글꼴 목록을 불러오지 못했어요. 잠시 뒤 다시 열어 주세요.</p>';
+  return `<div class="fontgrid">${FONTL.map(f => `<button class="fontopt${f.id === cur ? ' on' : ''}" data-${act}="font" data-id="${esc(f.id)}" title="${esc(f.name)}">
+      <span class="fs" style="font-family:${f.family ? `'PvF-${esc(f.id)}',` : ''}'Pretendard','Malgun Gothic',sans-serif!important">1학년 2반 · 오늘 급식 12:40</span>
+      <span class="fn">${f.id === cur ? '✓ ' : ''}${esc(f.name)}</span></button>`).join('')}</div>`;
+}
+function vFontBox(){
+  if (!FONTL) fontLoadList(() => { if (S.view === 'board' && bsubGet() === 'look') render(); });
+  return `<section class="box"><h2>🔤 TV 글꼴</h2>
+    <p class="small muted">교실 TV 화면 전체의 글꼴을 바꿉니다. 누르면 TV와 위 미리보기에 바로 반영돼요.</p>
+    ${fontPickHtml((S.B.cfg || {}).font, 'bact')}</section>`;
+}
 function vLookSetBox(){
   const T = S.bt;
   return `<section class="box"><h2>화면 배치 · D-day</h2>
@@ -1926,15 +2168,15 @@ function vSuggestSetBox(){
   return `<section class="box"><div class="row"><label class="small row grow" style="gap:5px"><input type="checkbox" id="bSg" ${T.suggestOn ? 'checked' : ''}> 칠판에서 건의사항 받기 (TV 오른쪽 아래 [건의사항] 단추)</label>
       <button class="btn pri sm" data-bact="saveset">저장</button></div></section>`;
 }
-const BSUBS = [['flash', '📣', '긴급 호출·쪽지'], ['notice', '📌', '공지·알림장'], ['look', '🎨', '화면 꾸미기'], ['time', '🕘', '시간표 설정'],
-  ['roster', '👥', '학급 명단'], ['survey', '🗳', '설문·투표·조사'], ['counsel', '💬', '상담 신청'], ['suggest', '✉️', '건의함'], ['setup', '📺', 'TV·휴대폰']];
+const BSUBS = [['notice', '📌', '공지·알림장'], ['survey', '🗳', '설문·투표·조사'], ['look', '🎨', '화면 꾸미기'], ['time', '🕘', '시간표 설정'],
+  ['roster', '👥', '학급 명단'], ['counsel', '💬', '상담 신청'], ['suggest', '✉️', '건의함'], ['setup', '📺', 'TV 연결·휴대폰'], ['flash', '📣', '긴급 호출·쪽지']];
 document.addEventListener('toggle', ev => {
   const d = ev.target; if (!d || !d.dataset || !d.dataset.past) return;
   const k = d.dataset.past; if (k === 'n') S.pastN = d.open; else if (k === 'a2') S.pastA = d.open; else if (k === 'a') S.calOpen = d.open;
 }, true);
 function bsubGet(){
   if (!S.bsub){ try { S.bsub = sessionStorage.getItem('hub_bsub') || ''; } catch (e) { S.bsub = ''; } }
-  if (!BSUBS.some(x => x[0] === S.bsub)) S.bsub = 'flash';
+  if (!BSUBS.some(x => x[0] === S.bsub)) S.bsub = 'notice';
   return S.bsub;
 }
 function bsubBar(){
@@ -2415,11 +2657,11 @@ function vPhoneBox(){
   if (isSolo()) return `<section class="box"><h2>학부모 · 학생 휴대폰 보기 주소</h2>
     <p class="small muted">이 주소로 공지 · 일정 · 급식 · 시간표를 <b>볼 수만</b> 있습니다. 이름은 가려져 보이고, 교실 TV 주소와 달라서 이 주소가 퍼져도 TV는 안전합니다.</p>
     <div class="row" style="margin-top:6px"><input class="in grow" readonly value="${esc(B.phoneUrl || '')}" style="min-width:260px" aria-label="휴대폰 보기 주소">
-      <button class="btn sm" data-bact="copyphone">복사</button><button class="btn txt sm" data-bact="regenview">새 주소 만들기</button></div></section>`;
+      <button class="btn sm" data-bact="phoneqr">QR 보기</button><button class="btn sm" data-bact="copyphone">복사</button><button class="btn txt sm" data-bact="regenview">새 주소 만들기</button></div></section>`;
   return `<section class="box"><h2>학생 휴대폰 · 학생 앱</h2>
     <p class="small muted">학생 첫 화면의 <b>클래스보드</b> 카드와 학생 앱은 아래 <b>보기 전용 주소</b>를 씁니다. 교실 TV 주소와 달라서, 이 주소가 퍼져도 TV 주소는 안전합니다.</p>
     <div class="row" style="margin-top:6px"><input class="in grow" readonly value="${esc(B.phoneUrl || '')}" style="min-width:260px" aria-label="학생용 보기 주소">
-      <button class="btn sm" data-bact="copyphone">복사</button><button class="btn txt sm" data-bact="regenview">새 주소 만들기</button></div>
+      <button class="btn sm" data-bact="phoneqr">QR 보기</button><button class="btn sm" data-bact="copyphone">복사</button><button class="btn txt sm" data-bact="regenview">새 주소 만들기</button></div>
     <label class="small row" style="gap:6px;margin-top:10px"><input type="checkbox" data-bact="pj" ${c.phoneJoin ? 'checked' : ''}> 휴대폰에서도 조사 · 건의 · 상담 신청 받기</label>
     <p class="small muted" style="margin-top:3px">끄면 휴대폰에서는 보기만 됩니다. 켜면 이름만 눌러 참여하므로, 다른 친구 이름으로 참여하는 일이 생길 수 있어요.</p>
     <div class="hr"></div>
@@ -2457,6 +2699,8 @@ document.addEventListener('click', ev => {
   switch (a){
     case 'copyurl': copyText(S.B.url); return;
     case 'copyphone': copyText(S.B.phoneUrl || ''); return;
+    case 'font': { const cur = (S.B.cfg || {}).font || 'bunpil'; if (cur === id) return; boardSave({ font: id }, '글꼴을 바꿨습니다. TV에 곧 반영돼요.', true); return; }
+    case 'phoneqr': mobModal('phone'); return;
     case 'wx': {
       const v = t.dataset.v, nm = v === 'place' ? ($('wxName').value || '').trim() : '';
       if (v === 'place' && !nm) return toast('지역 이름을 적어 주세요.', true);
