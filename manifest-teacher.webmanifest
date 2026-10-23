@@ -1,0 +1,16 @@
+{
+  "id": "./?p=teacher",
+  "name": "강릉제일고 1-2 담임 기록실",
+  "short_name": "1-2 기록실",
+  "lang": "ko",
+  "start_url": "./?p=teacher",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#22392E",
+  "theme_color": "#22392E",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

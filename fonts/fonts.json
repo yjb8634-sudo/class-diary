@@ -1,0 +1,9 @@
+{
+  "note": "교실 TV 글꼴 목록. 글꼴 파일을 fonts/ 폴더에 올리고 여기에 한 줄 더하면 선생님들 [화면 꾸미기 → TV 글꼴]에 나타납니다. id는 영어 소문자로, 한 번 정하면 바꾸지 마세요.",
+  "fonts": [
+    { "id": "bunpil", "name": "분필체 (기본)", "family": "Bunpil", "woff2": "Bunpil-R.woff2", "woff": "Bunpil-R.woff" },
+    { "id": "badasseugi-b", "name": "받아쓰기 굵게", "family": "Badasseugi", "woff2": "Badasseugi-Bold.woff2", "woff": "Badasseugi-Bold.woff" },
+    { "id": "badasseugi-l", "name": "받아쓰기 가늘게", "family": "Badasseugi", "woff2": "Badasseugi-Light.woff2", "woff": "Badasseugi-Light.woff" },
+    { "id": "system", "name": "깔끔한 기본 글꼴", "family": "" }
+  ]
+}

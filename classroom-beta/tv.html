@@ -7,8 +7,8 @@
 <title>우리 반 교실 화면</title>
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
-<link rel="manifest" href="manifest.webmanifest">
-<meta name="apple-mobile-web-app-title" content="교실 화면">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="교실 TV">
 <base target="_top">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1054,7 +1054,7 @@ html,body{background:var(--bg);color:var(--chalk)}
       .map(function (n) { var lv = Number(n.level) || 0; return { id: n.id, text: n.text, level: lv, important: lv >= 1, file: null, files: n.files || [] }; });
     var Q = B.quote || {};
     return {
-      ok: true, now: Date.now(), today: today, label: g + '학년 ' + k + '반', needExt: false,
+      ok: true, now: Date.now(), today: today, label: g + '학년 ' + k + '반', needExt: false, font: B.font || '',
       periods: periods.map(function (p) { var we = dow === 0 || dow === 6, n = String(Number(p.n)); return { n: p.n, s: p.s, e: p.e, subj: we ? '' : (subj[n] || subj[p.n] || ''), teacher: we ? '' : (TCH[n] || TCH[p.n] || '') }; }),
       ttNote: ttNote, lunch: B.lunch || '',
       meal: M[today] || [], mealErr: SCH ? '' : (schAt ? '급식 정보를 불러오지 못했어요' : '급식을 불러오는 중…'),
@@ -1722,12 +1722,40 @@ function paintSchedule(){
 let loading = false, loadStart = 0, lastTry = 0, lastFail = false;
 let extAt = 0, extBusy = false, extStart = 0, flashBusy = false, flashStart = 0;
 let staleAgain = false;
+/* ---- TV 글꼴: 선생님이 [화면 꾸미기 → TV 글꼴]에서 고른 글꼴 (목록 · 파일은 GitHub fonts/ 폴더) ---- */
+const FONT_BASE = 'https://yjb8634-sudo.github.io/class-diary/fonts/';
+let FONTS = null, fontCur = '';
+function fontList(){
+  if (FONTS) return Promise.resolve(FONTS);
+  return fetch(FONT_BASE + 'fonts.json?h=' + Math.floor(Date.now() / 36e5), { cache: 'no-cache' }).then(r => r.json()).then(j => (FONTS = j.fonts || j));
+}
+function applyFont(id){
+  id = String(id || '');
+  if (id === fontCur) return;
+  fontCur = id;
+  const root = document.documentElement.style, rest = "'Bunpil','Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif";
+  if (!id || id === 'bunpil'){ root.removeProperty('--t-font'); return; }
+  fontList().then(L => {
+    const f = (L || []).find(x => x.id === id);
+    if (!f || fontCur !== id){ if (!f) root.removeProperty('--t-font'); return; }
+    if (!f.family){ root.setProperty('--t-font', "'Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif"); return; }
+    const fam = 'CrFont-' + id.replace(/[^a-z0-9-]/gi, '');
+    if (!document.getElementById(fam)){
+      const src = [['woff2', 'woff2'], ['woff', 'woff'], ['ttf', 'truetype'], ['otf', 'opentype']].filter(([k]) => f[k]).map(([k, fm]) => `url('${FONT_BASE + encodeURI(f[k])}') format('${fm}')`).join(',');
+      const st = document.createElement('style'); st.id = fam;
+      st.textContent = `@font-face{font-family:'${fam}';font-style:normal;font-weight:100 900;font-display:swap;src:${src}}`;
+      document.head.appendChild(st);
+    }
+    root.setProperty('--t-font', `'${fam}',${rest}`);
+  }).catch(() => {});
+}
 function load(){
   if (loading) return Promise.resolve();
   loading = true; loadStart = lastTry = Date.now();
   const p = call('apiBoardData', BOOT.preview ? 1 : 0).then(d => {
     lastFail = false;
     D = d; offset = d.now - Date.now(); lastLoad = Date.now();
+    applyFont(d.font);
     if (d.needExt) mergeExt();   /* 아직 못 받은 부분은 지난번 값으로 먼저 채움 */
     if (!dateKey) dateKey = nowParts().ymd;
     if (!EDIT) LAY = layoutFrom(d.layout);
