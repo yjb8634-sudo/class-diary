@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-25 05:27",
+ "updated": "2026-10-26 05:27",
  "school": {
   "name": "강릉제일고등학교",
   "atpt": "K10",
@@ -149,170 +149,6 @@
   ]
  },
  "timetable": {
-  "2026-10-19": [
-   {
-    "period": 1,
-    "subject": "공통수학2"
-   },
-   {
-    "period": 2,
-    "subject": "통합과학2"
-   },
-   {
-    "period": 3,
-    "subject": "한국사2"
-   },
-   {
-    "period": 4,
-    "subject": "공통영어2"
-   },
-   {
-    "period": 5,
-    "subject": "통합사회2"
-   },
-   {
-    "period": 6,
-    "subject": "공통국어2"
-   },
-   {
-    "period": 7,
-    "subject": "생활과학 탐구A"
-   }
-  ],
-  "2026-10-20": [
-   {
-    "period": 1,
-    "subject": "공통영어2"
-   },
-   {
-    "period": 2,
-    "subject": "공통국어2"
-   },
-   {
-    "period": 3,
-    "subject": "미술"
-   },
-   {
-    "period": 4,
-    "subject": "체육2"
-   },
-   {
-    "period": 5,
-    "subject": "통합사회2"
-   },
-   {
-    "period": 6,
-    "subject": "통합과학2"
-   },
-   {
-    "period": 7,
-    "subject": "[보강]진로활동"
-   }
-  ],
-  "2026-10-21": [
-   {
-    "period": 1,
-    "subject": "공통수학2"
-   },
-   {
-    "period": 2,
-    "subject": "공통영어2"
-   },
-   {
-    "period": 3,
-    "subject": "공통국어2"
-   },
-   {
-    "period": 4,
-    "subject": "생활과학 탐구A"
-   },
-   {
-    "period": 5,
-    "subject": "공통영어2"
-   },
-   {
-    "period": 6,
-    "subject": "동아리활동"
-   }
-  ],
-  "2026-10-22": [
-   {
-    "period": 1,
-    "subject": "과학탐구실험2"
-   },
-   {
-    "period": 2,
-    "subject": "통합사회2"
-   },
-   {
-    "period": 3,
-    "subject": "체육2"
-   },
-   {
-    "period": 4,
-    "subject": "한국사2"
-   },
-   {
-    "period": 5,
-    "subject": "자율·자치활동"
-   },
-   {
-    "period": 6,
-    "subject": "생활과학 탐구A"
-   },
-   {
-    "period": 7,
-    "subject": "공통수학2"
-   }
-  ],
-  "2026-10-23": [
-   {
-    "period": 1,
-    "subject": "통합사회2"
-   },
-   {
-    "period": 2,
-    "subject": "한국사2"
-   },
-   {
-    "period": 3,
-    "subject": "미술"
-   },
-   {
-    "period": 4,
-    "subject": "공통국어2"
-   },
-   {
-    "period": 5,
-    "subject": "공통수학2"
-   },
-   {
-    "period": 6,
-    "subject": "공통영어2"
-   },
-   {
-    "period": 7,
-    "subject": "통합과학2"
-   }
-  ],
-  "2026-10-24": [
-   {
-    "period": 1,
-    "subject": "토요휴업일"
-   },
-   {
-    "period": 2,
-    "subject": "토요휴업일"
-   },
-   {
-    "period": 3,
-    "subject": "토요휴업일"
-   },
-   {
-    "period": 4,
-    "subject": "토요휴업일"
-   }
-  ],
   "2026-10-26": [
    {
     "period": 1,
@@ -457,6 +293,170 @@
    {
     "period": 7,
     "subject": "체험활동(1학년)"
+   }
+  ],
+  "2026-10-31": [
+   {
+    "period": 1,
+    "subject": "토요휴업일"
+   },
+   {
+    "period": 2,
+    "subject": "토요휴업일"
+   },
+   {
+    "period": 3,
+    "subject": "토요휴업일"
+   },
+   {
+    "period": 4,
+    "subject": "토요휴업일"
+   }
+  ],
+  "2026-11-02": [
+   {
+    "period": 1,
+    "subject": "미술"
+   },
+   {
+    "period": 2,
+    "subject": "통합과학2"
+   },
+   {
+    "period": 3,
+    "subject": "한국사2"
+   },
+   {
+    "period": 4,
+    "subject": "공통영어2"
+   },
+   {
+    "period": 5,
+    "subject": "통합사회2"
+   },
+   {
+    "period": 6,
+    "subject": "공통국어2"
+   },
+   {
+    "period": 7,
+    "subject": "생활과학 탐구A"
+   }
+  ],
+  "2026-11-03": [
+   {
+    "period": 1,
+    "subject": "공통영어2"
+   },
+   {
+    "period": 2,
+    "subject": "공통국어2"
+   },
+   {
+    "period": 3,
+    "subject": "미술"
+   },
+   {
+    "period": 4,
+    "subject": "체육2"
+   },
+   {
+    "period": 5,
+    "subject": "통합사회2"
+   },
+   {
+    "period": 6,
+    "subject": "통합과학2"
+   },
+   {
+    "period": 7,
+    "subject": "진로활동"
+   }
+  ],
+  "2026-11-04": [
+   {
+    "period": 1,
+    "subject": "공통수학2"
+   },
+   {
+    "period": 2,
+    "subject": "통합과학2"
+   },
+   {
+    "period": 3,
+    "subject": "공통국어2"
+   },
+   {
+    "period": 4,
+    "subject": "생활과학 탐구A"
+   },
+   {
+    "period": 5,
+    "subject": "공통영어2"
+   },
+   {
+    "period": 6,
+    "subject": "동아리활동"
+   }
+  ],
+  "2026-11-05": [
+   {
+    "period": 1,
+    "subject": "과학탐구실험2"
+   },
+   {
+    "period": 2,
+    "subject": "통합사회2"
+   },
+   {
+    "period": 3,
+    "subject": "체육2"
+   },
+   {
+    "period": 4,
+    "subject": "한국사2"
+   },
+   {
+    "period": 5,
+    "subject": "자율·자치활동"
+   },
+   {
+    "period": 6,
+    "subject": "생활과학 탐구A"
+   },
+   {
+    "period": 7,
+    "subject": "공통수학2"
+   }
+  ],
+  "2026-11-06": [
+   {
+    "period": 1,
+    "subject": "통합사회2"
+   },
+   {
+    "period": 2,
+    "subject": "한국사2"
+   },
+   {
+    "period": 3,
+    "subject": "미술"
+   },
+   {
+    "period": 4,
+    "subject": "공통국어2"
+   },
+   {
+    "period": 5,
+    "subject": "공통수학2"
+   },
+   {
+    "period": 6,
+    "subject": "공통영어2"
+   },
+   {
+    "period": 7,
+    "subject": "통합과학2"
    }
   ]
  },
@@ -603,6 +603,10 @@
   },
   {
    "date": "2027-01-23",
+   "name": "겨울방학"
+  },
+  {
+   "date": "2027-01-24",
    "name": "겨울방학"
   }
  ],
