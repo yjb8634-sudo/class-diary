@@ -67,6 +67,7 @@ function board준비_() {
   boardHead_(ss.getSheetByName(BOARD.SURVEY), 10, ['종류', '설명', '첨부ID', '첨부이름', '첨부종류', '기타입력']);
   boardHead_(ss.getSheetByName(BOARD.RESP), 6, ['기타내용']);
   boardHead_(ss.getSheetByName(BOARD.EVENT), 6, ['등록한 학생']);
+  boardHead_(ss.getSheetByName(BOARD.EVENT), 7, ['학생이 지운 시각']);
   boardHead_(stuSheetW_(), 9, ['생일']);
   var cur = getConfig_();
   BOARD_CONF.forEach(function (kv) { if (!(kv[0] in cur)) sheet_(SHEETS.CONFIG).appendRow([kv[0], kv[1]]); });
@@ -140,11 +141,18 @@ function boardStudent_(mode, no, pin) {
   if (mode !== 'phone') return findStudent_(no);
   return auth_(no, pin);
 }
+/* 교실 TV에서 이미 낸 답을 바꾸거나 지울 때는 PIN 확인 (휴대폰은 이미 로그인했으므로 그대로) */
+function boardChangeAuth_(mode, no, pin) {
+  if (mode === 'phone') return;
+  if (!String(pin || '')) throw new Error('이미 낸 답은 PIN을 넣어야 바꿀 수 있어요.');
+  auth_(no, pin);
+}
 
 /* 앱에서 PIN을 한 번만 묻기 위해 미리 확인합니다. */
-function apiBoardCheckPin(t, no, pin) {
+function apiBoardCheckPin(t, no, pin, change) {
   var m = boardAuthWrite_(t);
-  var st = boardStudent_(m, no, pin);
+  /* 교실 TV에서 이미 낸 답을 바꿀 때: TV도 그 학생의 PIN(6자리)을 확인합니다. 틀리면 몇 번 뒤 잠깁니다. */
+  var st = change ? auth_(no, pin) : boardStudent_(m, no, pin);
   return { ok: true, no: st.no, name: st.name };
 }
 
@@ -648,9 +656,9 @@ function boardNeisEvents_(from8, to8) {
   });
 }
 function boardManualEvents_() {
-  return hubRows_(BOARD.EVENT, 6).filter(function (x) { return x.r[0]; }).map(function (x) {
+  return hubRows_(BOARD.EVENT, 7).filter(function (x) { return x.r[0]; }).map(function (x) {
     var st = hubDate_(x.r[1]), en = hubDate_(x.r[2]) || st;
-    return { row: x.row, id: String(x.r[0]), start: st, end: en < st ? st : en, title: String(x.r[3] || ''), by: String(x.r[5] || '') };
+    return { row: x.row, id: String(x.r[0]), start: st, end: en < st ? st : en, title: String(x.r[3] || ''), by: String(x.r[5] || ''), gone: !!x.r[6] };
   }).sort(function (a, b) { return a.start < b.start ? -1 : 1; });
 }
 /* 오늘부터 정한 기간 안의 일정 (학교 + 학급) */
@@ -665,7 +673,7 @@ function boardEvents_(now, days) {
     if (r.pending) pendingEv = true;
     (r.events || []).forEach(function (e) { out.push({ title: e.title, start: e.start, end: e.end, src: '학교' }); });
   }
-  boardManualEvents_().forEach(function (e) { out.push({ title: e.title, start: e.start, end: e.end, src: '학급' }); });
+  boardManualEvents_().filter(function (e) { return !e.gone; }).forEach(function (e) { out.push({ title: e.title, start: e.start, end: e.end, src: '학급', id: e.by ? e.id : '', stu: !!e.by }); });
   /* 학교·학급 구분 없이 보여 주므로, 같은 날 같은 이름이 두 번 들어 있으면 하나만 남깁니다. */
   var seen = {};
   out = out.filter(function (e) {
@@ -878,7 +886,8 @@ function boardBuildData_(mode) {
     homeUrl: c.appUrl || webBase_() || '',
     flash: boardFlashOut_(boardFlash_()),
     ver: BOARD_VER, url: mode === 'phone' ? boardViewUrl_() : boardUrl_(c.key),
-    phone: mode === 'phone', phoneJoin: c.phoneJoin, needPin: mode === 'phone'
+    phone: mode === 'phone', phoneJoin: c.phoneJoin, needPin: mode === 'phone',
+    pinChange: mode !== 'phone', pinLen: 6, pinHow: '휴대폰 우리 반 앱에서 [학급가입]을 하면 PIN이 생겨요. 잊었으면 담임 선생님께 말해 주세요.'
   };
 }
 
@@ -905,6 +914,7 @@ function apiBoardAnswer(t, id, no, choices, pin, etcText) {
     }
     var sh = ss_().getSheetByName(BOARD.RESP);
     var cur = boardResponses_().filter(function (r) { return r.id === s.id && r.no === st.no; })[0];
+    if (cur) boardChangeAuth_(mode, st.no, pin);
     var row = [s.id, st.no, st.name, JSON.stringify(ch), new Date(), boardTxt_(etc)];
     if (cur) sh.getRange(cur.row, 1, 1, 6).setValues([row]); else sh.appendRow(row);
     var sum = boardSurveySummary_(s, boardResponses_(), students_(), false);
@@ -925,6 +935,7 @@ function apiBoardUncheck(t, id, no, pin) {
     if (!s) throw new Error('없어진 조사입니다.');
     if (!s.open) throw new Error('이미 마감된 조사입니다.');
     var st = boardStudent_(mode, no, pin);
+    boardChangeAuth_(mode, st.no, pin);
     var sh = ss_().getSheetByName(BOARD.RESP);
     boardResponses_().filter(function (r) { return r.id === s.id && r.no === st.no; })
       .sort(function (a, b) { return b.row - a.row; }).forEach(function (r) { sh.deleteRow(r.row); });
@@ -1032,14 +1043,32 @@ function apiBoardEventAdd(t, no, date, per, text, pin) {
   text = String(text || '').replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 30);
   if (text.length < 2) throw new Error('일정 내용을 적어 주세요.');
   var title = (per ? per + ' ' : '') + text;
-  var stu = boardManualEvents_().filter(function (e) { return e.by && e.end >= today; });
+  var stu = boardManualEvents_().filter(function (e) { return e.by && !e.gone && e.end >= today; });
   if (stu.length >= 30) throw new Error('학생이 올린 일정이 너무 많아요. 선생님이 정리한 뒤 다시 올려 주세요.');
-  if (boardManualEvents_().some(function (e) { return e.start === date && String(e.title).replace(/\s+/g, '') === title.replace(/\s+/g, ''); }))
+  if (boardManualEvents_().some(function (e) { return !e.gone && e.start === date && String(e.title).replace(/\s+/g, '') === title.replace(/\s+/g, ''); }))
     throw new Error('같은 날 같은 일정이 이미 있어요.');
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
     ss_().getSheetByName(BOARD.EVENT).appendRow(['e_' + Utilities.getUuid().slice(0, 8), date, date, boardTxt_(title), new Date(), '학생']);
+  } finally { lock.releaseLock(); }
+  boardBust_();
+  return { ok: true };
+}
+
+/* 학생이 올린 일정은 교실 TV에서 누구나 지울 수 있어요. 바로 없애지 않고 '지운 시각'만 적어 두어 담임 선생님이 되살릴 수 있게 합니다. */
+function apiBoardEventDel(t, id) {
+  boardBust_();
+  var mode = boardAuthWrite_(t);
+  if (mode === 'phone') throw new Error('일정은 교실 TV에서만 지울 수 있어요.');
+  board준비_();
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var e = boardManualEvents_().filter(function (x) { return x.id === String(id); })[0];
+    if (!e || e.gone) throw new Error('이미 지워진 일정이에요.');
+    if (!e.by) throw new Error('선생님이 넣은 일정은 담임 선생님만 지울 수 있어요.');
+    ss_().getSheetByName(BOARD.EVENT).getRange(e.row, 7).setValue(new Date());
   } finally { lock.releaseLock(); }
   boardBust_();
   return { ok: true };
@@ -1089,7 +1118,7 @@ function apiBoardAdminGet(pw) {
     students: sts.map(function (s) { return { no: s.no, name: s.name }; }),
     birthdays: boardBirthdays_(),
     weekBirthdays: boardWeekBirthdays_(new Date()),
-    events: boardManualEvents_().map(function (e) { return { id: e.id, start: e.start, end: e.end, title: e.title, by: e.by }; }),
+    events: boardManualEvents_().map(function (e) { return { id: e.id, start: e.start, end: e.end, title: e.title, by: e.by, gone: e.gone }; }),
     eventsShown: (function () { try { return boardEvents_(new Date()); } catch (e) { return { events: [], err: String(e.message || e) }; } })(),
     suggestions: hubRows_(BOARD.SUGGEST, 5).filter(function (x) { return x.r[0]; }).map(function (x) {
       return { id: String(x.r[0]), text: String(x.r[1] || ''), name: String(x.r[2] || ''), at: hubTime_(x.r[3]), read: String(x.r[4]) === '확인' };
@@ -1436,6 +1465,9 @@ function apiBoardEvent(pw, op, d) {
   } else if (op === 'del') {
     var e = boardManualEvents_().filter(function (x) { return x.id === String(d.id); })[0];
     if (e) sh.deleteRow(e.row);
+  } else if (op === 'restore') {
+    var g = boardManualEvents_().filter(function (x) { return x.id === String(d.id); })[0];
+    if (g) sh.getRange(g.row, 7).setValue('');
   }
   boardBust_();
   return apiBoardAdminGet(pw);
