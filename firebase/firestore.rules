@@ -54,16 +54,36 @@ service cloud.firestore {
       function ownsBoard() { return signedIn() && get(boardPath()).data.owner == request.auth.uid; }
 
       // 조사 · 투표 응답: 교실 TV(로그인 없음)가 씁니다. 학생 번호마다 한 문서.
+      // 처음 답할 때는 이름만 누르면 되고, 이미 낸 답을 바꾸거나 지울 때는 그 학생의 PIN 확인증(pinbox/…/proof)이 있어야 합니다.
       match /answers/{aid} {
+        function okAns(d) {
+          return d.keys().hasOnly(['sid', 'no', 'ch', 'etc', 'at', 'pf'])
+            && d.sid is string && d.sid.size() <= 20
+            && d.no is int && d.no >= 1 && d.no <= 99
+            && d.ch is list && d.ch.size() <= 160
+            && d.etc is string && d.etc.size() <= 100
+            && aid == d.sid + '_' + string(d.no);
+        }
+        function pinOn() { return get(boardPath()).data.get('pinChange', true) != false; }
+        function pinKeyOf() { return get(boardPath()).data.get('pinKey', ''); }
+        function proofPath(pk, pid) { return /databases/$(database)/documents/pinbox/$(pk)/proof/$(pid); }
+        function proofOk(pk, d) {
+          return pk is string && pk.size() >= 20
+            && d.get('pf', '') is string && d.get('pf', '').size() >= 16 && d.get('pf', '').size() <= 40
+            && d.get('pf', '') != resource.data.get('pf', '')
+            && exists(proofPath(pk, d.pf))
+            && get(proofPath(pk, d.pf)).data.no == d.no
+            && get(proofPath(pk, d.pf)).data.at > request.time - duration.value(10, 'm');
+        }
         allow read: if key.size() >= 20;
-        allow create, update: if exists(boardPath())
-          && request.resource.data.keys().hasOnly(['sid', 'no', 'ch', 'etc', 'at'])
-          && request.resource.data.sid is string && request.resource.data.sid.size() <= 20
-          && request.resource.data.no is int && request.resource.data.no >= 1 && request.resource.data.no <= 99
-          && request.resource.data.ch is list && request.resource.data.ch.size() <= 160
-          && request.resource.data.etc is string && request.resource.data.etc.size() <= 100
-          && aid == request.resource.data.sid + '_' + string(request.resource.data.no);
-        allow delete: if exists(boardPath());
+        allow create: if exists(boardPath()) && okAns(request.resource.data);
+        // 담임 선생님(조사 고치기 · 백업 되살리기)
+        allow update, delete: if ownsBoard();
+        // 교실 TV: PIN을 끈 반은 자유롭게, 켠 반(기본)은 확인증이 있어야
+        allow update: if exists(boardPath()) && okAns(request.resource.data) && request.resource.data.no == resource.data.no
+          && request.resource.data.sid == resource.data.sid
+          && (!pinOn() || proofOk(pinKeyOf(), request.resource.data));
+        allow delete: if exists(boardPath()) && !pinOn();
       }
 
       // 상담 신청: 교실 TV가 '날짜_때' 이름으로 한 번만 만들 수 있어요(먼저 신청한 사람 우선). 고치기는 안 되고, 취소는 담임 선생님만.
@@ -83,10 +103,10 @@ service cloud.firestore {
         allow delete: if ownsBoard();
       }
 
-      // 학생이 교실 TV에서 올린 일정: TV는 넣기만, 지우기는 담임 선생님만.
+      // 학생이 교실 TV에서 올린 일정: TV는 넣고, '지움' 표시(gone)만 할 수 있어요. 되살리기 · 완전히 지우기는 담임 선생님만.
       match /sevents/{eid} {
         allow read: if key.size() >= 20;
-        allow create: if ownsBoard() && request.resource.data.keys().hasOnly(['date', 'title', 'no', 'name', 'at'])
+        allow create: if ownsBoard() && request.resource.data.keys().hasOnly(['date', 'title', 'no', 'name', 'at', 'gone'])
           && request.resource.data.title is string && request.resource.data.title.size() <= 40;
         allow create: if exists(boardPath()) && get(boardPath()).data.get('eventAddOn', true) == true
           && request.resource.data.keys().hasOnly(['date', 'title', 'no', 'name', 'at'])
@@ -95,6 +115,10 @@ service cloud.firestore {
           && request.resource.data.no is int && request.resource.data.no >= 0 && request.resource.data.no <= 99
           && request.resource.data.name is string && request.resource.data.name.size() <= 20
           && request.resource.data.at == request.time;
+        allow update: if exists(boardPath()) && !('gone' in resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['gone'])
+          && request.resource.data.gone == request.time;
+        allow update: if ownsBoard() && request.resource.data.keys().hasOnly(['date', 'title', 'no', 'name', 'at', 'gone']);
         allow delete: if ownsBoard();
       }
 
@@ -137,6 +161,58 @@ service cloud.firestore {
         && request.resource.data.at == request.time;
       allow get, delete: if sid.size() >= 24;
       allow list: if false;
+    }
+
+    // 학생 PIN 보관함 (반마다 하나, 이름은 긴 무작위 글자). PIN은 지문(sha256)으로만 넣고, 아무도(담임 · 운영자 · TV 포함) 읽을 수 없습니다.
+    match /pinbox/{pk} {
+      function box() { return /databases/$(database)/documents/pinbox/$(pk); }
+      function ownsBox() { return signedIn() && exists(box()) && get(box()).data.owner == request.auth.uid; }
+      function secPath(no) { return /databases/$(database)/documents/pinbox/$(pk)/p/$(no); }
+      function regPath(no) { return /databases/$(database)/documents/pinbox/$(pk)/reg/$(no); }
+      function okNo(no) { return no.matches('^[1-9][0-9]?$'); }
+      function okH(h) { return h is string && h.size() == 64; }
+      allow get: if signedIn() && resource.data.owner == request.auth.uid;
+      allow create: if approved() && pk.size() >= 20
+        && request.resource.data.keys().hasOnly(['owner']) && request.resource.data.owner == request.auth.uid;
+      allow list, update, delete: if false;
+
+      // PIN 지문: 읽기는 누구도 못 함
+      match /p/{no} {
+        allow read: if false;
+        // 학생이 휴대폰에서 처음 만들 때 (먼저 만든 사람 우선, 확인표 reg 와 함께)
+        allow create: if pk.size() >= 20 && exists(box()) && okNo(no)
+          && request.resource.data.keys().hasOnly(['h', 'at']) && okH(request.resource.data.h)
+          && request.resource.data.at == request.time
+          && !exists(regPath(no)) && existsAfter(regPath(no));
+        // 담임 선생님이 대신 정할 때
+        allow create, update: if ownsBox() && okNo(no)
+          && request.resource.data.keys().hasOnly(['h', 'at']) && okH(request.resource.data.h);
+        // 학생이 바꿀 때: 지금 PIN(의 지문)을 알아야 함
+        allow update: if request.resource.data.keys().hasOnly(['h', 'old', 'at']) && okH(request.resource.data.h)
+          && request.resource.data.old == resource.data.h && request.resource.data.at == request.time;
+        // 초기화는 담임 선생님만
+        allow delete: if ownsBox();
+      }
+      // PIN을 만들었는지만 알려 주는 확인표 (TV · 휴대폰이 읽음, PIN은 들어 있지 않음)
+      match /reg/{no} {
+        allow read: if pk.size() >= 20;
+        allow create: if pk.size() >= 20 && okNo(no)
+          && request.resource.data.keys().hasOnly(['at', 'by']) && existsAfter(secPath(no))
+          && ((request.resource.data.by == 'student' && !exists(secPath(no)) && request.resource.data.at == request.time)
+            || (request.resource.data.by == 'teacher' && ownsBox()));
+        allow update: if ownsBox() && request.resource.data.keys().hasOnly(['at', 'by']);
+        allow delete: if ownsBox();
+      }
+      // PIN 확인증: 교실 TV가 PIN을 맞게 넣으면 만들 수 있고(10분 동안 한 번), 답을 바꿀 때 내밉니다. 읽기는 누구도 못 함.
+      match /proof/{pid} {
+        allow read, update, delete: if false;
+        allow create: if pk.size() >= 20 && pid.size() >= 16 && pid.size() <= 40
+          && request.resource.data.keys().hasOnly(['no', 'h', 'at'])
+          && request.resource.data.no is int && request.resource.data.no >= 1 && request.resource.data.no <= 99
+          && request.resource.data.at == request.time && okH(request.resource.data.h)
+          && exists(secPath(string(request.resource.data.no)))
+          && get(secPath(string(request.resource.data.no))).data.h == request.resource.data.h;
+      }
     }
 
     match /{document=**} {
