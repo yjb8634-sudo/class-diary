@@ -162,13 +162,14 @@ test('PIN 지문 · 확인증은 아무도 읽지 못하고, 확인표(reg)만 �
   await assertSucceeds(getDocs(collection(as.tv(), `pinbox/${PK}/reg`)));
 });
 test('학생은 휴대폰에서 PIN을 처음 한 번 만들고, 이미 있는 번호는 덮어쓸 수 없다', async () => {
-  const b1 = writeBatch(as.tv());
-  b1.set(doc(as.tv(), `pinbox/${PK}/p/5`), { h: H2, at: serverTimestamp() });
-  b1.set(doc(as.tv(), `pinbox/${PK}/reg/5`), { at: serverTimestamp(), by: 'student' });
+  const tv = as.tv();   // 한 번에 묶어 저장할 때는 같은 연결을 써야 함
+  const b1 = writeBatch(tv);
+  b1.set(doc(tv, `pinbox/${PK}/p/5`), { h: H2, at: serverTimestamp() });
+  b1.set(doc(tv, `pinbox/${PK}/reg/5`), { at: serverTimestamp(), by: 'student' });
   await assertSucceeds(b1.commit());
-  const b2 = writeBatch(as.tv());
-  b2.set(doc(as.tv(), `pinbox/${PK}/p/3`), { h: HX, at: serverTimestamp() });
-  b2.set(doc(as.tv(), `pinbox/${PK}/reg/3`), { at: serverTimestamp(), by: 'student' });
+  const b2 = writeBatch(tv);
+  b2.set(doc(tv, `pinbox/${PK}/p/3`), { h: HX, at: serverTimestamp() });
+  b2.set(doc(tv, `pinbox/${PK}/reg/3`), { at: serverTimestamp(), by: 'student' });
   await assertFails(b2.commit());
   await assertFails(setDoc(doc(as.tv(), `pinbox/${PK}/p/6`), { h: H2, at: serverTimestamp() }));   // 확인표 없이 혼자는 안 됨
   await assertFails(setDoc(doc(as.tv(), `pinbox/${PK}/reg/7`), { at: serverTimestamp(), by: 'teacher' }));
@@ -180,9 +181,10 @@ test('PIN 바꾸기는 지금 PIN을 알아야 하고, 초기화 · 대신 정�
   await assertFails(deleteDoc(doc(as.op(), `pinbox/${PK}/reg/3`)));
   await assertSucceeds(deleteDoc(doc(as.t1(), `pinbox/${PK}/p/3`)));
   await assertSucceeds(deleteDoc(doc(as.t1(), `pinbox/${PK}/reg/3`)));
-  const b = writeBatch(as.t1());
-  b.set(doc(as.t1(), `pinbox/${PK}/p/8`), { h: H1, at: serverTimestamp() });
-  b.set(doc(as.t1(), `pinbox/${PK}/reg/8`), { at: serverTimestamp(), by: 'teacher' });
+  const t1 = as.t1();
+  const b = writeBatch(t1);
+  b.set(doc(t1, `pinbox/${PK}/p/8`), { h: H1, at: serverTimestamp() });
+  b.set(doc(t1, `pinbox/${PK}/reg/8`), { at: serverTimestamp(), by: 'teacher' });
   await assertSucceeds(b.commit());
 });
 test('PIN 보관함은 승인된 선생님이 자기 것으로만 만든다', async () => {
