@@ -16,7 +16,7 @@ var API_ALLOW_ = {
   'apiAdminLogin': 1, 'apiAdminMine': 1, 'apiAdminPblMine': 1, 'apiAdminResetPin': 1, 'apiAdminSetConfig': 1,
   'apiAdminSetRoster': 1, 'apiAdminStudents': 1, 'apiAdminXlsx': 1, 'apiAppInfo': 1, 'apiBoard': 1,
   'apiHubAlerts': 1, 'apiAdminLogout': 1, 'apiHubAlertsSeen': 1, 'apiBoardAdminGet': 1, 'apiBoardAnswer': 1, 'apiBoardAppZip': 1, 'apiBoardBirthdays': 1,
-  'apiBoardCheckPin': 1, 'apiBoardCounselBook': 1, 'apiBoardCounselSlots': 1, 'apiBoardData': 1,
+  'apiBoardCheckPin': 1, 'apiBoardEventDel': 1, 'apiBoardCounselBook': 1, 'apiBoardCounselSlots': 1, 'apiBoardData': 1,
   'apiBoardEvent': 1, 'apiBoardEventAdd': 1, 'apiBoardExt': 1, 'apiBoardFlashAck': 1, 'apiBoardFlashPoll': 1,
   'apiBoardFlashSend': 1, 'apiBoardFlashStop': 1, 'apiBoardLayoutAuth': 1, 'apiBoardNeisWeek': 1,
   'apiBoardNotice': 1, 'apiBoardProjects': 1, 'apiBoardRegenKey': 1, 'apiBoardRegenViewKey': 1,

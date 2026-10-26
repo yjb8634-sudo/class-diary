@@ -2341,6 +2341,7 @@ function vSurveyBox(){
           : `<button class="btn txt sm" data-bact="sattach" data-id="${esc(s.id)}">첨부 넣기</button>`}
         ${s.anon ? '' : `<button class="btn txt sm" data-bact="scsv" data-id="${esc(s.id)}">CSV</button>`}
         ${s.anon || s.kind === '체크' ? '' : `<button class="btn txt sm" data-bact="scsv2" data-id="${esc(s.id)}">보기별 번호 CSV</button>`}
+        <button class="btn txt sm" data-bact="sshare" data-id="${esc(s.id)}" style="font-weight:800">📤 결과 그림 · 카톡</button>
         <button class="btn txt sm neg" data-bact="sdel" data-id="${esc(s.id)}">지우기</button></div></div>`;
     const desc = s.desc ? `<p class="small" style="margin-top:4px;white-space:pre-wrap">${esc(s.desc)}</p>` : '';
     const body = s.kind === '체크'
@@ -2372,6 +2373,144 @@ function vSurveyBox(){
       <span class="grow"></span><button class="btn pri" data-bact="sadd">${kind === '체크' ? '체크 시작' : '조사 시작'}</button></div>
     ${list || '<p class="empty">아직 만든 조사가 없습니다.</p>'}</section>`;
 }
+/* ---------- 조사 결과를 그림으로 만들어 카톡 단톡방에 보내기 ---------- */
+/* o = { cls:'1학년 2반', q, desc, kind:'선택'|'체크', options:[], counts:[], by:[[이름…]], total, done, missingNos:[], anon } */
+function resImgDraw(o, opt){
+  opt = opt || {};
+  const W = 1080, P = 64, F = "'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif";
+  const cv = document.createElement('canvas'), g = cv.getContext('2d');
+  const wrap = (text, font, maxW) => {
+    g.font = font; const out = []; let line = '';
+    for (const ch of String(text || '')){
+      if (ch === '\n'){ out.push(line); line = ''; continue; }
+      if (g.measureText(line + ch).width > maxW && line){ const sp = line.lastIndexOf(' '); if (sp > line.length * .6){ out.push(line.slice(0, sp)); line = line.slice(sp + 1) + ch; } else { out.push(line); line = ch; } }
+      else line += ch;
+    }
+    if (line) out.push(line);
+    return out.length ? out : [''];
+  };
+  const showNames = opt.names && !o.anon, isCheck = o.kind === '체크';
+  const max = Math.max(1, ...(o.counts || [0])), sum = Math.max(1, o.done || 0);
+  /* 1) 높이 재기 */
+  const qL = wrap(o.q, `800 46px ${F}`, W - P * 2), dL = o.desc ? wrap(o.desc, `500 28px ${F}`, W - P * 2) : [];
+  const rows = isCheck ? [] : o.options.map((op, i) => ({
+    op: wrap(op, `700 32px ${F}`, W - P * 2 - 190), n: o.counts[i] || 0,
+    nm: showNames && (o.by[i] || []).length ? wrap((o.by[i] || []).join(', '), `500 24px ${F}`, W - P * 2 - 20) : []
+  }));
+  let H = P + 44 + 20 + qL.length * 60 + (dL.length ? 10 + dL.length * 40 : 0) + 36;
+  if (isCheck) H += 220; else rows.forEach(r => { H += r.op.length * 44 + 30 + 26 + (r.nm.length ? 8 + r.nm.length * 34 : 0) + 26; });
+  const miss = opt.missing && (o.missingNos || []).length ? wrap('아직 안 한 번호: ' + o.missingNos.join(', '), `600 26px ${F}`, W - P * 2) : [];
+  if (miss.length) H += 16 + miss.length * 38;
+  H += 90;
+  cv.width = W; cv.height = H;
+  /* 2) 그리기 */
+  g.fillStyle = '#F6F4EC'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#1F3A30'; g.fillRect(0, 0, W, 14);
+  let y = P;
+  g.textBaseline = 'top';
+  g.fillStyle = '#2F6B55'; g.font = `800 30px ${F}`;
+  g.fillText((o.cls ? o.cls + ' · ' : '') + (isCheck ? '체크 결과' : '설문 · 투표 결과'), P, y); y += 44 + 20;
+  g.fillStyle = '#16231D'; g.font = `800 46px ${F}`; qL.forEach(l => { g.fillText(l, P, y); y += 60; });
+  if (dL.length){ y += 10; g.fillStyle = '#5B6B63'; g.font = `500 28px ${F}`; dL.forEach(l => { g.fillText(l, P, y); y += 40; }); }
+  y += 36;
+  const rr = (x, yy, w, h, r) => { g.beginPath(); g.moveTo(x + r, yy); g.arcTo(x + w, yy, x + w, yy + h, r); g.arcTo(x + w, yy + h, x, yy + h, r); g.arcTo(x, yy + h, x, yy, r); g.arcTo(x, yy, x + w, yy, r); g.closePath(); };
+  if (isCheck){
+    const pct = o.total ? Math.round(o.done / o.total * 100) : 0;
+    g.fillStyle = '#16231D'; g.font = `800 120px ${F}`; g.fillText(String(o.done), P, y);
+    const w0 = g.measureText(String(o.done)).width;
+    g.font = `700 44px ${F}`; g.fillStyle = '#5B6B63'; g.fillText(' / ' + o.total + '명 완료', P + w0 + 6, y + 62);
+    y += 150; rr(P, y, W - P * 2, 30, 15); g.fillStyle = '#E2E6DD'; g.fill();
+    if (pct){ rr(P, y, Math.max(30, (W - P * 2) * pct / 100), 30, 15); g.fillStyle = '#E6B84A'; g.fill(); }
+    y += 70;
+  } else {
+    const best = Math.max(...rows.map(r => r.n));
+    rows.forEach(r => {
+      g.fillStyle = '#16231D'; g.font = `700 32px ${F}`;
+      r.op.forEach((l, k) => { g.fillText(l, P, y + k * 44); });
+      g.textAlign = 'right'; g.font = `800 34px ${F}`; g.fillStyle = r.n && r.n === best ? '#B07D12' : '#2F6B55';
+      g.fillText(r.n + '명', W - P, y); g.font = `600 24px ${F}`; g.fillStyle = '#7A8780';
+      g.fillText(Math.round(r.n / sum * 100) + '%', W - P - 110, y + 8); g.textAlign = 'left';
+      y += r.op.length * 44 + 4;
+      rr(P, y, W - P * 2, 26, 13); g.fillStyle = '#E2E6DD'; g.fill();
+      if (r.n){ rr(P, y, Math.max(26, (W - P * 2) * r.n / max), 26, 13); g.fillStyle = r.n === best ? '#E6B84A' : '#7FB7A3'; g.fill(); }
+      y += 26 + 26;
+      if (r.nm.length){ y += 8 - 18; g.fillStyle = '#4B5F56'; g.font = `500 24px ${F}`; r.nm.forEach(l => { g.fillText(l, P + 10, y); y += 34; }); y += 18; }
+      y += 26;
+    });
+  }
+  if (miss.length){ y += 16; g.fillStyle = '#B3473A'; g.font = `600 26px ${F}`; miss.forEach(l => { g.fillText(l, P, y); y += 38; }); }
+  const d = new Date(Date.now() + 9 * 3600e3), ds = `${d.getUTCFullYear()}.${d.getUTCMonth() + 1}.${d.getUTCDate()}. ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+  g.fillStyle = '#E9EDE4'; g.fillRect(0, H - 76, W, 76);
+  g.fillStyle = '#4B5F56'; g.font = `600 26px ${F}`; g.textBaseline = 'middle';
+  g.fillText(`참여 ${o.done} / ${o.total}명${o.anon ? ' · 익명 조사' : ''}`, P, H - 38);
+  g.textAlign = 'right'; g.fillText(ds + ' 기준', W - P, H - 38); g.textAlign = 'left';
+  return cv;
+}
+function resShareModal(o){
+  if (!document.getElementById('resImgCss')){
+    const st = document.createElement('style'); st.id = 'resImgCss';
+    st.textContent = `#resImg{position:fixed;inset:0;z-index:300;background:rgba(10,16,13,.75);display:flex;align-items:center;justify-content:center;padding:14px}
+#resImg .rc{background:#F4F7F5;color:#1D2A25;border-radius:18px;width:min(560px,100%);max-height:94vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden;font-size:15px}
+#resImg .rh{display:flex;align-items:center;gap:10px;padding:14px 16px;background:#E3EEE8;border-bottom:1px solid #D2E0D8}
+#resImg .rh b{font-size:17px;flex:1}#resImg .rh button{all:unset;cursor:pointer;font-size:22px;color:#4B5F56;padding:2px 8px}
+#resImg .rb{padding:14px 16px;overflow:auto}
+#resImg .pv{background:#fff;border:1px solid #D2E0D8;border-radius:12px;padding:8px;text-align:center}
+#resImg .pv img{max-width:100%;max-height:46vh;display:inline-block}
+#resImg .op{display:flex;flex-wrap:wrap;gap:6px 16px;margin:12px 0 4px}#resImg .op label{display:flex;align-items:center;gap:6px;cursor:pointer}
+#resImg .bt{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+#resImg .bt button{all:unset;cursor:pointer;flex:1;min-width:130px;text-align:center;padding:11px 8px;border-radius:10px;font-weight:800;border:1.5px solid #B9CFC4;background:#fff;color:#24453A;box-sizing:border-box}
+#resImg .bt .kk{background:#FEE500;border-color:#FEE500;color:#191600}
+#resImg .hw{margin-top:12px;font-size:13.5px;line-height:1.65;color:#33493F;background:#fff;border:1px solid #D2E0D8;border-radius:12px;padding:10px 12px}`;
+    document.head.appendChild(st);
+  }
+  const old = document.getElementById('resImg'); if (old) old.remove();
+  const box = document.createElement('div'); box.id = 'resImg';
+  const S2 = { names: false, missing: false, blob: null, url: '' };
+  const canFile = () => { try { return !!(navigator.canShare && navigator.canShare({ files: [new File([new Blob(['x'], { type: 'image/png' })], 'a.png', { type: 'image/png' })] })); } catch (e) { return false; } };
+  const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+  const fname = () => 'survey-result-' + Date.now().toString(36) + '.png';
+  const note = msg => { const t = box.querySelector('.hw'); if (t) t.innerHTML = msg; };
+  function paint(){
+    const cv = resImgDraw(o, S2);
+    cv.toBlob(b => { S2.blob = b; if (S2.url) URL.revokeObjectURL(S2.url); S2.url = URL.createObjectURL(b); const im = box.querySelector('.pv img'); if (im) im.src = S2.url; }, 'image/png');
+  }
+  box.innerHTML = `<div class="rc" role="dialog" aria-modal="true"><div class="rh"><b>📤 결과를 그림으로 보내기</b><button data-r="x" aria-label="닫기">✕</button></div>
+    <div class="rb"><div class="pv"><img alt="조사 결과 그림"></div>
+      <div class="op">${o.anon || o.kind === '체크' ? '' : '<label><input type="checkbox" data-r="names"> 누가 골랐는지 이름도 넣기</label>'}
+        ${(o.missingNos || []).length ? '<label><input type="checkbox" data-r="missing"> 아직 안 한 번호 넣기</label>' : ''}</div>
+      <div class="bt">${canFile() ? '<button class="kk" data-r="share">카카오톡으로 보내기</button>' : ''}
+        ${navigator.clipboard && window.ClipboardItem && !mobile ? '<button data-r="copy">그림 복사 (카톡에 붙여 넣기)</button>' : ''}
+        <button data-r="save">그림 저장</button></div>
+      <div class="hw">${canFile() ? '<b>[카카오톡으로 보내기]</b>를 누르고 공유 목록에서 <b>카카오톡</b> → 우리 반 단톡방을 고르세요.' : '<b>PC 카카오톡</b>: [그림 복사]를 누른 뒤 단톡방 입력칸에서 <b>Ctrl+V</b> → 전송. (복사가 안 되면 [그림 저장] 후 대화창으로 끌어다 놓기)'}
+        ${o.anon ? '' : '<br>이름은 체크할 때만 그림에 들어가요. 학생 개인 정보가 단톡방에 퍼지지 않게 살펴 주세요.'}</div></div></div>`;
+  box.addEventListener('click', async ev => {
+    if (ev.target === box){ box.remove(); return; }
+    const b = ev.target.closest('[data-r]'); if (!b) return;
+    const r = b.dataset.r;
+    if (r === 'x'){ box.remove(); return; }
+    if (r === 'names' || r === 'missing'){ S2[r] = b.checked; paint(); return; }
+    if (!S2.blob) return;
+    if (r === 'share'){
+      try { await navigator.share({ files: [new File([S2.blob], fname(), { type: 'image/png' })], title: o.q }); }
+      catch (e) { if (e && e.name !== 'AbortError') note('보내기가 안 됐어요. [그림 저장]으로 저장한 뒤 카톡에서 사진으로 보내 주세요.'); }
+      return;
+    }
+    if (r === 'copy'){
+      try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': S2.blob })]); note('✅ <b>복사했어요.</b> PC 카카오톡 단톡방 입력칸을 누르고 <b>Ctrl+V</b> → 전송하세요.'); }
+      catch (e) { note('이 브라우저에서는 그림 복사가 안 돼요. [그림 저장] 후 카톡 대화창으로 끌어다 놓아 주세요.'); }
+      return;
+    }
+    if (r === 'save'){ const a = document.createElement('a'); a.href = S2.url; a.download = fname(); document.body.appendChild(a); a.click(); a.remove(); note('저장했어요. 카톡 대화창에서 <b>사진</b>으로 보내거나, PC에서는 대화창으로 끌어다 놓으세요.'); }
+  });
+  document.body.appendChild(box);
+  paint();
+}
+
+function svShareOrig(s){
+  resShareModal({ cls: S.B.cfg && S.B.cfg.grade ? S.B.cfg.grade + '학년 ' + S.B.cfg.klass + '반' : '', q: s.q, desc: s.desc || '', kind: s.kind === '체크' ? '체크' : '선택', options: s.options || [],
+    counts: s.counts || [], by: (s.byOption || s.options.map(() => [])).map(L => L.map(x => String(x).replace(/^\d+\.\s*/, ''))),
+    total: s.total || 0, done: s.count || 0, missingNos: (s.missing || []).map(m => m.no), anon: !!s.anon });
+}
 function vSurveyEdit(s){
   const d = S.seDraft && S.seDraft.id === s.id ? S.seDraft : { q: s.q, d: s.desc || '', o: s.options.slice(0, s.etc ? -1 : undefined).join('\n'), multi: s.multi, anon: s.anon, etc: s.etc };
   return `<div class="sedit"><div class="lbl">조사 고치기</div>
@@ -2400,7 +2539,7 @@ function vEventBox(){
       <button class="btn pri sm" data-bact="evadd">추가</button></div>
     ${list.length ? `<ul class="log" style="margin-top:8px">${list.map(e => `<li class="it" style="grid-template-columns:110px 1fr">
       <span class="small muted">${md(e.start)}${e.end !== e.start ? '~' + md(e.end) : ''}${e.end < B.today ? ' · 지남' : ''}</span>
-      <div class="row sb"><span>${esc(e.title)}${e.by ? ` <span class="tg">학생이 올림</span>` : ''}</span><button class="btn txt sm neg" data-bact="evdel" data-id="${esc(e.id)}">지우기</button></div></li>`).join('')}</ul>` : ''}
+      <div class="row sb"><span style="${e.gone ? 'text-decoration:line-through;opacity:.6' : ''}">${esc(e.title)}${e.by ? ` <span class="tg">${e.gone ? '학생이 지움' : '학생이 올림'}</span>` : ''}</span><span class="row" style="gap:2px">${e.gone ? `<button class="btn txt sm" data-bact="evrestore" data-id="${esc(e.id)}">되살리기</button>` : ''}<button class="btn txt sm neg" data-bact="evdel" data-id="${esc(e.id)}">${e.gone ? '완전히 지우기' : '지우기'}</button></span></div></li>`).join('')}</ul>` : ''}
     <div class="lbl" style="margin-top:12px">지금 TV에 나오는 일정</div>
     ${shown.events.length ? `<ul class="log">${shown.events.slice(0, 10).map(e => `<li class="it" style="grid-template-columns:110px 1fr">
       <span class="small muted">${md(e.start)}${e.end !== e.start ? '~' + md(e.end) : ''}</span>
@@ -2905,6 +3044,7 @@ document.addEventListener('click', ev => {
     case 'spub': apply(call('apiBoardSurvey', S.pw, 'pub', {id})); return;
     case 'smiss': apply(call('apiBoardSurvey', S.pw, 'missing', {id})); return;
     case 'sdel': if (confirm('이 조사와 응답을 모두 지울까요?')) apply(call('apiBoardSurvey', S.pw, 'del', {id})); return;
+    case 'sshare': { const s = S.B.surveys.find(x => x.id === id); if (s) svShareOrig(s); return; }
     case 'scsv': {
       const s = S.B.surveys.find(x => x.id === id);
       const rows = [['번호', '이름', '선택', '응답 시각']].concat((s.responses || []).sort((a, b) => a.no - b.no).map(r => [r.no, r.name, r.choices.join(' / '), r.at]))
@@ -3017,6 +3157,7 @@ document.addEventListener('click', ev => {
       return;
     }
     case 'evdel': if (confirm('이 일정을 지울까요?')) apply(call('apiBoardEvent', S.pw, 'del', {id})); return;
+    case 'evrestore': apply(call('apiBoardEvent', S.pw, 'restore', {id})); return;
     case 'layreset': if (confirm('TV 화면의 크기·여백·칸 너비를 처음대로 되돌릴까요?')) boardSave({layout: {}}, '화면 배치를 처음대로 되돌렸습니다.', true); return;
     case 'savett': btCollect(); S.fillMsg = ''; boardSave({source: S.bt.source, periods: S.bt.periods, lunch: S.bt.lunch, timetable: S.bt.timetable, teachers: S.bt.teachers, specials: S.bt.specials.filter(x => x.name && x.s && x.e)}, '시간표를 저장했습니다.'); return;
   }

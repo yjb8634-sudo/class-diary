@@ -207,6 +207,30 @@ button:active:not(:disabled),.go:active,.slot:active,.opt:active,.nm:active,.chi
 .iconbtn.phonebtn[hidden]{display:none}
 .iconbtn.phonebtn svg{flex:none}
 .appsteps{font-size:1.45rem;line-height:1.75;margin:.4rem 0 0}
+/* 답 바꾸기 PIN: 오른쪽 아래 손바닥으로 가릴 만한 작은 숫자판 */
+.cpmsg{max-width:52rem;padding:1rem 0 0 .4rem}
+.cpmsg .big{font-size:5rem;line-height:1}
+.cpmsg p{font-size:2rem;line-height:1.6;margin:1rem 0 0;word-break:keep-all}
+.cpmsg p b{color:var(--yellow)}
+.cpmsg p.sm{font-size:1.5rem;color:var(--chalk2)}
+.cpmsg p.err{font-size:1.6rem;color:var(--pink);font-weight:700}
+.cpad{position:fixed;right:max(1.2vw,10px);bottom:max(1.6vh,10px);z-index:60;width:clamp(190px,12vw,300px);padding:clamp(8px,.6vw,14px);
+  border-radius:14px;background:#0F1814;border:2px solid var(--yellow);box-shadow:0 12px 40px rgba(0,0,0,.6)}
+.cpad .cpd{display:flex;justify-content:center;gap:clamp(5px,.4vw,9px);margin:2px 0 clamp(6px,.5vw,10px)}
+.cpad .cpd i{width:clamp(9px,.62vw,15px);height:clamp(9px,.62vw,15px);border-radius:50%;border:2px solid var(--chalk3)}
+.cpad .cpd i.on{background:var(--yellow);border-color:var(--yellow)}
+.cpad.bad .cpd{animation:shake .35s}
+.cpad .ck{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(4px,.35vw,8px)}
+.cpad .ck button{all:unset;cursor:pointer;text-align:center;height:clamp(40px,2.9vw,70px);line-height:clamp(40px,2.9vw,70px);border-radius:9px;
+  background:#22322B;color:var(--chalk);font-size:clamp(18px,1.35vw,32px);font-weight:800;-webkit-tap-highlight-color:transparent}
+.cpad .ck button:active{background:#33473E}
+.cpad .ck button.sm{font-size:clamp(12px,.8vw,18px);font-weight:700;color:var(--chalk2)}
+.cpad .cpbusy{position:absolute;inset:0;border-radius:12px;background:rgba(15,24,20,.85);display:grid;place-items:center;font-size:clamp(14px,.9vw,20px);font-weight:700;color:var(--yellow)}
+.nm .pk{position:absolute;top:.35rem;right:.5rem;font-size:.85rem;font-weight:800;color:var(--mint)}
+.nm .pk.no{color:var(--chalk3)}
+#pinNudge{position:fixed;left:10px;right:10px;bottom:10px;z-index:40;display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:#26372F;border:1px solid var(--yellow);font-size:15px;line-height:1.45;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+#pinNudge button{all:unset;cursor:pointer;flex:none;padding:9px 14px;border-radius:10px;background:var(--yellow);color:var(--yellow-ink);font-weight:800}
+#pinNudge .x{background:transparent;color:var(--chalk3);padding:9px 6px}
 .appsteps b{color:var(--yellow)}
 .evadd{all:unset;cursor:pointer;margin-left:auto;font-size:1.05rem;font-weight:700;color:var(--yellow);border:1.5px solid rgba(242,209,107,.55);border-radius:.7rem;padding:.25rem .8rem;letter-spacing:0}
 .evadd[hidden]{display:none}
@@ -381,6 +405,11 @@ button:active:not(:disabled),.go:active,.slot:active,.opt:active,.nm:active,.chi
 /* 일정 줄: 제목 + 날짜만. 오늘 일정만 제목을 노란색으로 */
 .sch .r.ev{grid-template-columns:1fr auto}
 .sch .r.ev.tdy .w{color:var(--yellow)}
+.sch .r.ev.stu{grid-template-columns:1fr auto auto}
+.sch .r.ev .evx{all:unset;cursor:pointer;font-size:calc(.95rem * var(--sz));font-weight:700;color:var(--chalk3);border:1px solid var(--line);border-radius:.5rem;padding:.1rem .5rem;white-space:nowrap}
+.sch .r.ev .evx:active{background:var(--card2)}
+.evdelbox{font-size:2.2rem;font-weight:800;margin:1rem 0;padding:1.1rem 1.4rem;border-radius:1rem;border:2px dashed var(--line)}
+.evdelbox small{display:block;font-size:1.4rem;font-weight:600;color:var(--chalk3);margin-top:.4rem}
 .sch .tm{font-size:calc(1rem * var(--sz));color:var(--chalk3);white-space:nowrap;font-variant-numeric:tabular-nums}
 .qwrap{flex:1;min-width:0}
 .pbtn{cursor:pointer;border-color:rgba(244,211,94,.5) !important}
@@ -623,7 +652,7 @@ function frame(){
     <div class="top">${BOOT.preview ? '' : `<a class="homebtn" id="btnHome" target="_top" hidden aria-label="처음 화면(메뉴)으로 가기" title="처음 화면(메뉴)으로">${ICON.home}<span>메뉴</span></a>`}<div class="qwrap" data-blk="quote"><div class="quote" id="quote"></div></div>
       <div class="tools"><span class="pill prev" id="pPrev" hidden>미리보기 · 저장되지 않아요</span>
         ${BOOT.phone ? '' : `<button class="iconbtn" id="btnEdit" aria-label="화면 배치 조절">${ICON.gear}</button>`}
-        ${BOOT.phone ? '' : `<button class="iconbtn phonebtn" id="btnPhone" hidden aria-label="내 휴대폰에 앱으로 설치하기" title="내 휴대폰에 앱으로 설치하기">${ICON.phone}<span>앱 설치</span></button>`}
+        ${BOOT.phone ? `<button class="iconbtn phonebtn" id="btnMyPin" hidden aria-label="내 PIN 만들기 · 바꾸기">🔑<span>내 PIN</span></button>` : `<button class="iconbtn phonebtn" id="btnPhone" hidden aria-label="내 휴대폰에 앱으로 설치하기" title="내 휴대폰에 앱으로 설치하기">${ICON.phone}<span>앱 설치</span></button>`}
         <button class="iconbtn" id="btnShare" aria-label="학부모님께 주소 보내기" title="학부모님께 주소 보내기">${ICON.share}</button>
         <button class="iconbtn" id="btnSync" aria-label="새로고침">${ICON.sync}</button>
         <button class="iconbtn" id="btnFull" aria-label="전체 화면">${ICON.full}</button></div></div>
@@ -977,6 +1006,8 @@ const mdS = s => `${+String(s).slice(5, 7)}/${+String(s).slice(8, 10)}`;
 function paintSchedule(){
   const t = nowParts(), today = Date.UTC(t.y, t.mo - 1, t.d) / 864e5;
   const pb = $('btnPhone'); if (pb) pb.hidden = !(D.phoneApp || D.homeUrl);
+  const mp = $('btnMyPin'); if (mp) mp.hidden = !D.pinSignup;
+  pinNudge();
   const ea = $('btnEvAdd'); if (ea) ea.hidden = !(D.eventAddOn && (!D.phone || D.phoneJoin));
   const cl = D.counsel || [];
   const cs = cl.length ? `<div class="r"><span class="d cs">오늘 상담</span><span class="w">${cl.map(c =>
@@ -986,7 +1017,8 @@ function paintSchedule(){
     const s = dayNum(e.start), en = dayNum(e.end || e.start);
     const isToday = s <= today && en >= today;
     const when = e.end && e.end !== e.start ? `${mdS(e.start)}~${mdS(e.end)}` : `${mdS(e.start)} (${DOW[new Date(s * 864e5).getUTCDay()]})`;
-    return `<div class="r ev${isToday ? ' tdy' : ''}"><span class="w">${esc(e.title)}</span><span class="tm">${when}</span></div>`;
+    const del = e.stu && e.id && !D.phone;   /* 학생이 올린 일정: TV에서 누구나 지울 수 있음 */
+    return `<div class="r ev${isToday ? ' tdy' : ''}${del ? ' stu' : ''}"><span class="w">${esc(e.title)}</span><span class="tm">${when}</span>${del ? `<button class="evx" data-evdel="${esc(e.id)}" data-t="${esc(e.title)}" data-w="${esc(when)}" aria-label="학생이 올린 일정 지우기">학생 ✕</button>` : ''}</div>`;
   }).join('');
   setHtml($('evl'), ev || (cs ? '' : '<div class="muted" style="font-size:1.3rem">다가오는 일정이 없어요</div>'));
   updateNav();
@@ -1109,8 +1141,87 @@ function savedPin(){
 }
 function rememberPin(no, pin){ try { localStorage.setItem(PINKEY, JSON.stringify({no, pin})); } catch (e) {} }
 function forgetPin(){ try { localStorage.removeItem(PINKEY); } catch (e) {} }
-function pinOf(no){ const g = window.Gate && Gate.me(); if (g && g.no === no) return g.pin; const v = savedPin(); return v && v.no === no ? v.pin : ''; }
+function pinOf(no){ if (OV && OV.cpin && OV.no === no) return OV.cpin; const g = window.Gate && Gate.me(); if (g && g.no === no) return g.pin; const v = savedPin(); return v && v.no === no ? v.pin : ''; }
 function needPinStep(no){ return !!(D.needPin && !pinOf(no)); }
+/* 교실 TV: 이미 낸 답을 바꿀 때만 PIN (처음 답할 때는 이름만) */
+function changeNeedsPin(no){
+  if (BOOT.phone || BOOT.preview || !D.pinChange || !OV || OV.kind !== 'survey') return false;
+  const s = survey(); return !!s && (s.anyNos || s.doneNos || []).includes(no);
+}
+const PINL = () => D.pinLen || 6;
+function cpinView(){
+  const n = (OV.pin || '').length, L = PINL();
+  return head(esc((survey() || {}).q || '조사'), true) + `<div class="ovb"><div class="cpmsg">
+    <div class="big">✋</div>
+    <p><b>${esc(nameOf(OV.no))}</b> 학생은 이미 답했어요.<br>답을 바꾸려면 <b>내 PIN ${L}자리</b>를 넣어 주세요.</p>
+    <p class="sm">오른쪽 아래 숫자판을 <b>손으로 가리고</b> 눌러요. 친구가 보지 않게! ↘</p>
+    ${OV.pinMsg ? `<p class="err">${esc(OV.pinMsg)}</p>` : ''}
+    <p class="sm">PIN을 잊었으면 담임 선생님께 말해 주세요.</p></div></div>
+  <div class="cpad${OV.pinBad ? ' bad' : ''}" role="group" aria-label="PIN 숫자판">
+    <div class="cpd">${Array.from({length: L}, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</div>
+    <div class="ck">${[1,2,3,4,5,6,7,8,9].map(k => `<button data-ov="cpk" data-k="${k}">${k}</button>`).join('')}<button class="sm" data-ov="cpdel">지움</button><button data-ov="cpk" data-k="0">0</button><button class="sm" data-ov="cpclr">처음</button></div>
+    ${OV.busy ? '<div class="cpbusy">확인 중…</div>' : ''}</div>`;
+}
+function nopinView(){
+  return head(esc((survey() || {}).q || '조사'), true) + `<div class="ovb"><div class="cpmsg"><div class="big">🔒</div>
+    <p><b>${esc(nameOf(OV.no))}</b> 학생은 이미 답했어요.<br>답을 바꾸려면 PIN이 필요한데, <b>아직 PIN이 없어요.</b></p>
+    <p class="sm">${esc(D.pinHow || '담임 선생님께 말해 주세요.')}</p></div></div>`;
+}
+/* ---------- 휴대폰: 내 PIN 만들기 · 바꾸기 ---------- */
+const MYNO = 'cr_myno';
+function myNo(){ try { return Number(localStorage.getItem(MYNO)) || 0; } catch (e) { return 0; } }
+function openMyPin(){ const nd = $('pinNudge'); if (nd) nd.remove(); const n = myNo(); openOv({kind: 'mypin', step: n && D.students.some(s => s.no === n) ? 'has' : 'who', no: n, pin: '', p1: '', old: ''}); if (OV && OV.step === 'has' && !stuHasPin(n)) { OV.step = 'new1'; drawOv(); } }
+function stuHasPin(no){ return !!(D.students.find(s => s.no === no) || {}).hasPin; }
+function pinNudge(){
+  const el = $('pinNudge');
+  if (!BOOT.phone || !D.pinSignup || (myNo() && stuHasPin(myNo())) || sessionStorage.getItem('cr_nudge_x')){ if (el) el.remove(); return; }
+  if (el) return;
+  const d = document.createElement('div'); d.id = 'pinNudge';
+  d.innerHTML = '<span style="flex:1">🔑 교실 TV에서 낸 답을 바꿀 때 쓰는 <b style="color:var(--yellow)">내 PIN</b>을 만들어 주세요</span><button data-nd="go">만들기</button><button class="x" data-nd="x">✕</button>';
+  d.onclick = e => { const t = e.target.closest('[data-nd]'); if (!t) return; if (t.dataset.nd === 'x'){ try { sessionStorage.setItem('cr_nudge_x', '1'); } catch (er) {} d.remove(); } else openMyPin(); };
+  document.body.appendChild(d);
+}
+function myPinView(){
+  const o = OV, L = PINL();
+  if (o.step === 'who') return head('🔑 내 PIN') + `<div class="ovb"><p class="lead">내 번호를 눌러 주세요. 교실 TV에서 <b>이미 낸 답을 바꿀 때</b> 이 PIN을 넣어요.</p>
+    <div class="names">${D.students.map(s => `<button class="nm" data-ov="mpwho" data-no="${s.no}"><span class="no">${s.no}</span><span class="na">${esc(s.name)}</span>${s.hasPin ? '<span class="pk">만듦</span>' : ''}</button>`).join('')}</div></div>`;
+  if (o.step === 'has') return head('🔑 내 PIN', true) + `<div class="ovb"><p class="lead"><b>${o.no}번 ${esc(nameOf(o.no))}</b> · PIN이 이미 있어요.</p>
+    <div class="row" style="display:flex;gap:.8rem;flex-wrap:wrap;margin-top:1rem"><button class="go" data-ov="mpchg">PIN 바꾸기</button><button class="go" style="background:var(--card2);color:var(--chalk)" data-ov="mpother">다른 번호</button></div>
+    <p class="lead" style="font-size:1.3rem;margin-top:1.4rem">내가 만든 PIN이 아니거나 잊어버렸으면 담임 선생님께 <b>PIN 초기화</b>를 부탁하세요.</p></div>`;
+  if (o.step === 'ok') return head('🔑 내 PIN') + `<div class="ovb"><div class="cpmsg"><div class="big">✅</div><p>${o.changed ? 'PIN을 바꿨어요.' : 'PIN을 만들었어요!'}</p>
+    <p class="sm">교실 TV에서 이미 낸 답을 바꿀 때, 오른쪽 아래 숫자판에 이 PIN을 넣어요. 다른 사람에게 알려 주지 마세요.</p></div></div>`;
+  const T = {new1: `새 PIN ${L}자리를 정해 주세요`, new2: '한 번 더 넣어 주세요', old: `지금 PIN ${L}자리를 넣어 주세요`, chg1: `새 PIN ${L}자리를 정해 주세요`, chg2: '새 PIN을 한 번 더 넣어 주세요'}[o.step];
+  const n = (o.pin || '').length;
+  return head('🔑 내 PIN', true) + `<div class="ovb"><div class="pinwrap">
+    <p class="lead" style="text-align:center;margin:0"><b>${o.no}번 ${esc(nameOf(o.no))}</b> · ${T}</p>
+    ${o.step === 'new1' || o.step === 'chg1' ? '<p class="lead" style="text-align:center;margin:0;font-size:1.2rem">같은 숫자 · 이어진 숫자(123456)는 안 돼요. 생일도 피해 주세요.</p>' : ''}
+    <div class="pindots${o.pinBad ? ' bad' : ''}">${Array.from({length: L}, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</div>
+    ${o.pinMsg ? `<p class="lead" style="color:var(--pink);text-align:center;margin:0;font-size:1.3rem">${esc(o.pinMsg)}</p>` : ''}
+    ${o.busy ? '<p class="lead" style="text-align:center;margin:0">저장하는 중…</p>' : ''}
+    <div class="keys">${[1,2,3,4,5,6,7,8,9].map(k => `<button data-ov="mpk" data-k="${k}">${k}</button>`).join('')}
+      <button class="sm" data-ov="mpclr">처음</button><button data-ov="mpk" data-k="0">0</button><button class="sm" data-ov="mpdel">지우기</button></div></div></div>`;
+}
+function myPinKey(k){
+  const o = OV, L = PINL();
+  if (o.busy) return;
+  o.pin = ((o.pin || '') + k).slice(0, L); o.pinBad = false; o.pinMsg = '';
+  if (o.pin.length < L){ drawOv(); return; }
+  const v = o.pin; o.pin = '';
+  const bad = m => { o.pinBad = true; o.pinMsg = m; drawOv(); };
+  const save = (fn, args, changed) => { o.busy = true; drawOv();
+    call(fn, ...args).then(() => { try { localStorage.setItem(MYNO, String(o.no)); } catch (e) {} o.busy = false; o.changed = changed; o.step = 'ok'; drawOv(); pinNudge(); })
+      .catch(e => { o.busy = false; if (changed){ o.step = 'old'; o.old = ''; o.p1 = ''; } else { o.step = 'new1'; o.p1 = ''; } bad(e.message); }); };
+  if (o.step === 'new1' || o.step === 'chg1'){
+    if (!/^\d+$/.test(v) || /^(\d)\1+$/.test(v) || '01234567890'.indexOf(v) >= 0 || '09876543210'.indexOf(v) >= 0) return bad('너무 쉬운 PIN이에요. 같거나 이어진 숫자는 피해 주세요.');
+    o.p1 = v; o.step = o.step === 'new1' ? 'new2' : 'chg2'; drawOv(); return;
+  }
+  if (o.step === 'new2' || o.step === 'chg2'){
+    if (v !== o.p1){ o.step = o.step === 'new2' ? 'new1' : 'chg1'; o.p1 = ''; return bad('두 번 넣은 PIN이 달라요. 처음부터 다시 정해 주세요.'); }
+    if (o.step === 'new2') save('apiPinCreate', [o.no, v], false); else save('apiPinChange', [o.no, o.old, v], true);
+    return;
+  }
+  if (o.step === 'old'){ o.old = v; o.step = 'chg1'; drawOv(); }
+}
 function pinView(title, no){
   const n = (OV.pin || '').length;
   return head(title, true) + `<div class="ovb"><div class="pinwrap">
@@ -1123,6 +1234,9 @@ function pinView(title, no){
 }
 function drawOv(){
   const o = OV, el = $('ov');
+  if (o.kind === 'mypin'){ el.innerHTML = myPinView(); return; }
+  if (o.step === 'cpin'){ el.innerHTML = cpinView(); return; }
+  if (o.step === 'nopin'){ el.innerHTML = nopinView(); return; }
   if (o.step === 'pin'){
     el.innerHTML = pinView(o.kind === 'counsel' ? '상담 신청' : (o.kind === 'suggest' ? '건의사항' : (o.kind === 'event' ? '일정 추가' : esc((survey() || {}).q || '조사'))), o.no);
     return;
@@ -1156,6 +1270,13 @@ function drawOv(){
       ${Q.notJoined && Q.notJoined.length ? `<p class="lead" style="margin-top:1rem;font-size:1.25rem">아직 참여하지 않은 친구: ${Q.notJoined.map(n => esc(n.no + '. ' + n.name)).join(', ')}</p>` : ''}`}</div>`;
     return;
   }
+  if (o.kind === 'evdel'){
+    el.innerHTML = head('일정 지우기') + `<div class="ovb"><p class="lead">학생이 올린 이 일정을 지울까요?</p>
+      <div class="evdelbox">${esc(o.title)}<small>${esc(o.when)}</small></div>
+      <p class="lead" style="font-size:1.3rem">잘못 올렸거나 끝난 일정만 지워 주세요. 지운 일정은 담임 선생님이 되살릴 수 있어요.</p>
+      <div style="display:flex;gap:.8rem;margin-top:1.2rem"><button class="go" data-ov="evdelok" style="background:var(--pink);color:#3A0F0B">지우기</button><button class="go" data-ov="close" style="background:var(--card2);color:var(--chalk)">그대로 두기</button></div></div>`;
+    return;
+  }
   if (o.kind === 'phone'){
     const u = D.phoneApp || D.homeUrl || '';
     if (!u){ closeOv(); return; }
@@ -1165,6 +1286,7 @@ function drawOv(){
         <div class="appsteps">② 열린 화면을 앱처럼 설치해요<br>
           · 안드로이드: 오른쪽 위 <b>⋮</b> → <b>홈 화면에 추가</b> (또는 <b>앱 설치</b>)<br>
           · 아이폰: 아래쪽 <b>공유 □↑</b> → <b>홈 화면에 추가</b></div>
+        ${D.pinChange && D.phoneApp ? '<div class="appsteps">③ 설치한 앱에서 <b>🔑 내 PIN</b>을 만들어요 · 교실 TV에서 낸 답을 바꿀 때 써요</div>' : ''}
         <p class="lkn">카카오톡 · 네이버 앱으로 열렸다면 <b>⋮</b> → <b>다른 브라우저로 열기</b>를 누른 뒤 설치해요.</p>
         <p class="lku">${esc(u)}</p></div></div></div>`;
     return;
@@ -1248,7 +1370,7 @@ function drawOv(){
         <button class="go" data-ov="evgo" id="evGo" disabled>교실 화면에 올리기</button></div>`;
       submitState();
     } else if (o.step === 'done'){
-      el.innerHTML = head('일정 추가') + `<div class="ovb"><div class="done-msg"><div class="big">올렸어요!</div><p>${esc(o.doneText || '')}<br>일정 칸에 곧 나와요. 잘못 올렸으면 선생님께 말해 주세요.</p></div></div>`;
+      el.innerHTML = head('일정 추가') + `<div class="ovb"><div class="done-msg"><div class="big">올렸어요!</div><p>${esc(o.doneText || '')}<br>일정 칸에 곧 나와요. 잘못 올렸으면 일정 옆 [학생 ✕]로 지울 수 있어요.</p></div></div>`;
     } else {
       el.innerHTML = head('일정 추가') + `<div class="ovb"><p class="lead">올리는 중…</p></div>`;
     }
@@ -1703,6 +1825,8 @@ document.addEventListener('click', ev => {
   if (b.id === 'btnMine'){ openOv({kind: 'mine', step: 'who'}); return; }
   if (b.id === 'btnShare'){ openOv({kind: 'share'}); return; }
   if (b.id === 'btnPhone'){ openOv({kind: 'phone'}); return; }
+  if (b.id === 'btnMyPin'){ openMyPin(); return; }
+  if (b.dataset.evdel){ openOv({kind: 'evdel', id: b.dataset.evdel, title: b.dataset.t || '', when: b.dataset.w || ''}); return; }
   if (b.id === 'btnSuggest'){ openOv({kind: 'suggest', step: 'write', text: '', no: 0}); return; }
   if (b.dataset.rs){ openOv({kind: 'result', id: b.dataset.rs}); return; }
   if (b.id === 'btnCounsel'){ openOv({kind: 'counsel', step: 'who'}); return; }
@@ -1719,7 +1843,8 @@ document.addEventListener('click', ev => {
     return;
   }
   if (a === 'back'){
-    if (OV.step === 'pin'){ OV.step = 'who'; OV.pin = ''; drawOv(); return; }
+    if (OV.kind === 'mypin'){ OV.step = OV.step === 'has' || OV.step === 'new1' || OV.step === 'new2' ? 'who' : (OV.step === 'ok' ? 'who' : 'has'); OV.pin = ''; OV.p1 = ''; OV.old = ''; OV.pinMsg = ''; drawOv(); return; }
+    if (OV.step === 'pin' || OV.step === 'cpin' || OV.step === 'nopin'){ OV.step = 'who'; OV.pin = ''; OV.cpin = ''; OV.pinMsg = ''; OV.busy = false; drawOv(); return; }
     if (OV.kind === 'mine'){ OV.step = 'who'; OV.open = ''; drawOv(); return; }
     if (OV.kind === 'survey') OV.step = (OV.step === 'who' && OV.intro) ? 'intro' : 'who';
     else if (OV.kind === 'suggest') OV.step = 'write';
@@ -1745,6 +1870,13 @@ document.addEventListener('click', ev => {
   }
   if (a === 'evd'){ OV.date = b.dataset.d; document.querySelectorAll('#ov [data-ov="evd"]').forEach(x => x.classList.toggle('on', x === b)); submitState(); return; }
   if (a === 'evp'){ OV.per = OV.per === b.dataset.p ? '' : b.dataset.p; document.querySelectorAll('#ov [data-ov="evp"]').forEach(x => x.classList.toggle('on', x.dataset.p === OV.per)); submitState(); return; }
+  if (a === 'evdelok'){
+    if (BOOT.preview){ toast('미리보기: 실제로는 지우지 않았어요'); closeOv(); return; }
+    b.disabled = true;
+    call('apiBoardEventDel', OV.id).then(() => { toast('일정을 지웠어요.'); closeOv(); load(); })
+      .catch(e => { b.disabled = false; toast(e.message, true); });
+    return;
+  }
   if (a === 'evgo'){
     const text = etcText().slice(0, 30);
     if (!OV.date || !text){ toast('날짜와 내용을 넣어 주세요.', true); return; }
@@ -1777,10 +1909,34 @@ document.addEventListener('click', ev => {
     return;
   }
   if (a === 'who'){
-    OV.no = Number(b.dataset.no);
+    OV.no = Number(b.dataset.no); OV.cpin = '';
+    if (changeNeedsPin(OV.no)){
+      OV.pin = ''; OV.pinMsg = ''; OV.pinBad = false; OV.busy = false;
+      OV.step = (D.students.find(s => s.no === OV.no) || {}).hasPin === false ? 'nopin' : 'cpin';
+      drawOv(); return;
+    }
     if (needPinStep(OV.no)){ OV.pin = ''; OV.pinMsg = ''; OV.pinBad = false; OV.step = 'pin'; drawOv(); return; }
     afterWho(); return;
   }
+  if (a === 'cpk'){
+    if (OV.busy) return;
+    OV.pin = ((OV.pin || '') + b.dataset.k).slice(0, PINL()); OV.pinBad = false; OV.pinMsg = '';
+    if (OV.pin.length === PINL()){
+      const no = OV.no, pin = OV.pin; OV.busy = true; drawOv();
+      call('apiBoardCheckPin', no, pin, true).then(() => { if (!OV || OV.no !== no) return; OV.busy = false; OV.pin = ''; OV.cpin = pin; afterWho(); })
+        .catch(e => { if (!OV) return; OV.busy = false; OV.pin = ''; OV.pinBad = true; OV.pinMsg = e.message; drawOv(); });
+      return;
+    }
+    drawOv(); return;
+  }
+  if (a === 'cpdel'){ OV.pin = (OV.pin || '').slice(0, -1); drawOv(); return; }
+  if (a === 'cpclr'){ OV.pin = ''; drawOv(); return; }
+  if (a === 'mpwho'){ OV.no = Number(b.dataset.no); OV.pin = ''; OV.p1 = ''; OV.pinMsg = ''; OV.step = stuHasPin(OV.no) ? 'has' : 'new1'; drawOv(); return; }
+  if (a === 'mpother'){ OV.step = 'who'; drawOv(); return; }
+  if (a === 'mpchg'){ OV.step = 'old'; OV.pin = ''; OV.old = ''; OV.p1 = ''; OV.pinMsg = ''; drawOv(); return; }
+  if (a === 'mpk'){ myPinKey(b.dataset.k); return; }
+  if (a === 'mpdel'){ OV.pin = (OV.pin || '').slice(0, -1); drawOv(); return; }
+  if (a === 'mpclr'){ OV.pin = ''; drawOv(); return; }
   if (a === 'pinback'){ OV.step = 'who'; OV.pin = ''; OV.pinMsg = ''; drawOv(); return; }
   if (a === 'pindel'){ OV.pin = (OV.pin || '').slice(0, -1); OV.pinBad = false; drawOv(); return; }
   if (a === 'pin'){
