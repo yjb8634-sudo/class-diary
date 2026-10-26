@@ -1324,7 +1324,7 @@ const FIELDS = {
 };
 const FIELD_RE = {
   grade: /^학년$|학년$/, klass: /^반$|학급|^반\s/, no: /^번호$|^번$/, sid: /학번/, name: /이름|성명|명단|참가|학생명|대상자/,
-  area: /영역|구분/, title: /활동명|행사|프로그램|주제|활동\s?이름/, text: /내용|특기|문구|기록|활동\s?내용|세부/, date: /날짜|일자|일시|기간/,
+  area: /영역|구분/, title: /활동명|행사|프로그램|주제|활동\s?이름/, text: /내용|특기|문구|기록|활동\s?내용|세부|활동지|보고서|소감|후기|느낀\s?점|감상|답변|응답|성찰|탐구/, date: /날짜|일자|일시|기간/,
   target: /^대상$|참여\s?대상|대상\s?학년/, tag: /태그|분류/
 };
 function guessHeader(rows, mode){
@@ -1346,7 +1346,21 @@ function guessCols(head, mode){
   });
   return cols;
 }
+/* 내용 열을 못 찾았으면: 글이 가장 긴 열을 내용으로 (활동지 · 보고서처럼 제목이 제각각인 파일) */
+function guessTextCol(rows, hdr, cols){
+  if (Object.values(cols).includes('text')) return cols;
+  const body = rows.slice(hdr + 1, hdr + 40), width = Math.max(0, ...rows.slice(hdr, hdr + 40).map(r => r.length));
+  let best = -1, bestLen = 0;
+  for (let c = 0; c < width; c++){
+    if (cols[c]) continue;
+    const L = body.map(r => String(r[c] || '').length).filter(n => n), avg = L.length ? L.reduce((a, b) => a + b, 0) / L.length : 0;
+    if (avg > bestLen){ best = c; bestLen = avg; }
+  }
+  if (best >= 0 && bestLen >= 15) cols[best] = 'text';
+  return cols;
+}
 const sheetArea = name => /진로/.test(name) ? '진로' : (/자율|자치/.test(name) ? '자율' : '');
+const impAreaOf = (sheet, file) => sheetArea(sheet) || sheetArea(file || '');
 function openImport(mode, file){
   readTable(file).then(sheets => {
     if (!sheets.length) return toast('파일에 내용이 없습니다.', true);
@@ -1357,8 +1371,8 @@ function openImport(mode, file){
 }
 function setSheet(i){
   const I = S.imp, sh = I.sheets[i];
-  I.cur = i; I.hdr = guessHeader(sh.rows, I.mode); I.cols = guessCols(sh.rows[I.hdr] || [], I.mode);
-  I.area = sheetArea(sh.name); I.preview = null;
+  I.cur = i; I.hdr = guessHeader(sh.rows, I.mode); I.cols = guessTextCol(sh.rows, I.hdr, guessCols(sh.rows[I.hdr] || [], I.mode));
+  I.area = impAreaOf(sh.name, I.file) || I.lastArea || ''; I.preview = null;
 }
 function vImporter(){
   const I = S.imp, sh = I.sheets[I.cur], F = FIELDS[I.mode];
@@ -1373,7 +1387,7 @@ function vImporter(){
         <div class="row" style="margin-bottom:10px">
           <label class="small">머리글 줄 <input class="in" type="number" min="1" style="width:60px" data-imp="hdr" value="${I.hdr + 1}"></label>
           ${I.mode === 'act' ? `
-          <label class="small">이 시트의 영역 <select class="in" data-imp="area"><option value="">파일의 영역 열 따르기</option>
+          <label class="small" style="${I.area || Object.values(I.cols).includes('area') ? '' : 'color:var(--neg);font-weight:700'}">이 시트의 영역 <select class="in" data-imp="area"><option value="">${Object.values(I.cols).includes('area') ? '파일의 영역 열 따르기' : '— 골라 주세요 —'}</option>
             <option ${I.area === '자율' ? 'selected' : ''}>자율</option><option ${I.area === '진로' ? 'selected' : ''}>진로</option></select></label>
           <label class="small">우리 반 <input class="in" style="width:44px" data-imp="grade" value="${esc(I.grade)}">학년
             <input class="in" style="width:44px" data-imp="klass" value="${esc(I.klass)}">반</label>
@@ -1421,8 +1435,8 @@ function normDate(v){
 function actRowsOf(sheetIdx, opts){
   const I = S.imp, sh = I.sheets[sheetIdx];
   const hdr = opts ? guessHeader(sh.rows, 'act') : I.hdr;
-  const cols = opts ? guessCols(sh.rows[hdr] || [], 'act') : I.cols;
-  const areaDefault = opts ? sheetArea(sh.name) : I.area;
+  const cols = opts ? guessTextCol(sh.rows, hdr, guessCols(sh.rows[hdr] || [], 'act')) : I.cols;
+  const areaDefault = opts ? (impAreaOf(sh.name, I.file) || I.area) : I.area;
   const pick = (r, k) => { const c = Object.keys(cols).find(c => cols[c] === k); return c == null ? '' : (r[c] || ''); };
   const has = k => Object.values(cols).includes(k);
   const G = +I.grade, C = +I.klass, idx = rosterIndex(), all = S.D.students.map(s => s.no);
@@ -1498,7 +1512,7 @@ function vImpPreview(){
   const sk = Object.entries(P.skip).filter(([k, v]) => v).map(([k, v]) => ({other: '다른 반', notfound: '명단에서 못 찾음', area: '자율·진로 아님', empty: '내용 없음'}[k] + ' ' + v)).join(' · ');
   const rows = I.mode === 'act'
     ? P.out.map((x, i) => `<tr class="${x.flag && x.flag !== '반 전체' ? 'warn' : ''}"><td><input type="checkbox" data-act="impon" data-i="${i}" ${x.on ? 'checked' : ''}></td>
-        <td>${x.no}</td><td>${esc(nameOf(x.no))}</td><td><span class="area" data-a="${x.area}">${x.area}</span></td>
+        <td>${x.no}</td><td style="white-space:nowrap">${esc(nameOf(x.no))}</td><td style="white-space:nowrap"><span class="area" data-a="${x.area}">${x.area}</span></td>
         <td style="white-space:normal;max-width:none">${esc(x.text)}</td><td class="small">${esc(x.flag)}</td></tr>`).join('')
     : P.out.map((x, i) => `<tr><td><input type="checkbox" data-act="impon" data-i="${i}" ${x.on ? 'checked' : ''}></td>
         <td>${esc(x.date)}</td><td>${x.nos.map(nameOf).map(esc).join(', ')}</td><td>${tagHtml(x.tags)}</td>
@@ -1506,7 +1520,9 @@ function vImpPreview(){
   return `<div class="hr"></div>
     <div class="row sb"><h2>미리 보기 · ${P.out.length}건 ${sk ? `<span class="small muted" style="font-weight:400">(빠진 줄: ${sk})</span>` : ''}</h2>
       <button class="btn pri" data-act="impsave" ${on ? '' : 'disabled'}>체크한 ${on}건 저장</button></div>
-    ${P.noArea ? '<p class="small" style="color:var(--neg)">이 시트는 자율인지 진로인지 알 수 없습니다. 위에서 영역을 골라 주세요.</p>' : ''}
+    ${P.noArea ? `<div class="row" style="margin:6px 0;gap:8px"><span class="small" style="color:var(--neg);font-weight:700">이 파일이 자율인지 진로인지 알 수 없어요. 어디에 담을까요?</span>
+      <button class="btn pri sm" data-act="imparea" data-v="진로">진로로 담기</button><button class="btn sm" data-act="imparea" data-v="자율">자율로 담기</button></div>` : ''}
+    ${!Object.values(I.cols).includes('text') ? '<p class="small" style="color:var(--neg);font-weight:700">내용 열을 찾지 못했어요. 표 위쪽 칸에서 활동 내용이 들어 있는 열을 [내용]으로 골라 주세요.</p>' : ''}
     ${I.mode === 'act' && P.out.some(x => x.flag === '이름으로만 찾음') ? '<p class="small" style="color:var(--neg);margin:4px 0">학년·반 열이 없어 이름으로만 찾은 줄이 있습니다. 다른 반 동명이인이 아닌지 확인해 주세요.</p>' : ''}
     <div class="wx" style="max-height:420px;overflow:auto;margin-top:8px"><table class="t"><tr>${I.mode === 'act'
       ? '<th></th><th>번호</th><th>이름</th><th>영역</th><th>내용</th><th>확인</th>' : '<th></th><th>날짜</th><th>학생</th><th>태그</th><th>내용</th>'}</tr>${rows}</table></div>`;
@@ -1877,6 +1893,7 @@ document.addEventListener('click', ev => {
     case 'impsheet': setSheet(i); render(); return;
     case 'impclose': S.imp = null; render(); return;
     case 'imppreview': S.imp.preview = S.imp.mode === 'act' ? actRowsOf(S.imp.cur) : recRowsOf(); render(); return;
+    case 'imparea': S.imp.area = S.imp.lastArea = t.dataset.v; S.imp.preview = actRowsOf(S.imp.cur); render(); return;
     case 'impall': {
       const out = [], skip = {other: 0, notfound: 0, area: 0, empty: 0}, noArea = [];
       S.imp.sheets.forEach((sh, k) => { const r = actRowsOf(k, true); if (r.noArea) noArea.push(sh.name);
@@ -1935,11 +1952,13 @@ document.addEventListener('change', ev => {
   if (t.dataset.act === 'relteam'){ S.rel.team = t.checked; render(); return; }
   if (t.dataset.imp){
     const I = S.imp, k = t.dataset.imp;
-    if (k === 'hdr'){ I.hdr = Math.max(0, Number(t.value) - 1); I.cols = guessCols(I.sheets[I.cur].rows[I.hdr] || [], I.mode); }
+    if (k === 'hdr'){ I.hdr = Math.max(0, Number(t.value) - 1); I.cols = guessTextCol(I.sheets[I.cur].rows, I.hdr, guessCols(I.sheets[I.cur].rows[I.hdr] || [], I.mode)); }
     else if (k === 'col'){ const c = t.dataset.c; if (t.value) I.cols[c] = t.value; else delete I.cols[c]; }
     else if (k === 'whole') I.whole = t.checked;
     else I[k] = t.value;
-    I.preview = null; render();
+    if (k === 'area' && t.value) I.lastArea = t.value;
+    /* 미리 보기를 이미 봤으면 바뀐 설정으로 바로 다시 나눠 보여 줌 */
+    I.preview = I.preview ? (I.mode === 'act' ? actRowsOf(I.cur) : recRowsOf()) : null; render();
   }
 });
 let qT;
