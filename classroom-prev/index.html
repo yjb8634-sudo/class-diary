@@ -793,7 +793,8 @@ function vTvConnect(){
       <div class="viewbox"><div class="row"><b style="flex:1">📱 학생 휴대폰용 주소 <span class="small muted" style="font-weight:400">단톡방 공유용 · 보기만 됨 · 이름은 가려서 보여요</span></b>
         ${B.viewKey ? `<button class="b sm" data-a="viewqr">QR 보기</button><button class="b sm" data-a="copyview">주소 복사</button><button class="b sm" data-a="viewnew">새 주소로 바꾸기</button><button class="b sm r" data-a="viewoff">끄기</button>` : `<button class="b sm y" data-a="viewmake">학생용 주소 만들기</button>`}</div>
         ${B.viewKey ? `<input class="in" readonly value="${esc(viewUrl())}" style="width:100%;margin-top:8px" id="viewUrlIn">
-        <p class="lead" style="margin:6px 0 0">시간표 · 급식 · 일정 · 공지 · 알림장 · 링크 조사를 휴대폰에서 볼 수 있어요. 투표 · 상담 신청 · 건의는 교실 TV에서만 됩니다.</p>` : ''}</div></section>`;
+        <p class="lead" style="margin:6px 0 0">시간표 · 급식 · 일정 · 공지 · 알림장 · 링크 조사를 휴대폰에서 볼 수 있어요. 투표 · 상담 신청 · 건의는 교실 TV에서만 됩니다.</p>
+        <label class="chk" style="margin-top:8px"><input type="checkbox" data-a="tog" data-f="phoneBtn" ${B.phoneBtn !== false ? 'checked' : ''}> 교실 TV 오른쪽 위에 <b>[📱 앱 설치]</b> 단추 보이기 (학생이 QR을 찍어 휴대폰에 설치)</label>` : ''}</div></section>`;
 }
 
 /* ---------- 긴급 호출 ---------- */
@@ -1134,8 +1135,12 @@ function vLinkForm(){
 }
 
 /* ---------- 알림 종 ---------- */
-const APP_VER = '2026-10-23a';
+const APP_VER = '2026-10-23b';
 const UPDATES = [
+  { v: '2026-10-23b', title: '10월 23일 업데이트 (2)', items: [
+    '📌 탭 순서: 공지·알림장이 맨 앞, TV 연결은 탭으로, 긴급 호출은 맨 뒤로',
+    '🔤 화면 꾸미기 → TV 글꼴: 학교안심 글꼴 65종 중에서 골라요',
+    '📱 교실 TV 오른쪽 위 [앱 설치]: 학생이 QR을 찍어 휴대폰에 우리 반 화면을 설치해요 (학생용 주소를 만든 반)'] },
   { v: '2026-10-23a', title: '10월 23일 업데이트', items: [
     '📱 위쪽 [📱 모바일] 단추: QR 코드로 휴대폰에서 바로 열고, 홈 화면에 앱처럼 설치할 수 있어요',
     '🔳 학생 휴대폰용 주소에 [QR 보기]가 생겼어요. 교실 TV에 띄워 두면 학생들이 찍어 가요'] },

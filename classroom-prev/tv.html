@@ -209,6 +209,11 @@ button:active:not(:disabled),.go:active,.slot:active,.opt:active,.nm:active,.chi
 .ntxt .badge{display:inline-block;font-size:1.3rem;background:#E5533D;color:#fff;border-radius:.5rem;padding:.1rem .6rem;margin-right:.7rem;vertical-align:.3rem}
 .desc{font-size:1.8rem;line-height:1.6;white-space:pre-wrap;word-break:keep-all;color:var(--chalk)}
 .evh{display:flex;align-items:center;gap:.6rem}
+.iconbtn.phonebtn{width:auto;padding:0 .9rem 0 .7rem;gap:.35rem;display:inline-flex;align-items:center;font-size:1rem;font-weight:700;white-space:nowrap}
+.iconbtn.phonebtn[hidden]{display:none}
+.iconbtn.phonebtn svg{flex:none}
+.appsteps{font-size:1.45rem;line-height:1.75;margin:.4rem 0 0}
+.appsteps b{color:var(--yellow)}
 .evadd{all:unset;cursor:pointer;margin-left:auto;font-size:1.05rem;font-weight:700;color:var(--yellow);border:1.5px solid rgba(242,209,107,.55);border-radius:.7rem;padding:.25rem .8rem;letter-spacing:0}
 .evadd[hidden]{display:none}
 .evdays{display:grid;grid-template-columns:repeat(5,1fr);gap:.6rem;margin:.4rem 0 1rem}
@@ -1069,7 +1074,7 @@ html,body{background:var(--bg);color:var(--chalk)}
       surveys: VIEW ? [] : (B.surveys || []).filter(function (s) { return s && (s.open || s.pub); }).map(function (s) { return summary(s, sts); }),
       students: sts.map(function (s) { return { no: s.no, name: s.name, hasPin: false }; }),
       weather: B.weatherOn !== false ? WX : null,
-      shareUrl: '', homeUrl: '', flash: flashOut(), ver: VER, url: location.href,
+      shareUrl: '', homeUrl: '', phoneApp: !VIEW && B.viewKey && B.phoneBtn !== false ? new URL('tv.html?v=' + B.viewKey, location.href).href : '', flash: flashOut(), ver: VER, url: location.href,
       phone: VIEW, phoneJoin: VIEW, needPin: false
     };
   }
@@ -1281,6 +1286,7 @@ const DOW = ['일','월','화','수','목','금','토'];
 const ICON = {
   more: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/></svg>',
   home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/></svg>',
+  phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>',
   share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8l7.4-4.3M8.3 13.2l7.4 4.3"/></svg>',
   sun: '<svg viewBox="0 0 24 24" fill="none" stroke="#F4D35E" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>',
   part: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="#F4D35E" d="M8.5 3.5v1.6M3.6 8.4h1.6M5 5l1.1 1.1M12 5l-1.1 1.1M11.2 8.6a3.2 3.2 0 0 0-5.6 1.9"/><path stroke="#C9CDBF" d="M7.5 19.5h9.8a3.7 3.7 0 0 0 .3-7.4 5 5 0 0 0-9.6 1.4 3 3 0 0 0-.5 6z"/></svg>',
@@ -1350,6 +1356,7 @@ function frame(){
     <div class="top">${BOOT.preview ? '' : `<a class="homebtn" id="btnHome" target="_top" hidden aria-label="처음 화면(메뉴)으로 가기" title="처음 화면(메뉴)으로">${ICON.home}<span>메뉴</span></a>`}<div class="qwrap" data-blk="quote"><div class="quote" id="quote"></div></div>
       <div class="tools"><span class="pill prev" id="pPrev" hidden>미리보기 · 저장되지 않아요</span>
         ${BOOT.phone ? '' : `<button class="iconbtn" id="btnEdit" aria-label="화면 배치 조절">${ICON.gear}</button>`}
+        ${BOOT.phone ? '' : `<button class="iconbtn phonebtn" id="btnPhone" hidden aria-label="내 휴대폰에 앱으로 설치하기" title="내 휴대폰에 앱으로 설치하기">${ICON.phone}<span>앱 설치</span></button>`}
         <button class="iconbtn" id="btnShare" aria-label="학부모님께 주소 보내기" title="학부모님께 주소 보내기">${ICON.share}</button>
         <button class="iconbtn" id="btnSync" aria-label="새로고침">${ICON.sync}</button>
         <button class="iconbtn" id="btnFull" aria-label="전체 화면">${ICON.full}</button></div></div>
@@ -1702,6 +1709,7 @@ const dayNum = s => { const [y, m, d] = String(s).split('-').map(Number); return
 const mdS = s => `${+String(s).slice(5, 7)}/${+String(s).slice(8, 10)}`;
 function paintSchedule(){
   const t = nowParts(), today = Date.UTC(t.y, t.mo - 1, t.d) / 864e5;
+  const pb = $('btnPhone'); if (pb) pb.hidden = !(D.phoneApp || D.homeUrl);
   const ea = $('btnEvAdd'); if (ea) ea.hidden = !(D.eventAddOn && (!D.phone || D.phoneJoin));
   const cl = D.counsel || [];
   const cs = cl.length ? `<div class="r"><span class="d cs">오늘 상담</span><span class="w">${cl.map(c =>
@@ -1879,6 +1887,19 @@ function drawOv(){
         <div class="steps">${[1, 2, 3, 4, 5].map(i => `<i class="${i <= x.done ? 's' + i : ''}"></i>`).join('')}<span>${x.completed ? '완주' : x.done + '/5단계'}</span></div></div>`).join('')}</div>`
         : '<p class="lead">아직 만들어진 모둠이 없어요.</p>'}
       ${Q.notJoined && Q.notJoined.length ? `<p class="lead" style="margin-top:1rem;font-size:1.25rem">아직 참여하지 않은 친구: ${Q.notJoined.map(n => esc(n.no + '. ' + n.name)).join(', ')}</p>` : ''}`}</div>`;
+    return;
+  }
+  if (o.kind === 'phone'){
+    const u = D.phoneApp || D.homeUrl || '';
+    if (!u){ closeOv(); return; }
+    el.innerHTML = head('📱 내 휴대폰에 우리 반 앱 설치하기') + `<div class="ovb"><div class="lkv">
+      <div class="lkq">${qrSvg(u, '#14201B', '#FFFFFF')}</div>
+      <div class="lkt"><p class="lead">① 휴대폰 <b>카메라</b>로 QR 코드를 비추면 우리 반 화면이 열려요.</p>
+        <div class="appsteps">② 열린 화면을 앱처럼 설치해요<br>
+          · 안드로이드: 오른쪽 위 <b>⋮</b> → <b>홈 화면에 추가</b> (또는 <b>앱 설치</b>)<br>
+          · 아이폰: 아래쪽 <b>공유 □↑</b> → <b>홈 화면에 추가</b></div>
+        <p class="lkn">카카오톡 · 네이버 앱으로 열렸다면 <b>⋮</b> → <b>다른 브라우저로 열기</b>를 누른 뒤 설치해요.</p>
+        <p class="lku">${esc(u)}</p></div></div></div>`;
     return;
   }
   if (o.kind === 'share'){
@@ -2414,6 +2435,7 @@ document.addEventListener('click', ev => {
   }
   if (b.id === 'btnMine'){ openOv({kind: 'mine', step: 'who'}); return; }
   if (b.id === 'btnShare'){ openOv({kind: 'share'}); return; }
+  if (b.id === 'btnPhone'){ openOv({kind: 'phone'}); return; }
   if (b.id === 'btnSuggest'){ openOv({kind: 'suggest', step: 'write', text: '', no: 0}); return; }
   if (b.dataset.rs){ openOv({kind: 'result', id: b.dataset.rs}); return; }
   if (b.id === 'btnCounsel'){ openOv({kind: 'counsel', step: 'who'}); return; }
