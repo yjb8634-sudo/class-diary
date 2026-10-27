@@ -189,6 +189,36 @@ button:active:not(:disabled),.go:active,.slot:active,.opt:active,.nm:active,.chi
 .dd.bd b{color:var(--pink);margin:0 .25rem}
 .dd.bd.today{background:var(--yellow);color:var(--yellow-ink);border-color:var(--yellow);font-weight:800}
 .dd.bd.today b{color:var(--yellow-ink)}
+.dd.bd[data-bdn]{cursor:pointer}
+/* 소리 · 음악 · 타이머 */
+#sndChip{all:unset;cursor:pointer;position:fixed;left:50%;transform:translateX(-50%);bottom:1.2rem;z-index:45;padding:.6rem 1.2rem;border-radius:999px;background:var(--card2);border:1.5px solid var(--yellow);color:var(--yellow);font-size:1.15rem;font-weight:800;box-shadow:0 8px 30px rgba(0,0,0,.45)}
+#musicBar{position:fixed;left:1rem;bottom:1rem;z-index:44;display:flex;gap:.7rem;align-items:center;padding:.5rem .7rem .5rem .5rem;border-radius:1rem;background:rgba(20,32,27,.94);border:1px solid var(--line);box-shadow:0 10px 30px rgba(0,0,0,.45);max-width:min(560px,60vw)}
+#musicBar[hidden]{display:none}
+#musicBar .mbv{width:192px;height:108px;border-radius:.6rem;overflow:hidden;background:#000;flex:none}
+#musicBar .mbv iframe{display:block}
+#musicBar .mbi{min-width:0;display:flex;flex-direction:column;gap:.5rem}
+#musicBar .mbt{font-size:1.05rem;font-weight:700;color:var(--chalk2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#musicBar .mbc{display:flex;gap:.4rem}
+#musicBar .mbc button{all:unset;cursor:pointer;width:3.2rem;height:2.6rem;border-radius:.6rem;background:var(--card2);display:grid;place-items:center;font-size:1.3rem}
+#tmrBox{position:fixed;right:1.2rem;top:5.6rem;z-index:46;display:flex;align-items:center;gap:.6rem;padding:.5rem .7rem .5rem 1rem;border-radius:1rem;background:rgba(20,32,27,.95);border:2px solid var(--mint);box-shadow:0 10px 30px rgba(0,0,0,.45)}
+#tmrBox b{font-size:2.6rem;font-weight:800;font-variant-numeric:tabular-nums;min-width:6.5rem;text-align:center}
+#tmrBox .tl{font-size:1.6rem}
+#tmrBox button{all:unset;cursor:pointer;padding:.35rem .6rem;border-radius:.5rem;background:var(--card2);font-size:1rem;font-weight:700;color:var(--chalk2)}
+#tmrBox.soon{border-color:var(--yellow)}#tmrBox.soon b{color:var(--yellow)}
+#tmrBox.done{border-color:var(--pink);animation:tmrBlink .6s steps(2) infinite}#tmrBox.done b{color:var(--pink)}
+@keyframes tmrBlink{50%{background:rgba(242,167,160,.25)}}
+.tmgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-top:1rem}
+.tmgrid button{all:unset;cursor:pointer;text-align:center;padding:1.4rem 0;border-radius:1rem;background:var(--card2);border:2px solid var(--line);font-size:2.4rem;font-weight:800}
+.tmgrid button small{display:block;font-size:1.1rem;font-weight:600;color:var(--chalk3)}
+#bdayFx{position:fixed;inset:0;z-index:80;display:grid;place-items:center;background:rgba(10,16,13,.72);overflow:hidden;cursor:pointer}
+#bdayFx .bx{text-align:center;animation:bdIn .6s cubic-bezier(.2,1.4,.4,1) both}
+#bdayFx .ck{font-size:9rem;line-height:1}
+#bdayFx .t1{font-size:3rem;font-weight:800;color:var(--yellow);margin-top:1rem}
+#bdayFx .t2{font-size:6rem;font-weight:800;letter-spacing:-.02em}
+#bdayFx .t3{font-size:1.5rem;color:var(--chalk2);margin-top:.6rem}
+#bdayFx .cf i{position:absolute;top:-4vh;width:.9rem;height:1.4rem;border-radius:.2rem;animation:cfFall 4.2s linear infinite}
+@keyframes cfFall{to{transform:translateY(110vh) rotate(540deg)}}
+@keyframes bdIn{from{transform:scale(.6);opacity:0}}
 .act.sg{flex:none;min-width:auto;padding:.9rem 1.3rem}
 .act.sg .ic{background:var(--card2);color:var(--chalk);width:2.8rem;height:2.8rem}
 .act.sg .tx b{font-size:1.35rem}
@@ -740,7 +770,7 @@ html,body{background:var(--bg);color:var(--chalk)}
   var VIEW = !K && V.length >= 20;
   var WANT_EDIT = QS.get('edit') === '1';
   var PV = QS.get('pv') === '1';   /* 관리 화면 안 미리보기: 눌러도 저장 안 됨 */
-  var VER = 'fb-2026-11-13a';
+  var VER = 'fb-2026-11-14a';
   window.__BOOT = { t: K || V, preview: PV ? 1 : 0, phone: VIEW, ver: VER };
   if (VIEW) document.write('<style>#btnMine,#btnEdit,#btnShare{display:none !important}html,body{height:auto !important;overflow:auto !important}</style>');
   var FB = null, B = null, gone = false, SCH = null, schAt = 0, schBusy = false, WX = null, wxAt = 0, wxBusy = false;
@@ -1147,7 +1177,7 @@ html,body{background:var(--bg);color:var(--chalk)}
       .map(function (n) { var lv = Number(n.level) || 0; return { id: n.id, text: n.text, level: lv, important: lv >= 1, file: null, files: n.files || [] }; });
     var Q = B.quote || {};
     return {
-      ok: true, now: Date.now(), today: today, label: g + '학년 ' + k + '반', needExt: false, font: B.font || '',
+      ok: true, now: Date.now(), today: today, label: g + '학년 ' + k + '반', needExt: false, font: B.font || '', sound: VIEW ? { bday: true } : (B.sound || null),
       periods: periods.map(function (p) { var we = dow === 0 || dow === 6, n = String(Number(p.n)); return { n: p.n, s: p.s, e: p.e, subj: we ? '' : (subj[n] || subj[p.n] || ''), teacher: we ? '' : (TCH[n] || TCH[p.n] || '') }; }),
       ttNote: ttNote, lunch: B.lunch || '',
       meal: M[today] || [], mealErr: SCH ? '' : (schAt ? '급식 정보를 불러오지 못했어요' : '급식을 불러오는 중…'),
@@ -1507,6 +1537,7 @@ function frame(){
       <div class="tools"><span class="pill prev" id="pPrev" hidden>미리보기 · 저장되지 않아요</span>
         ${BOOT.phone ? '' : `<button class="iconbtn" id="btnEdit" aria-label="화면 배치 조절">${ICON.gear}</button>`}
         ${BOOT.phone ? `<button class="iconbtn phonebtn" id="btnMyPin" hidden aria-label="내 PIN 만들기 · 바꾸기">🔑<span>내 PIN</span></button>` : `<button class="iconbtn phonebtn" id="btnPhone" hidden aria-label="내 휴대폰에 앱으로 설치하기" title="내 휴대폰에 앱으로 설치하기">${ICON.phone}<span>앱 설치</span></button>`}
+        ${BOOT.phone ? '' : '<button class="iconbtn" id="btnTimer" aria-label="타이머" title="타이머" style="font-size:1.5rem">⏱</button>'}
         <button class="iconbtn" id="btnShare" aria-label="학부모님께 주소 보내기" title="학부모님께 주소 보내기">${ICON.share}</button>
         <button class="iconbtn" id="btnSync" aria-label="새로고침">${ICON.sync}</button>
         <button class="iconbtn" id="btnFull" aria-label="전체 화면">${ICON.full}</button></div></div>
@@ -1570,7 +1601,7 @@ function paintData(){
   paintSchedule();
 
   /* 공지사항 */
-  const bd = (D.birthdays || []).map(b => `<span class="dd bd${b.today ? ' today' : ''}">${ICON.cake}${b.today ? ' 오늘 생일' : ''}<b>${esc(b.name)}</b>${b.today ? '' : `${+b.date.slice(5, 7)}/${+b.date.slice(8, 10)} (${DOW[b.dow % 7]})`}</span>`).join('');
+  const bd = (D.birthdays || []).map(b => `<span class="dd bd${b.today ? ' today' : ''}" data-bdn="${esc(b.name)}" role="button" title="누르면 생일 축하 노래">${ICON.cake}${b.today ? ' 오늘 생일' : ''}<b>${esc(b.name)}</b>${b.today ? '' : `${+b.date.slice(5, 7)}/${+b.date.slice(8, 10)} (${DOW[b.dow % 7]})`}</span>`).join('');
   $('bdays').innerHTML = bd; $('bdays').hidden = !bd;
   const bm = $('btnMine'); if (bm) bm.hidden = !D.phone;
   const NT = (D.notes || []);
@@ -1654,6 +1685,8 @@ function showFlash(f){
   if (!f || !f.id){ FLASH = null; box.hidden = true; clearInterval(flashTimer); return; }
   if (FLASH && FLASH.id === f.id){ FLASH.until = f.until; return; }
   FLASH = f;
+  if (!BOOT.phone && !BOOT.preview && SO().flash !== false && SND.lastFlash !== f.id){ SND.lastFlash = f.id; playAlert(f.level === '긴급'); }
+  musicTick();
   box.className = f.level === '긴급' ? 'urgent' : '';
   $('flTag').textContent = f.level === '긴급' ? '긴급' : '공지사항';
   $('flWho').textContent = f.who || '';
@@ -1861,7 +1894,7 @@ function paintSchedule(){
   const t = nowParts(), today = Date.UTC(t.y, t.mo - 1, t.d) / 864e5;
   const pb = $('btnPhone'); if (pb) pb.hidden = !(D.phoneApp || D.homeUrl);
   const mp = $('btnMyPin'); if (mp) mp.hidden = !D.pinSignup;
-  pinNudge();
+  pinNudge(); sndChip();
   const ea = $('btnEvAdd'); if (ea) ea.hidden = !(D.eventAddOn && (!D.phone || D.phoneJoin));
   const cl = D.counsel || [];
   const cs = cl.length ? `<div class="r"><span class="d cs">오늘 상담</span><span class="w">${cl.map(c =>
@@ -2122,6 +2155,11 @@ function drawOv(){
         <div class="steps">${[1, 2, 3, 4, 5].map(i => `<i class="${i <= x.done ? 's' + i : ''}"></i>`).join('')}<span>${x.completed ? '완주' : x.done + '/5단계'}</span></div></div>`).join('')}</div>`
         : '<p class="lead">아직 만들어진 모둠이 없어요.</p>'}
       ${Q.notJoined && Q.notJoined.length ? `<p class="lead" style="margin-top:1rem;font-size:1.25rem">아직 참여하지 않은 친구: ${Q.notJoined.map(n => esc(n.no + '. ' + n.name)).join(', ')}</p>` : ''}`}</div>`;
+    return;
+  }
+  if (o.kind === 'timer'){
+    el.innerHTML = head('⏱ 타이머') + `<div class="ovb"><p class="lead">몇 분을 잴까요? 시간이 다 되면 종소리가 세 번 울려요. (오른쪽 위에 남은 시간이 보여요)</p>
+      <div class="tmgrid">${[1, 3, 5, 10, 15, 20, 30, 50].map(m => `<button data-ov="tmset" data-m="${m}">${m}<small>분</small></button>`).join('')}</div></div>`;
     return;
   }
   if (o.kind === 'evdel'){
@@ -2648,6 +2686,8 @@ document.addEventListener('click', ev => {
   if (nn && !OV){ openOv({kind: 'note', id: nn.dataset.note}); return; }
   const mi = ev.target.closest && ev.target.closest('[data-mi]');
   if (mi && OV && OV.kind === 'mine' && !ev.target.closest('iframe')){ OV.open = OV.open === mi.dataset.mi ? '' : mi.dataset.mi; drawOv(); poke(); return; }
+  const bdn = ev.target.closest && ev.target.closest('[data-bdn]');
+  if (bdn && !EDIT && !OV){ soundUnlock(); bdayShow(bdn.dataset.bdn); return; }
   const nt = ev.target.closest && ev.target.closest('[data-nt]');
   if (nt && !OV){ openOv({kind: 'notice', id: nt.dataset.nt}); return; }
   const b = ev.target.closest('button');
@@ -2680,6 +2720,7 @@ document.addEventListener('click', ev => {
   if (b.id === 'btnShare'){ openOv({kind: 'share'}); return; }
   if (b.id === 'btnPhone'){ openOv({kind: 'phone'}); return; }
   if (b.id === 'btnMyPin'){ openMyPin(); return; }
+  if (b.id === 'btnTimer'){ openOv({kind: 'timer'}); return; }
   if (b.dataset.evdel){ openOv({kind: 'evdel', id: b.dataset.evdel, title: b.dataset.t || '', when: b.dataset.w || ''}); return; }
   if (b.id === 'btnSuggest'){ openOv({kind: 'suggest', step: 'write', text: '', no: 0}); return; }
   if (b.dataset.rs){ openOv({kind: 'result', id: b.dataset.rs}); return; }
@@ -2724,6 +2765,7 @@ document.addEventListener('click', ev => {
   }
   if (a === 'evd'){ OV.date = b.dataset.d; document.querySelectorAll('#ov [data-ov="evd"]').forEach(x => x.classList.toggle('on', x === b)); submitState(); return; }
   if (a === 'evp'){ OV.per = OV.per === b.dataset.p ? '' : b.dataset.p; document.querySelectorAll('#ov [data-ov="evp"]').forEach(x => x.classList.toggle('on', x.dataset.p === OV.per)); submitState(); return; }
+  if (a === 'tmset'){ soundUnlock(); timerStart(Number(b.dataset.m)); return; }
   if (a === 'evdelok'){
     if (BOOT.preview){ toast('미리보기: 실제로는 지우지 않았어요'); closeOv(); return; }
     b.disabled = true;
@@ -3102,6 +3144,197 @@ setInterval(() => {
       '<br>1분이 넘으면 새로고침(F5) 해 주세요. · 화면 버전 ' + (BOOT.ver || '?') + '</span></div>';
   }, 1000);
 })();
+/* ---------- 소리: 효과음(브라우저가 직접 만듦, 저작권 없음) · 점심/청소시간 음악(유튜브) ---------- */
+const SND = { ac: null, unlocked: false, lastFlash: '', lastChime: '', timer: null, yt: null, ytReady: false, ytKey: '', musicOn: false, userPaused: false, vol: null, win: null };
+const SO = () => Object.assign({ lunch: false, clean: false, url: '', vol: 30, offDay: '', chime: true, flash: true, bday: true, fxVol: 60 }, (D && D.sound) || {});
+function acGet(){
+  if (!SND.ac){ const C = window.AudioContext || window.webkitAudioContext; if (!C) return null; SND.ac = new C(); }
+  return SND.ac;
+}
+/* 처음 한 번 화면을 누르면 소리를 쓸 수 있게 됨 (브라우저 자동 재생 규칙) */
+function soundUnlock(){
+  const ac = acGet(); if (ac && ac.state !== 'running') ac.resume().catch(() => {});
+  if (!SND.unlocked){ SND.unlocked = true; const c = $('sndChip'); if (c) c.remove(); musicTick(); }
+}
+document.addEventListener('pointerdown', soundUnlock, true);
+document.addEventListener('keydown', soundUnlock, true);
+function tone(ac, out, f, t0, dur, type, gain){
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type || 'sine'; o.frequency.value = f;
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(gain, t0 + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(out); o.start(t0); o.stop(t0 + dur + 0.05);
+}
+function fxOut(){
+  const ac = acGet(); if (!ac) return null;
+  if (ac.state !== 'running') ac.resume().catch(() => {});
+  const g = ac.createGain(); g.gain.value = Math.max(0.05, Math.min(1, (+SO().fxVol || 60) / 100)); g.connect(ac.destination);
+  return { ac, g };
+}
+/* 종소리 (딩-동) */
+function playChime(times){
+  const x = fxOut(); if (!x) return;
+  musicDuck(4500);
+  for (let k = 0; k < (times || 1); k++){
+    const t = x.ac.currentTime + 0.05 + k * 1.6;
+    [[659.25, 0], [523.25, 0.55]].forEach(([f, d]) => { tone(x.ac, x.g, f, t + d, 1.4, 'sine', 0.5); tone(x.ac, x.g, f * 2, t + d, 0.6, 'sine', 0.12); tone(x.ac, x.g, f * 3, t + d, 0.3, 'sine', 0.05); });
+  }
+}
+/* 긴급 호출 알림음 (올라가는 세 음 두 번) */
+function playAlert(urgent){
+  const x = fxOut(); if (!x) return;
+  musicDuck(6000);
+  const seq = urgent ? [880, 1108.73, 1318.51] : [659.25, 783.99, 987.77];
+  for (let r = 0; r < 2; r++) seq.forEach((f, i) => tone(x.ac, x.g, f, x.ac.currentTime + 0.05 + r * 0.9 + i * 0.16, 0.32, urgent ? 'square' : 'triangle', urgent ? 0.18 : 0.35));
+}
+/* 생일 축하 노래 (선율은 저작권이 끝난 곡) — 오르골 소리 */
+const BDAY = [['G4',.75],['G4',.25],['A4',1],['G4',1],['C5',1],['B4',2],['G4',.75],['G4',.25],['A4',1],['G4',1],['D5',1],['C5',2],
+  ['G4',.75],['G4',.25],['G5',1],['E5',1],['C5',1],['B4',1],['A4',2],['F5',.75],['F5',.25],['E5',1],['C5',1],['D5',1],['C5',3]];
+const NOTE = n => { const m = n.match(/([A-G])(\d)/), s = {C: -9, D: -7, E: -5, F: -4, G: -2, A: 0, B: 2}[m[1]]; return 440 * Math.pow(2, (s + (m[2] - 4) * 12) / 12); };
+function playBday(){
+  const x = fxOut(); if (!x) return 0;
+  const beat = 0.42; let t = x.ac.currentTime + 0.1;
+  BDAY.forEach(([n, b]) => { const f = NOTE(n); tone(x.ac, x.g, f, t, Math.max(0.5, b * beat * 1.6), 'triangle', 0.42); tone(x.ac, x.g, f * 2, t, 0.35, 'sine', 0.1); t += b * beat; });
+  const total = BDAY.reduce((a, [, b]) => a + b, 0) * beat;
+  musicDuck(total * 1000 + 1500);
+  return total;
+}
+function bdayShow(name){
+  const old = $('bdayFx'); if (old) old.remove();
+  const sec = SO().bday === false ? 0 : playBday();
+  const d = document.createElement('div'); d.id = 'bdayFx';
+  const conf = Array.from({length: 46}, (_, i) => `<i style="left:${(i * 37) % 100}%;animation-delay:${(i % 9) * 0.35}s;background:${['#F4D35E', '#F2A7A0', '#8FD3C1', '#9CC7F0', '#fff'][i % 5]}"></i>`).join('');
+  d.innerHTML = `<div class="cf">${conf}</div><div class="bx"><div class="ck">🎂</div><div class="t1">생일 축하해요!</div><div class="t2">${esc(name)}</div><div class="t3">${sec ? '🎵 생일 축하 노래' : ''}</div></div>`;
+  d.onclick = () => d.remove();
+  document.body.appendChild(d);
+  setTimeout(() => d.remove(), Math.max(6, sec + 2) * 1000);
+}
+/* 소리 켜기 안내 (처음 한 번 화면을 눌러야 해서) */
+function sndChip(){
+  if (BOOT.phone || BOOT.preview || SND.unlocked || $('sndChip')) return;
+  const o = SO(); if (!(o.lunch || o.clean || o.chime || o.flash)) return;
+  const c = document.createElement('button'); c.id = 'sndChip'; c.textContent = '🔊 화면을 한 번 눌러 소리 켜기';
+  c.onclick = () => { soundUnlock(); playChime(1); };
+  document.body.appendChild(c);
+}
+/* 매초: 수업 시작 1분 전 종소리 · 음악 시간 확인 */
+function soundTick(){
+  if (!D || BOOT.phone || BOOT.preview) return;
+  const t = nowParts(), o = SO();
+  if (t.dow === 0 || t.dow === 6) { musicTick(); return; }
+  if (o.chime !== false && SND.unlocked){
+    const P = (D.periods || []).map(p => toMin(p.s)).filter(a => a > 0);
+    const key = t.ymd + '|' + t.hm;
+    if (t.s < 3 && P.includes(t.hm + 1) && SND.lastChime !== key){ SND.lastChime = key; playChime(1); }
+  }
+  musicTick();
+}
+/* ---------- 타이머 (TV 위쪽 ⏱) ---------- */
+function timerStart(min){
+  SND.timer = { end: Date.now() + min * 60000, min };
+  timerPaint(); closeOv();
+}
+function timerStop(){ SND.timer = null; const w = $('tmrBox'); if (w) w.remove(); }
+function timerPaint(){
+  const T = SND.timer; let w = $('tmrBox');
+  if (!T){ if (w) w.remove(); return; }
+  if (!w){ w = document.createElement('div'); w.id = 'tmrBox'; document.body.appendChild(w);
+    w.onclick = e => { const b = e.target.closest('[data-tm]'); if (!b) return; if (b.dataset.tm === 'x') timerStop(); else if (b.dataset.tm === 'add') { T.end += 60000; timerPaint(); } }; }
+  const left = Math.max(0, Math.ceil((T.end - Date.now()) / 1000));
+  w.className = left === 0 ? 'done' : (left <= 60 ? 'soon' : '');
+  w.innerHTML = `<span class="tl">⏱</span><b>${left === 0 ? '끝!' : `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`}</b><button data-tm="add" aria-label="1분 더">+1분</button><button data-tm="x" aria-label="타이머 끄기">✕</button>`;
+  if (left === 0 && !T.rang){ T.rang = true; playChime(3); setTimeout(() => { if (SND.timer === T) timerStop(); }, 15000); }
+}
+setInterval(() => { soundTick(); if (SND.timer) timerPaint(); }, 1000);
+
+/* ---------- 점심 · 청소시간 음악 (선생님이 넣은 유튜브 재생목록 · 영상) ---------- */
+function ytParse(u){
+  u = String(u || '').trim(); if (!u) return null;
+  const list = (u.match(/[?&]list=([\w-]{10,})/) || [])[1];
+  const vid = (u.match(/(?:[?&]v=|youtu\.be\/|\/shorts\/|\/live\/|\/embed\/)([\w-]{11})/) || [])[1];
+  return list ? { list, vid } : (vid ? { vid } : null);
+}
+function musicWindow(t){
+  const o = SO(); if (t.dow === 0 || t.dow === 6 || o.offDay === t.ymd) return null;
+  const W = [];
+  if (o.lunch){ const [a, b] = range(D.lunch); if (a >= 0 && b > a) W.push({ name: '점심시간', a, b }); }
+  if (o.clean) (D.specials || []).filter(s => /청소/.test(s.name || '')).forEach(s => { const a = toMin(s.s), b = toMin(s.e); if (a >= 0 && b > a) W.push({ name: s.name, a, b }); });
+  /* 다음 수업 1분 전에는 무조건 멈춤 */
+  return W.find(w => t.hm >= w.a && t.hm < w.b - 1) || null;
+}
+function ytLoad(cb){
+  if (window.YT && YT.Player) return cb();
+  if (!SND.ytWait){ SND.ytWait = []; const s = document.createElement('script'); s.src = 'https:' + '/' + '/www.youtube.com/iframe_api'; document.head.appendChild(s);
+    const prev = window.onYouTubeIframeAPIReady; window.onYouTubeIframeAPIReady = () => { if (prev) prev(); (SND.ytWait || []).forEach(f => f()); SND.ytWait = null; }; }
+  if (SND.ytWait) SND.ytWait.push(cb); else cb();
+}
+function musicBar(state){
+  let bar = $('musicBar');
+  if (!state){ if (bar) bar.hidden = true; return; }
+  if (!bar){
+    bar = document.createElement('div'); bar.id = 'musicBar';
+    bar.innerHTML = '<div class="mbv"><div id="ytBox"></div></div><div class="mbi"><div class="mbt" id="mTitle"></div><div class="mbc"><button data-mu="play" id="mPlay">⏸</button><button data-mu="next" aria-label="다음 곡">⏭</button><button data-mu="down" aria-label="소리 작게">🔉</button><button data-mu="up" aria-label="소리 크게">🔊</button></div></div>';
+    bar.onclick = e => { const b = e.target.closest('[data-mu]'); if (!b) return; musicCmd(b.dataset.mu); };
+    document.body.appendChild(bar);
+  }
+  bar.hidden = false;
+  const tt = $('mTitle'); if (tt) tt.textContent = state.title;
+  const pb = $('mPlay'); if (pb) pb.textContent = state.playing ? '⏸' : '▶';
+}
+function musicCmd(c){
+  const p = SND.yt; soundUnlock();
+  if (!p || !SND.ytReady) return;
+  if (c === 'play'){ if (p.getPlayerState() === 1){ p.pauseVideo(); SND.userPaused = true; } else { SND.userPaused = false; p.playVideo(); } }
+  if (c === 'next' && p.nextVideo) p.nextVideo();
+  if (c === 'down' || c === 'up'){ SND.vol = Math.max(5, Math.min(100, (SND.vol == null ? (+SO().vol || 30) : SND.vol) + (c === 'up' ? 10 : -10))); p.setVolume(SND.vol); toast('소리 ' + SND.vol); }
+  setTimeout(musicPaintState, 300);
+}
+function musicPaintState(){
+  if (!SND.win) return;
+  const p = SND.yt, st = p && SND.ytReady ? p.getPlayerState() : -1;
+  let ti = ''; try { ti = (p.getVideoData() || {}).title || ''; } catch (e) {}
+  musicBar({ title: `🎵 ${SND.win.name} 음악${ti ? ' · ' + ti : ''}${SND.unlocked ? '' : ' — ▶를 눌러 켜 주세요'}`, playing: st === 1 });
+}
+function musicStop(){
+  SND.win = null; SND.userPaused = false; SND.vol = null;
+  try { if (SND.yt && SND.ytReady) SND.yt.stopVideo(); } catch (e) {}
+  musicBar(null);
+}
+function musicTick(){
+  if (!D || BOOT.phone || BOOT.preview) return;
+  const o = SO(), src = ytParse(o.url), t = nowParts(), w = src && !FLASH ? musicWindow(t) : null;
+  if (!w){ if (SND.win) musicStop(); return; }
+  const key = (src.list || '') + '|' + (src.vid || '');
+  if (!SND.win || SND.win.name !== w.name){ SND.win = w; SND.userPaused = false; }
+  if (!SND.yt || SND.ytKey !== key){
+    SND.ytKey = key; musicBar({ title: '🎵 음악을 준비하는 중…', playing: false });
+    ytLoad(() => {
+      if (SND.yt){ try { SND.yt.destroy(); } catch (e) {} SND.yt = null; SND.ytReady = false; }
+      const pv = src.list ? { listType: 'playlist', list: src.list, loop: 1 } : { loop: 1, playlist: src.vid };
+      SND.yt = new YT.Player('ytBox', { width: 192, height: 108, videoId: src.vid || undefined,
+        playerVars: Object.assign({ autoplay: 0, controls: 0, rel: 0, playsinline: 1, modestbranding: 1, fs: 0, disablekb: 1 }, pv),
+        events: {
+          onReady: e => { SND.ytReady = true; e.target.setVolume(SND.vol == null ? (+SO().vol || 30) : SND.vol); if (src.list && e.target.setShuffle) e.target.setShuffle(true); musicTick(); },
+          onStateChange: () => musicPaintState(),
+          onError: () => { try { SND.yt.nextVideo(); } catch (e) {} }
+        } });
+      const fr = SND.yt.getIframe && SND.yt.getIframe(); if (fr) fr.setAttribute('allow', 'autoplay; encrypted-media');
+    });
+    return;
+  }
+  if (!SND.ytReady) return;
+  const p = SND.yt, st = p.getPlayerState();
+  const want = SND.ducked ? null : (SND.vol == null ? (+o.vol || 30) : SND.vol);
+  if (want != null && SND.lastVol !== want){ SND.lastVol = want; p.setVolume(want); }
+  if (!SND.userPaused && !SND.ducked && SND.unlocked && st !== 1 && st !== 3) p.playVideo();
+  musicPaintState();
+}
+/* 효과음이 날 때 음악을 잠깐 줄였다가 돌려놓기 */
+function musicDuck(ms){
+  const p = SND.yt; if (!p || !SND.ytReady || !SND.win) return;
+  SND.ducked = true; try { p.setVolume(Math.max(3, Math.round((SND.vol == null ? (+SO().vol || 30) : SND.vol) / 5))); } catch (e) {}
+  clearTimeout(SND.duckT); SND.duckT = setTimeout(() => { SND.ducked = false; try { p.setVolume(SND.vol == null ? (+SO().vol || 30) : SND.vol); } catch (e) {} }, ms);
+}
+
 /* 긴급 호출은 자주 확인합니다 (가벼운 요청) */
 setInterval(pollFlash, 15000);
 window.BOARD_MARK_END = 1;

@@ -1139,6 +1139,41 @@ function vNotice(){
 function addDays(s, n){ const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
 
 /* ---------- 화면 꾸미기 ---------- */
+/* ---------- 교실 TV 소리 · 음악 설정 ---------- */
+const SND_DEF = { lunch: false, clean: false, url: '', vol: 30, offDay: '', chime: true, flash: true, bday: true, fxVol: 60 };
+function sndCur(){ return Object.assign({}, SND_DEF, SND_SRC() || {}); }
+function ytOk(u){ return /^https:\/\/(www\.|m\.|music\.)?(youtube\.com|youtu\.be)\//.test(String(u || '').trim()) && /([?&]list=[\w-]{10,}|[?&]v=[\w-]{11}|youtu\.be\/[\w-]{11}|\/shorts\/[\w-]{11}|\/live\/[\w-]{11})/.test(u); }
+function sndBoxHtml(K){
+  const o = sndCur(), off = o.offDay === SND_TODAY();
+  const chk = (id, v, l) => `<label class="${K.chk}"><input type="checkbox" id="${id}" ${v ? 'checked' : ''}> ${l}</label>`;
+  return `<section class="${K.box}"><h2>🎵 교실 TV 음악 · 소리</h2>
+    <p class="${K.lead}">점심시간 · 청소시간에 교실 TV가 유튜브 음악을 작게 틀어 주고, <b>다음 수업 1분 전에는 저절로 멈춰요.</b> 학생은 TV에서 멈춤 · 다음 곡 · 소리 크기만 바꿀 수 있어요.
+      아침에 TV를 켜면 화면을 한 번 눌러 주세요 (브라우저 규칙상 한 번 눌러야 소리가 나요).</p>
+    <div class="${K.row}">${chk('sndLunch', o.lunch, '점심시간 음악')}${chk('sndClean', o.clean, '청소시간 음악')}</div>
+    <input class="in" id="sndUrl" style="width:100%;margin-top:8px" inputmode="url" value="${esc(o.url)}" placeholder="유튜브 재생목록 또는 영상 주소 붙여 넣기 (예: https://www.youtube.com/playlist?list=…)">
+    <p class="${K.small}" style="margin-top:4px">유튜브에서 재생목록을 열고 <b>공유 → 복사</b>한 주소를 넣으세요. 재생목록은 섞어서 틀어요. 광고가 나올 수 있어요.</p>
+    <div class="${K.row}" style="margin-top:8px;align-items:center">음악 크기 <input type="range" id="sndVol" min="5" max="100" step="5" value="${o.vol}" style="width:180px"> <span id="sndVolV">${o.vol}</span></div>
+    <div class="${K.row}" style="margin-top:12px">${chk('sndChime', o.chime, '수업 시작 1분 전 종소리')}${chk('sndFlash', o.flash, '긴급 호출 알림음')}${chk('sndBday', o.bday, '생일 이름을 누르면 생일 축하 노래')}</div>
+    <div class="${K.row}" style="margin-top:8px;align-items:center">효과음 크기 <input type="range" id="sndFx" min="10" max="100" step="10" value="${o.fxVol}" style="width:180px"> <span id="sndFxV">${o.fxVol}</span></div>
+    <p class="${K.small}" style="margin-top:6px">⏱ 타이머: 교실 TV 오른쪽 위 ⏱ 단추로 1~50분을 재고, 끝나면 종소리가 세 번 울려요.</p>
+    <div class="${K.row}" style="margin-top:12px;justify-content:flex-end">
+      <button class="${K.btn}" data-${K.act}="sndoff">${off ? '오늘 음악 다시 켜기' : '🔇 오늘은 음악 끄기'}</button>
+      <button class="${K.pri}" data-${K.act}="sndsave">저장</button></div>
+    ${off ? `<p class="${K.small}" style="color:var(--yellow);text-align:right;margin-top:4px">오늘은 음악이 나오지 않아요.</p>` : ''}</section>`;
+}
+function sndRead(){
+  const v = id => document.getElementById(id), o = sndCur();
+  const url = (v('sndUrl').value || '').trim();
+  return Object.assign(o, { lunch: v('sndLunch').checked, clean: v('sndClean').checked, url, vol: +v('sndVol').value, chime: v('sndChime').checked, flash: v('sndFlash').checked, bday: v('sndBday').checked, fxVol: +v('sndFx').value });
+}
+function sndValidate(o){
+  if (o.url && !ytOk(o.url)) return '유튜브 재생목록이나 영상 주소가 아니에요. 유튜브에서 [공유 → 복사]한 주소를 넣어 주세요.';
+  if ((o.lunch || o.clean) && !o.url) return '음악을 켜려면 유튜브 주소를 넣어 주세요.';
+  return '';
+}
+document.addEventListener('input', e => { const t = e.target; if (t.id === 'sndVol' || t.id === 'sndFx'){ const s = document.getElementById(t.id + 'V'); if (s) s.textContent = t.value; } });
+const SND_SRC = () => S.B.sound, SND_TODAY = () => kstToday();
+const SND_K = { box: 'card', lead: 'lead', row: 'row', chk: 'chk', small: 'small muted', btn: 'b', pri: 'b y', act: 'a' };
 function vLook(){
   const B = S.B, Q = B.quote || { on: true, mode: 'day', list: [] };
   const dd = (B.ddays || []).concat([{}, {}, {}]).slice(0, 3);
@@ -1146,6 +1181,7 @@ function vLook(){
       <button class="b sm" data-a="pvreload">새로고침</button><a class="b sm" href="${esc(tvUrl())}" target="_blank" rel="noopener">새 탭에서 열기</a></div>
     <div id="pvSlot" class="pvslot"></div>
     <p class="lead" style="margin:8px 0 0">교실 TV와 같은 모습이에요. 눌러 봐도 실제로 저장되지 않아요. 여기서 고친 내용은 몇 초 안에 미리보기에도 바뀝니다.</p></section>
+  ${sndBoxHtml(SND_K)}
   <section class="card"><h2>🔤 TV 글꼴</h2>
     <p class="lead">교실 TV 화면 전체의 글꼴을 바꿉니다. 누르면 몇 초 안에 TV와 위 미리보기에 바뀌어요.</p>
     ${fontPickHtml(S.B.font, 'a')}</section>
@@ -1302,7 +1338,7 @@ function rosterFromRows(rows){
 function rosterFromText(t){
   const rows = String(t || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(l => {
     if (l.indexOf('\t') >= 0) return l.split('\t');
-    const m = l.match(/^(\d{1,3})\s*[.,)\s]\s*(\S+(?:\s\S+)?)\s*(.*)$/);
+    const m = l.match(/^(\d{1,3})\s*[.,)\s]\s*([^\d\s]\S*(?:\s[^\d\s]\S*)?)\s*(.*)$/);   /* 이름 칸이 생일(숫자)까지 삼키지 않게 */
     return m ? [m[1], m[2], m[3]] : l.split(/\s+/);
   });
   const r1 = rosterFromRows(rows);
@@ -1412,6 +1448,7 @@ const UPDATES = [
     '📱 학생은 휴대폰 앱의 [🔑 내 PIN]에서 직접 만들어요. 학급 명단 탭에서 누가 만들었는지 보고, 초기화 · 대신 정하기를 할 수 있어요 (PIN은 선생님 · 운영자도 볼 수 없어요)',
     '📤 설문·투표·조사 결과를 그림으로 만들어 카카오톡 단톡방에 보내요 (조사마다 [결과 그림 · 카톡])',
     '💻 위쪽 [바탕화면] 단추: 이 컴퓨터에 앱으로 설치해 바탕화면에서 바로 열어요',
+    '🎵 화면 꾸미기 → 교실 TV 음악 · 소리: 점심 · 청소시간 유튜브 음악(수업 1분 전 저절로 멈춤), 수업 시작 1분 전 종소리, 긴급 호출 알림음, 생일 이름을 누르면 생일 축하 노래, TV 오른쪽 위 ⏱ 타이머',
     '🗓 학생이 올린 일정은 학생도 교실 TV 일정 칸의 [학생 ✕]로 지울 수 있어요. 지운 일정은 시간표 설정 탭에서 되살릴 수 있어요'] },
   { v: '2026-10-23b', title: '10월 23일 업데이트 (2)', items: [
     '📌 탭 순서: 공지·알림장이 맨 앞, TV 연결은 탭으로, 긴급 호출은 맨 뒤로',
@@ -2296,6 +2333,8 @@ document.addEventListener('click', async ev => {
       await save({ pinChange: on }, on ? '🔒 PIN으로 안전하게: 이미 낸 답은 PIN을 넣어야 바꿀 수 있어요.' : '🙂 PIN 없이 간단하게: 이름만 누르면 답을 바꿀 수 있어요.');
       return;
     }
+    case 'sndsave': { const o = sndRead(), e = sndValidate(o); if (e) return toast(e); await save({ sound: o }, '소리 설정을 저장했어요. 교실 TV에 곧 반영돼요.'); return; }
+    case 'sndoff': { const o = sndCur(); o.offDay = o.offDay === kstToday() ? '' : kstToday(); await save({ sound: o }, o.offDay ? '오늘은 교실 TV 음악을 껐어요.' : '오늘 음악을 다시 켰어요.'); return; }
     case 'pinreset': return pinReset(+t.dataset.no);
     case 'pinset': return pinSetFor(+t.dataset.no);
     case 'pcinst': pcModal(); return;
