@@ -190,6 +190,8 @@ button:active:not(:disabled),.go:active,.slot:active,.opt:active,.nm:active,.chi
 .dd.bd.today{background:var(--yellow);color:var(--yellow-ink);border-color:var(--yellow);font-weight:800}
 .dd.bd.today b{color:var(--yellow-ink)}
 .dd.bd[data-bdn]{cursor:pointer}
+.chg{display:inline-block;vertical-align:middle;margin-left:.4em;padding:.05em .45em;border-radius:.35em;background:var(--yellow);color:var(--yellow-ink);font-size:.55em;font-weight:800;letter-spacing:0;line-height:1.5}
+.tt li.on .chg{background:var(--yellow-ink);color:var(--yellow)}
 /* 소리 · 음악 · 타이머 */
 #sndChip{all:unset;cursor:pointer;position:fixed;left:50%;transform:translateX(-50%);bottom:1.2rem;z-index:45;padding:.6rem 1.2rem;border-radius:999px;background:var(--card2);border:1.5px solid var(--yellow);color:var(--yellow);font-size:1.15rem;font-weight:800;box-shadow:0 8px 30px rgba(0,0,0,.45)}
 #musicBar{position:fixed;left:1rem;bottom:1rem;z-index:44;display:flex;gap:.7rem;align-items:center;padding:.5rem .7rem .5rem .5rem;border-radius:1rem;background:rgba(20,32,27,.94);border:1px solid var(--line);box-shadow:0 10px 30px rgba(0,0,0,.45);max-width:min(560px,60vw)}
@@ -770,7 +772,7 @@ html,body{background:var(--bg);color:var(--chalk)}
   var VIEW = !K && V.length >= 20;
   var WANT_EDIT = QS.get('edit') === '1';
   var PV = QS.get('pv') === '1';   /* 관리 화면 안 미리보기: 눌러도 저장 안 됨 */
-  var VER = 'fb-2026-11-14a';
+  var VER = 'fb-2026-11-15a';
   window.__BOOT = { t: K || V, preview: PV ? 1 : 0, phone: VIEW, ver: VER };
   if (VIEW) document.write('<style>#btnMine,#btnEdit,#btnShare{display:none !important}html,body{height:auto !important;overflow:auto !important}</style>');
   var FB = null, B = null, gone = false, SCH = null, schAt = 0, schBusy = false, WX = null, wxAt = 0, wxBusy = false;
@@ -1001,6 +1003,17 @@ html,body{background:var(--bg);color:var(--chalk)}
       .catch(function () { schAt = Date.now() - 25 * 60e3; })
       .then(function () { schBusy = false; });
   }
+  /* ---- 컴시간 시간표 (수업 교환 · 보강 반영, 깃허브가 수업일 30분마다 받아 둠) ---- */
+  var CM = null, cmAt = 0, cmBusy = false;
+  function loadComci() {
+    if (cmBusy || (CM && Date.now() - cmAt < 10 * 60e3)) return;
+    cmBusy = true;
+    fetch('../data/comci.json?h=' + Math.floor(Date.now() / 300e3), { cache: 'no-cache' })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (j) { CM = j; cmAt = Date.now(); kick(); })
+      .catch(function () { cmAt = Date.now() - 5 * 60e3; })
+      .then(function () { cmBusy = false; });
+  }
   /* ---- 날씨 · 미세먼지 (강릉) ---- */
   function sky(c) {
     if (c === 0) return { t: '맑음', i: 'sun' };
@@ -1154,16 +1167,20 @@ html,body{background:var(--bg);color:var(--chalk)}
   }
   function build() {
     builtRev = rev;
-    loadSchool();
+    loadSchool(); loadComci();
     if (B.weatherOn !== false) loadWeather();
     var today = ymd(kst()), dow = dowOf(today), g = String(B.grade || ''), k = String(B.klass || ''), sts = students();
     var periods = (B.periods || []).filter(function (p) { return p && p.s && p.e; });
-    var subj = {}, ttNote = '';
+    var subj = {}, chg = {}, ttNote = '';
     var TT = SCH && SCH.timetable && SCH.timetable[g + '-' + k];
-    var manual = B.ttSource === 'manual';
+    var CT = CM && CM.timetable && CM.timetable[g + '-' + k];
+    var manual = B.ttSource === 'manual', useCm = B.ttSource !== 'manual' && B.ttSource !== 'neis';   /* 기본: 컴시간 → 없으면 나이스 */
     if (dow === 0 || dow === 6) ttNote = '주말';
     else if (manual && hasManual(dow)) subj = manualOf(dow);
     else if (manual) ttNote = '직접 입력한 오늘 시간표가 없어요';
+    else if (useCm && CT && CT[today] && CT[today].length) {
+      CT[today].forEach(function (x) { var n = String(x.p); subj[n] = subj[n] && subj[n] !== x.s ? subj[n] + '/' + x.s : x.s; if (x.c) chg[n] = 1; });
+    }
     else if (!SCH) ttNote = schAt ? '시간표를 불러오지 못했어요' : '시간표를 불러오는 중…';
     else if (TT && TT[today] && TT[today].length) {
       TT[today].forEach(function (x) { var n = String(x.p); subj[n] = subj[n] && subj[n] !== x.s ? subj[n] + '/' + x.s : x.s; });
@@ -1178,7 +1195,7 @@ html,body{background:var(--bg);color:var(--chalk)}
     var Q = B.quote || {};
     return {
       ok: true, now: Date.now(), today: today, label: g + '학년 ' + k + '반', needExt: false, font: B.font || '', sound: VIEW ? { bday: true } : (B.sound || null),
-      periods: periods.map(function (p) { var we = dow === 0 || dow === 6, n = String(Number(p.n)); return { n: p.n, s: p.s, e: p.e, subj: we ? '' : (subj[n] || subj[p.n] || ''), teacher: we ? '' : (TCH[n] || TCH[p.n] || '') }; }),
+      periods: periods.map(function (p) { var we = dow === 0 || dow === 6, n = String(Number(p.n)); return { n: p.n, s: p.s, e: p.e, subj: we ? '' : (subj[n] || subj[p.n] || ''), chg: !we && !!(chg[n] || chg[p.n]), teacher: we ? '' : (TCH[n] || TCH[p.n] || '') }; }),
       ttNote: ttNote, lunch: B.lunch || '',
       meal: M[today] || [], mealErr: SCH ? '' : (schAt ? '급식 정보를 불러오지 못했어요' : '급식을 불러오는 중…'),
       mealTomorrow: { date: tom, meals: M[tom] || [] },
@@ -1384,7 +1401,7 @@ html,body{background:var(--bg);color:var(--chalk)}
   }
   window.google = { script: { run: runner(null, null) } };
   /* 자정이 지나거나 화면을 오래 켜 두어도 학교 자료 · 날씨가 새로 들어오게 */
-  setInterval(function () { if (B) { loadSchool(); if (B.weatherOn !== false) loadWeather(); } }, 5 * 60e3);
+  setInterval(function () { if (B) { loadSchool(); loadComci(); if (B.weatherOn !== false) loadWeather(); } }, 5 * 60e3);
   /* 새 버전이 올라오면 교실 TV가 스스로 새로고침 (학생이 2분 넘게 안 만졌을 때만) */
   var lastTouch = 0;
   document.addEventListener('pointerdown', function () { lastTouch = Date.now(); }, true);
@@ -1776,7 +1793,7 @@ function paintTime(force){
 
   /* 지금 */
   const st = status(t);
-  const sj = p => esc(p.subj || '수업') + (p.teacher ? `<span class="tch">(${esc(p.teacher)})</span>` : '');
+  const sj = p => esc(p.subj || '수업') + (p.teacher ? `<span class="tch">(${esc(p.teacher)})</span>` : '') + (p.chg ? '<span class="chg" title="수업 교환 · 보강으로 바뀐 수업">변경</span>' : '');
   const bigSz = p => { const n = [...(p.subj || '수업')].length + (p.teacher ? 2 : 0); return n <= 4 ? 4.4 : n <= 6 ? 3.7 : n <= 8 ? 3.1 : 2.6; };
   const nx = p => p ? `${esc(p.n)}교시 <b>${sj(p)}</b>` : '';
   const spName = n => /시간$/.test(n) ? n : n + '시간';

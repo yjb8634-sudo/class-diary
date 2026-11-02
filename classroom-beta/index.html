@@ -1209,12 +1209,14 @@ function vLook(){
 
 /* ---------- 시간표 설정 ---------- */
 function vTimetable(){
-  const B = S.B, P = (B.periods || DEFAULT_PERIODS).filter(p => p && p.n), src = B.ttSource === 'manual' ? 'manual' : 'neis';
+  const B = S.B, P = (B.periods || DEFAULT_PERIODS).filter(p => p && p.n), src = B.ttSource === 'manual' ? 'manual' : (B.ttSource === 'neis' ? 'neis' : 'comci');
   const T = B.timetable || {}, TC = B.teachers || {}, D = ['월', '화', '수', '목', '금'];
   const cell = (m, d, n) => esc(((m || {})[String(d)] || {})[String(n)] || '');
   return `<section class="card"><h2>요일별 시간표 <span class="sub">과목 · 선생님 이름</span></h2>
-    <div class="row"><div class="seg">${[['neis', '나이스 자동 (추천)'], ['manual', '직접 입력']].map(([v, l]) => `<button data-a="ttsrc" data-v="${v}" class="${src === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
-    <p class="lead" style="margin-top:8px">${src === 'manual' ? '아래 과목을 그대로 TV에 보여 줘요. 학기가 바뀌면 고쳐 주세요.' : '과목은 나이스 것을 씁니다. 아래 과목 칸은 나이스에 그날 시간표가 없을 때만 대신 보여요.'}
+    <div class="row"><div class="seg">${[['comci', '컴시간 자동 (추천)'], ['neis', '나이스 자동'], ['manual', '직접 입력']].map(([v, l]) => `<button data-a="ttsrc" data-v="${v}" class="${src === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+    <p class="lead" style="margin-top:8px">${src === 'manual' ? '아래 과목을 그대로 TV에 보여 줘요. 학기가 바뀌면 고쳐 주세요.'
+      : src === 'comci' ? '<b>컴시간</b> 시간표를 씁니다. 일과계에서 <b>수업 교환 · 보강</b>을 입력하면 30분 안에 TV에 반영되고, 바뀐 교시에 <b style="color:var(--yellow)">변경</b> 표시가 붙어요. 컴시간 자료가 없는 날은 나이스 → 아래 과목 칸 순서로 대신 보여요.'
+      : '과목은 나이스 것을 씁니다. 아래 과목 칸은 나이스에 그날 시간표가 없을 때만 대신 보여요. (나이스에는 수업 교환이 늦게 들어가거나 빠질 수 있어요)'}
       선생님 이름을 넣으면 TV 과목 옆에 작게 나와요. (비워 두면 안 보임)</p>
     <div class="ttwrap"><table class="t tt"><tr><th></th>${D.map(d => `<th>${d}</th>`).join('')}</tr>
     ${P.map(p => `<tr><th>${esc(p.n)}교시</th>${D.map((_, i) => `<td><input class="in" data-tts="${i + 1}|${esc(p.n)}" value="${cell(T, i + 1, p.n)}" placeholder="과목" maxlength="12">
@@ -1440,9 +1442,11 @@ function vLinkForm(){
 }
 
 /* ---------- 알림 종 ---------- */
-const APP_VER = '2026-10-23c';
+const APP_VER = '2026-11-02a';
 const UPDATES = [
-  { v: '2026-10-23c', title: '10월 23일 업데이트 (3)', items: [
+  { v: '2026-11-02a', title: '11월 2일 업데이트', items: [
+    '🕘 TV 시간표가 컴시간을 따라요: 일과계에서 수업 교환 · 보강을 입력하면 30분 안에 교실 TV에 반영되고, 바뀐 교시에 노란 [변경] 표시가 붙어요 (시간표 설정 탭에서 컴시간 / 나이스 / 직접 입력을 고를 수 있어요)'] },
+  { v: '2026-10-27a', title: '10월 27일 업데이트', items: [
     '🔑 이미 낸 답을 바꿀 때 [PIN 없이 간단하게 / PIN으로 안전하게] 중에서 골라요 (설문·투표·조사 탭 맨 위)',
     '🔒 PIN으로 안전하게: 교실 TV에서 이미 낸 답을 바꾸거나 지울 때는 그 학생의 PIN 6자리를 넣어야 해요 (처음 답할 때는 이름만). 숫자판은 TV 오른쪽 아래에 작게 떠서 손으로 가리고 눌러요',
     '📱 학생은 휴대폰 앱의 [🔑 내 PIN]에서 직접 만들어요. 학급 명단 탭에서 누가 만들었는지 보고, 초기화 · 대신 정하기를 할 수 있어요 (PIN은 선생님 · 운영자도 볼 수 없어요)',
@@ -2107,7 +2111,7 @@ document.addEventListener('click', async ev => {
       return;
     }
     /* 요일별 시간표 */
-    case 'ttsrc': return save({ ttSource: t.dataset.v }, t.dataset.v === 'manual' ? '직접 입력한 시간표를 써요.' : '나이스 시간표를 써요.');
+    case 'ttsrc': return save({ ttSource: t.dataset.v }, ({ manual: '직접 입력한 시간표를 써요.', neis: '나이스 시간표를 써요.', comci: '컴시간 시간표를 써요. 수업 교환이 TV에 30분 안에 반영돼요.' })[t.dataset.v]);
     case 'ttclear': if (!confirm('요일별 과목 · 선생님 칸을 모두 비울까요?')) return; return save({ timetable: {}, teachers: {} }, '비웠어요.');
     case 'ttsave': {
       const T = {}, TC = {};
