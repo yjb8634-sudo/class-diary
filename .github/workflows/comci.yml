@@ -1,0 +1,151 @@
+# 컴시간 시간표를 받아 data/comci.json 에 저장합니다. 교실 TV(두 프로그램 모두)가 이 파일을 읽어
+# 수업 교환 · 보강이 반영된 '오늘 시간표'를 보여 주고, 바뀐 교시에 '변경' 표시를 붙입니다.
+# 컴시간에서 못 받으면 예전 파일을 그대로 두고, 교실 TV는 나이스 시간표로 대신 보여 줍니다.
+#
+# 언제 도나요?  수업 있는 날(월~금) 07:00 ~ 16:30 사이 30분마다 (한국 시각, 몇 분 늦을 수 있음)
+#               + 저장소의 [Actions] 탭에서 [Run workflow] 를 누르면 바로 돕니다.
+
+name: 컴시간 자료 받기
+
+on:
+  schedule:
+    - cron: '0,30 22-23 * * 0-4'   # 월~금 07:00 ~ 08:30 (한국)
+    - cron: '0,30 0-7 * * 1-5'     # 월~금 09:00 ~ 16:30 (한국)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: comci
+  cancel-in-progress: false
+
+jobs:
+  comci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 도구 설치
+        run: pip install --quiet "comci==0.7.0"
+
+      - name: 컴시간에서 받기
+        env:
+          SCHOOL_NAME: '강릉제일고등학교'
+          COMCI_CODE: '24660'      # 컴시간 학교 번호 (비우면 학교 이름으로 찾습니다)
+        run: |
+          mkdir -p data
+          python - <<'PY'
+          import json, os, time, traceback
+          from datetime import datetime, timedelta, timezone
+          KST = timezone(timedelta(hours=9))
+          now = datetime.now(KST); today = now.date()
+          notes = []
+          def note(msg):
+              notes.append(msg); print('::notice title=컴시간::' + msg.replace('%', '%25').replace('\n', '%0A'))
+          from comci import search_schools, get_timetable
+
+          code = int(os.environ.get('COMCI_CODE') or 0)
+          name = os.environ.get('SCHOOL_NAME', '')
+          if not code:
+              hit = [s for s in search_schools(name.replace('등학교', '')) if s.get('school_name') == name]
+              if not hit: raise SystemExit('컴시간에서 학교를 찾지 못했어요: ' + name)
+              code = int(hit[0]['school_code'])
+
+          # 반 목록: 나이스가 받아 둔 학교 전체 시간표(data/school.json)의 반을 씁니다. 없으면 1~3학년 1~12반.
+          classes = []
+          try:
+              sj = json.load(open('data/school.json', encoding='utf-8'))
+              classes = sorted({tuple(map(int, k.split('-'))) for k in (sj.get('timetable') or {}).keys()})
+          except Exception:
+              pass
+          if not classes:
+              classes = [(g, c) for g in (1, 2, 3) for c in range(1, 13)]
+
+          def clean(day):
+              out = []
+              for i, cell in enumerate(day or []):
+                  if not cell or not (cell.get('subject') or '').strip(): continue
+                  x = {'p': int(cell.get('period') or i + 1), 's': str(cell.get('subject')).strip()}
+                  if cell.get('teacher'): x['t'] = str(cell['teacher']).strip()
+                  if cell.get('changed'): x['c'] = 1
+                  out.append(x)
+              return out
+
+          def put(tt, key, week):
+              for d in ['월', '화', '수', '목', '금']:
+                  day = week.get(d) or []
+                  date = next((c.get('calendar_date') for c in day if c and c.get('calendar_date')), None)
+                  if date: tt.setdefault(key, {})[date] = clean(day)
+
+          tt, how = {}, ''
+          for on in (today, today + timedelta(days=7)):
+              wk = '이번 주' if on == today else '다음 주'
+              # 1) 학교 전체를 한 번에 (서버에 부담이 가장 적음)
+              try:
+                  errs = []
+                  allc = get_timetable(code, on=on, parse_errors_out=errs)
+                  n = 0
+                  for label, week in (allc or {}).items():
+                      g, c = [int(''.join(ch for ch in part if ch.isdigit()) or 0) for part in label.split()[:2]]
+                      if g and c: put(tt, f'{g}-{c}', week); n += 1
+                  if n == 0: raise ValueError('반이 하나도 없음')
+                  how += f'{wk}: 한 번에 {n}개 반' + (f' (못 읽은 칸 {len(errs)})' if errs else '') + ' · '
+                  continue
+              except Exception as e:
+                  note(f'{wk} 한 번에 받기 실패 → 반별로 받습니다: ' + ''.join(traceback.format_exception_only(type(e), e)).strip()[:200])
+              # 2) 반별로 (한 반이 실패해도 계속)
+              ok = bad = 0
+              for g, c in classes:
+                  try:
+                      week = get_timetable(code, grade=g, class_num=c, on=on)
+                      put(tt, f'{g}-{c}', week); ok += 1
+                  except Exception:
+                      bad += 1
+                  time.sleep(0.4)
+              how += f'{wk}: 반별 {ok}개 반 성공 · {bad}개 실패 · '
+
+          if not tt:
+              note('컴시간에서 아무것도 받지 못했어요. 예전 파일을 그대로 둡니다.')
+              raise SystemExit(1)
+
+          # 못 받은 날짜는 예전 파일에서 그대로 가져와 지우지 않습니다 (지난 14일까지만 남김)
+          try:
+              old = json.load(open('data/comci.json', encoding='utf-8')).get('timetable') or {}
+          except Exception:
+              old = {}
+          keep_from = (today - timedelta(days=14)).isoformat()
+          for k, days in old.items():
+              for d, rows in days.items():
+                  if d >= keep_from and d not in tt.get(k, {}):
+                      tt.setdefault(k, {})[d] = rows
+          for k in list(tt):
+              tt[k] = {d: tt[k][d] for d in sorted(tt[k]) if d >= keep_from}
+
+          chg = sum(1 for k in tt for d, rows in tt[k].items() if d >= today.isoformat() for x in rows if x.get('c'))
+          out = {'updated': now.strftime('%Y-%m-%d %H:%M'), 'school': {'name': name, 'code': code},
+                 'timetable': dict(sorted(tt.items(), key=lambda kv: tuple(map(int, kv[0].split('-'))))), 'notes': notes}
+          json.dump(out, open('data/comci.json', 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+          note(how + f'오늘 이후 바뀐 칸 {chg}개')
+          PY
+
+      - name: 바뀌었으면 저장
+        run: |
+          git config user.name 'comci-bot'
+          git config user.email 'comci-bot@users.noreply.github.com'
+          git add data/comci.json
+          if git diff --cached --quiet; then echo '바뀐 것 없음'; exit 0; fi
+          # 받은 시각(updated)만 바뀐 경우는 저장하지 않습니다 (불필요한 기록 줄이기)
+          if [ -n "$(git show HEAD:data/comci.json 2>/dev/null)" ] && python3 -c "
+          import json,subprocess,sys
+          a=json.loads(subprocess.check_output(['git','show','HEAD:data/comci.json']));b=json.load(open('data/comci.json'))
+          a.pop('updated',None);b.pop('updated',None);a.pop('notes',None);b.pop('notes',None)
+          sys.exit(0 if a==b else 1)"; then echo '시각만 바뀜 — 저장 안 함'; git reset -q; exit 0; fi
+          git commit -q -m '컴시간 자료 갱신'
+          for i in 1 2 3; do git pull -q --rebase && git push -q && exit 0; sleep 5; done
+          exit 1
