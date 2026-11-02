@@ -89,7 +89,8 @@ jobs:
                   tt.setdefault(key, {})[want] = clean(day)
 
           tt, how = {}, ''
-          for wk, wmon, opt in (('이번 주', mon, {'on': mon}), ('다음 주', mon + timedelta(days=7), {'on': mon + timedelta(days=7)})):
+          # 교실 TV는 '오늘' 시간표만 쓰므로 이번 주만 받습니다. (컴시간 학생용 화면은 다음 주를 미리 주지 않음 · 월요일 07:00에 새 주를 받음)
+          for wk, wmon, opt in (('이번 주', mon, {'on': mon}),):
               # 1) 학교 전체를 한 번에 (서버에 부담이 가장 적음)
               try:
                   errs = []
