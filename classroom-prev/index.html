@@ -328,6 +328,17 @@ nav.tabs button .dot{position:absolute;top:6px;right:8px;min-width:18px;height:1
 #pvHost{position:absolute;z-index:1;overflow:hidden;border-radius:12px;display:none}
 #pvHost iframe{border:0;width:1600px;height:900px;transform-origin:0 0;display:block;background:#1D2A25}
 #betaBar{position:sticky;top:0;z-index:60;background:#E0705F;color:#fff;font-size:13.5px;padding:7px 14px;text-align:center;line-height:1.5}
+#app .pinmode .pmh{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin-bottom:8px}#app .pinmode .pmh b{font-size:16px}
+#app .pinmode .pmc{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:640px){#app .pinmode .pmc{grid-template-columns:1fr}}
+#app .pinmode .pmc button{all:unset;cursor:pointer;box-sizing:border-box;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line2);display:flex;flex-direction:column;gap:3px}
+#app .pinmode .pmc button span{font-size:13px;color:var(--chalk2);line-height:1.45}
+#app .pinmode .pmc button.on{border-color:var(--yellow);background:rgba(242,209,107,.10)}
+#app .pinmode .pmc button.on b::after{content:'  ✓ 지금 쓰는 방식';font-size:12px;color:var(--yellow)}
+#app .pins{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;margin-top:12px}
+#app .pn{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.03)}
+#app .pn>span:first-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#app .pn.on{border-color:rgba(143,211,193,.45)}#app .pn.on .small{color:var(--mint)}
 #mobModal{position:fixed;inset:0;z-index:210;background:rgba(10,16,13,.72);display:flex;align-items:center;justify-content:center;padding:16px}
 #mobModal .mc{background:#F4F7F5;color:#1D2A25;border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.5);width:min(460px,100%);max-height:92vh;overflow:auto}
 #mobModal .mh{display:flex;gap:12px;align-items:center;padding:16px 18px;background:#E3EEE8;border-bottom:1px solid #D2E0D8}
@@ -571,6 +582,7 @@ function watchBoard(){
   S.unsub = F.onSnapshot(F.doc(db, 'boards', S.key), snap => {
     if (!snap.exists()){ S.B = null; makeBoard().then(watchBoard).catch(fail); return; }
     S.B = snap.data();
+    ensurePinBox(); watchReg();
     if (!S.updChecked){ S.updChecked = true; setTimeout(updOnOpen, 600); setTimeout(mobTip, 2500); }
     render(); syncView();
   }, fail);
@@ -578,7 +590,7 @@ function watchBoard(){
   S.ansUnsub = F.onSnapshot(F.collection(db, 'boards', S.key, 'answers'), qs => {
     const A = {};
     const AL = [];
-    qs.docs.forEach(d => { const x = d.data(); if (!x || !x.sid) return; (A[x.sid] = A[x.sid] || {})[x.no] = { ch: x.ch || [], etc: x.etc || '' }; AL.push({ sid: x.sid, no: x.no, t: msOf(x.at) }); });
+    qs.docs.forEach(d => { const x = d.data(); if (!x || !x.sid || !(x.ch || []).length) return; (A[x.sid] = A[x.sid] || {})[x.no] = { ch: x.ch || [], etc: x.etc || '' }; AL.push({ sid: x.sid, no: x.no, t: msOf(x.at) }); });
     S.ANS = A; S.ANSL = AL;
     if (S.B) render();
   }, () => {});
@@ -600,6 +612,260 @@ function watchBoard(){
     if (S.B) render();
   }, () => {});
 }
+/* ---------- 학생 PIN (교실 TV에서 이미 낸 답을 바꿀 때) ---------- */
+/* 작은 SHA-256 (오래된 TV 브라우저처럼 crypto.subtle 이 없을 때) */
+function sha256hex(str) {
+  if (window.crypto && crypto.subtle && window.TextEncoder) {
+    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function (b) {
+      return Array.from(new Uint8Array(b), function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+    });
+  }
+  return Promise.resolve(sha256js(str));
+}
+function sha256js(ascii) {
+  function rr(v, a) { return (v >>> a) | (v << (32 - a)); }
+  var bytes = unescape(encodeURIComponent(ascii)), i, j, res = '', words = [], blen = bytes.length * 8;
+  var hash = [], k = [], pc = 0, isC = {};
+  for (var c = 2; pc < 64; c++) { if (!isC[c]) { for (i = 0; i < 313; i += c) isC[i] = c; hash[pc] = (Math.pow(c, .5) * 4294967296) | 0; k[pc++] = (Math.pow(c, 1 / 3) * 4294967296) | 0; } }
+  hash = hash.slice(0, 8);
+  bytes += '\x80';
+  while (bytes.length % 64 - 56) bytes += '\x00';
+  for (i = 0; i < bytes.length; i++) { j = bytes.charCodeAt(i); words[i >> 2] |= j << ((3 - i) % 4) * 8; }
+  words[words.length] = ((blen / 4294967296) | 0); words[words.length] = blen;
+  for (j = 0; j < words.length;) {
+    var w = words.slice(j, j += 16), oh = hash;
+    hash = hash.slice(0, 8);
+    for (i = 0; i < 64; i++) {
+      var w15 = w[i - 15], w2 = w[i - 2], a = hash[0], e = hash[4];
+      var t1 = hash[7] + (rr(e, 6) ^ rr(e, 11) ^ rr(e, 25)) + ((e & hash[5]) ^ (~e & hash[6])) + k[i]
+        + (w[i] = (i < 16) ? w[i] : (w[i - 16] + (rr(w15, 7) ^ rr(w15, 18) ^ (w15 >>> 3)) + w[i - 7] + (rr(w2, 17) ^ rr(w2, 19) ^ (w2 >>> 10))) | 0);
+      var t2 = (rr(a, 2) ^ rr(a, 13) ^ rr(a, 22)) + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+      hash = [(t1 + t2) | 0].concat(hash); hash[4] = (hash[4] + t1) | 0;
+    }
+    for (i = 0; i < 8; i++) hash[i] = (hash[i] + oh[i]) | 0;
+  }
+  for (i = 0; i < 8; i++) for (j = 3; j + 1; j--) { var b = (hash[i] >> (j * 8)) & 255; res += ((b < 16) ? 0 : '') + b.toString(16); }
+  return res;
+}
+/* 반 PIN 지문: 보관함 이름 · 번호와 섞어서 */
+function pinHash(pk, no, pin) { return sha256hex('crpin|' + pk + '|' + Number(no) + '|' + String(pin)); }
+function pinWeak(pin) {
+  pin = String(pin || '');
+  if (!/^\d{6}$/.test(pin)) return 'PIN은 숫자 6자리로 정해 주세요.';
+  if (/^(\d)\1{5}$/.test(pin) || '01234567890'.indexOf(pin) >= 0 || '09876543210'.indexOf(pin) >= 0) return '너무 쉬운 PIN이에요. 같거나 이어진 숫자는 피해 주세요.';
+  return '';
+}
+
+let pinMaking = false;
+const BETA_RO = () => false;
+async function ensurePinBox(){
+  if (!S.B || S.B.pinKey || pinMaking || BETA_RO()) return;
+  pinMaking = true;
+  try {
+    const { db, F } = S.fb, pk = rid(24);
+    await F.setDoc(F.doc(db, 'pinbox', pk), { owner: S.user.uid });
+    await F.updateDoc(F.doc(db, 'boards', S.key), { pinKey: pk });
+  } catch (e) { console.warn('pinbox', e); }
+  pinMaking = false;
+}
+let regPk = '';
+function watchReg(){
+  const pk = (S.B && S.B.pinKey) || '';
+  if (pk === regPk) return;
+  regPk = pk; if (S.regUnsub) S.regUnsub(); S.regUnsub = null; S.REG = {};
+  if (!pk) return;
+  const { db, F } = S.fb;
+  S.regUnsub = F.onSnapshot(F.collection(db, 'pinbox', pk, 'reg'), qs => {
+    const R = {}; qs.docs.forEach(d => { R[+d.id] = { t: msOf(d.data().at), by: d.data().by || '' }; }); S.REG = R; if (S.B) render();
+  }, () => {});
+}
+/* 교실 TV에서 이미 낸 답을 바꿀 때: PIN 없이 간단하게 / PIN으로 안전하게 (선생님이 고름) */
+function vPinMode(where){
+  const on = S.B.pinChange !== false, R = S.REG || {}, stu = S.B.students || [], n = stu.filter(t => R[t.no]).length;
+  return `<div class="pinmode">
+    <div class="pmh"><b>🔑 이미 낸 답을 바꿀 때</b><span class="small muted">처음 답할 때는 어느 쪽이든 이름만 누르면 돼요</span></div>
+    <div class="pmc">
+      <button data-a="pinmode" data-v="off" class="${on ? '' : 'on'}"><b>🙂 PIN 없이 간단하게</b><span>이름만 누르면 누구나 바꿀 수 있어요. 준비할 것이 없어요. (장난으로 친구 답을 바꿀 수 있음)</span></button>
+      <button data-a="pinmode" data-v="on" class="${on ? 'on' : ''}"><b>🔒 PIN으로 안전하게</b><span>그 학생의 PIN 6자리를 넣어야 바꿀 수 있어요. 학생이 휴대폰 앱에서 PIN을 만들어요.${stu.length ? ` (지금 ${n} / ${stu.length}명 만듦)` : ''}</span></button>
+    </div>
+    ${on && where === 'survey' ? '<div class="small muted" style="margin-top:6px">학생 PIN 현황 · 초기화는 <b>학급 명단</b> 탭 맨 아래에 있어요.</div>' : ''}</div>`;
+}
+function vPinCard(){
+  const B = S.B, stu = (B.students || []).slice().sort((a, b) => a.no - b.no), R = S.REG || {};
+  const n = stu.filter(t => R[t.no]).length, on = B.pinChange !== false;
+  return `<section class="card"><h2>🔑 학생 PIN <span class="sub">${n} / ${stu.length}명 만듦</span></h2>
+    <p class="lead">학생이 교실 TV에서 <b>이미 낸 답을 바꾸거나 지울 때</b> 넣는 6자리 숫자예요. 처음 답할 때는 지금처럼 이름만 누르면 됩니다.
+      학생은 휴대폰에 우리 반 앱을 설치하고(TV 오른쪽 위 📱 앱 설치) <b>🔑 내 PIN</b>에서 직접 만들어요. PIN은 지문(암호)으로만 저장돼서 <b>선생님 · 운영자도 볼 수 없어요.</b></p>
+    ${vPinMode('roster')}
+    ${!on ? '<p class="small muted" style="margin-top:10px">지금은 <b>PIN 없이 간단하게</b> 쓰고 있어요. 위에서 [PIN으로 안전하게]를 고르면 학생 PIN 현황이 여기에 나와요.</p>' : `${!B.viewKey ? `<div class="hint" style="color:var(--pink)">학생이 휴대폰에서 PIN을 만들려면 먼저 <b>TV 연결 탭 → 학생용 주소 만들기</b>를 해 주세요.</div>` : ''}
+    ${stu.length ? `<div class="pins">${stu.map(t => { const r = R[t.no]; return `<div class="pn ${r ? 'on' : ''}"><span><b>${t.no}</b> ${esc(t.name)}</span>
+      <span class="small ${r ? '' : 'muted'}">${r ? (r.by === 'teacher' ? '선생님이 정함' : '만듦') + (r.t ? ' · ' + new Date(r.t).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' }) : '') : '아직 없음'}</span>
+      ${r ? `<button class="b sm r" data-a="pinreset" data-no="${t.no}">초기화</button>` : `<button class="b sm" data-a="pinset" data-no="${t.no}">대신 정하기</button>`}</div>`; }).join('')}</div>
+    <div class="hint">· 학생이 PIN을 잊었거나, 다른 친구가 먼저 만들어 버렸으면 <b>[초기화]</b> 후 다시 만들게 하세요.<br>· 휴대폰이 없는 학생은 <b>[대신 정하기]</b>로 선생님이 6자리를 정해 알려 주세요.</div>` : '<p class="small muted">먼저 학급 명단을 넣어 주세요.</p>'}`}
+  </section>`;
+}
+async function pinReset(no){
+  const pk = S.B.pinKey; if (!pk) return;
+  if (!confirm(no + '번 학생의 PIN을 초기화할까요?\n학생이 휴대폰 앱에서 다시 만들어야 해요.')) return;
+  const { db, F } = S.fb;
+  try { await F.deleteDoc(F.doc(db, 'pinbox', pk, 'p', String(no))); await F.deleteDoc(F.doc(db, 'pinbox', pk, 'reg', String(no))); toast(no + '번 PIN을 초기화했어요.'); } catch (e) { fail(e); }
+}
+async function pinSetFor(no){
+  const pk = S.B.pinKey; if (!pk) return toast('잠시 뒤 다시 눌러 주세요.');
+  const v = (prompt(no + '번 학생의 PIN 6자리를 정해 주세요. (같은 숫자 · 이어진 숫자는 안 돼요)') || '').trim();
+  if (!v) return;
+  const w = pinWeak(v); if (w) return toast(w);
+  const { db, F } = S.fb;
+  try {
+    const h = await pinHash(pk, no, v), b = F.writeBatch(db);
+    b.set(F.doc(db, 'pinbox', pk, 'p', String(no)), { h, at: F.serverTimestamp() });
+    b.set(F.doc(db, 'pinbox', pk, 'reg', String(no)), { at: F.serverTimestamp(), by: 'teacher' });
+    await b.commit(); toast(no + '번 PIN을 정했어요. 학생에게 따로 알려 주세요.');
+  } catch (e) { fail(e); }
+}
+async function ansClear(sid, no){
+  if (!confirm(no + '번 학생의 답을 지울까요? 학생이 교실 TV에서 처음부터 다시 답할 수 있어요.')) return;
+  const { db, F } = S.fb;
+  try { await F.deleteDoc(F.doc(db, 'boards', S.key, 'answers', sid + '_' + no)); toast('지웠어요.'); } catch (e) { fail(e); }
+}
+/* ---------- 조사 결과를 그림으로 만들어 카톡 단톡방에 보내기 ---------- */
+/* o = { cls:'1학년 2반', q, desc, kind:'선택'|'체크', options:[], counts:[], by:[[이름…]], total, done, missingNos:[], anon } */
+function resImgDraw(o, opt){
+  opt = opt || {};
+  const W = 1080, P = 64, F = "'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif";
+  const cv = document.createElement('canvas'), g = cv.getContext('2d');
+  const wrap = (text, font, maxW) => {
+    g.font = font; const out = []; let line = '';
+    for (const ch of String(text || '')){
+      if (ch === '\n'){ out.push(line); line = ''; continue; }
+      if (g.measureText(line + ch).width > maxW && line){ const sp = line.lastIndexOf(' '); if (sp > line.length * .6){ out.push(line.slice(0, sp)); line = line.slice(sp + 1) + ch; } else { out.push(line); line = ch; } }
+      else line += ch;
+    }
+    if (line) out.push(line);
+    return out.length ? out : [''];
+  };
+  const showNames = opt.names && !o.anon, isCheck = o.kind === '체크';
+  const max = Math.max(1, ...(o.counts || [0])), sum = Math.max(1, o.done || 0);
+  /* 1) 높이 재기 */
+  const qL = wrap(o.q, `800 46px ${F}`, W - P * 2), dL = o.desc ? wrap(o.desc, `500 28px ${F}`, W - P * 2) : [];
+  const rows = isCheck ? [] : o.options.map((op, i) => ({
+    op: wrap(op, `700 32px ${F}`, W - P * 2 - 190), n: o.counts[i] || 0,
+    nm: showNames && (o.by[i] || []).length ? wrap((o.by[i] || []).join(', '), `500 24px ${F}`, W - P * 2 - 20) : []
+  }));
+  let H = P + 44 + 20 + qL.length * 60 + (dL.length ? 10 + dL.length * 40 : 0) + 36;
+  if (isCheck) H += 220; else rows.forEach(r => { H += r.op.length * 44 + 30 + 26 + (r.nm.length ? 8 + r.nm.length * 34 : 0) + 26; });
+  const miss = opt.missing && (o.missingNos || []).length ? wrap('아직 안 한 번호: ' + o.missingNos.join(', '), `600 26px ${F}`, W - P * 2) : [];
+  if (miss.length) H += 16 + miss.length * 38;
+  H += 90;
+  cv.width = W; cv.height = H;
+  /* 2) 그리기 */
+  g.fillStyle = '#F6F4EC'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#1F3A30'; g.fillRect(0, 0, W, 14);
+  let y = P;
+  g.textBaseline = 'top';
+  g.fillStyle = '#2F6B55'; g.font = `800 30px ${F}`;
+  g.fillText((o.cls ? o.cls + ' · ' : '') + (isCheck ? '체크 결과' : '설문 · 투표 결과'), P, y); y += 44 + 20;
+  g.fillStyle = '#16231D'; g.font = `800 46px ${F}`; qL.forEach(l => { g.fillText(l, P, y); y += 60; });
+  if (dL.length){ y += 10; g.fillStyle = '#5B6B63'; g.font = `500 28px ${F}`; dL.forEach(l => { g.fillText(l, P, y); y += 40; }); }
+  y += 36;
+  const rr = (x, yy, w, h, r) => { g.beginPath(); g.moveTo(x + r, yy); g.arcTo(x + w, yy, x + w, yy + h, r); g.arcTo(x + w, yy + h, x, yy + h, r); g.arcTo(x, yy + h, x, yy, r); g.arcTo(x, yy, x + w, yy, r); g.closePath(); };
+  if (isCheck){
+    const pct = o.total ? Math.round(o.done / o.total * 100) : 0;
+    g.fillStyle = '#16231D'; g.font = `800 120px ${F}`; g.fillText(String(o.done), P, y);
+    const w0 = g.measureText(String(o.done)).width;
+    g.font = `700 44px ${F}`; g.fillStyle = '#5B6B63'; g.fillText(' / ' + o.total + '명 완료', P + w0 + 6, y + 62);
+    y += 150; rr(P, y, W - P * 2, 30, 15); g.fillStyle = '#E2E6DD'; g.fill();
+    if (pct){ rr(P, y, Math.max(30, (W - P * 2) * pct / 100), 30, 15); g.fillStyle = '#E6B84A'; g.fill(); }
+    y += 70;
+  } else {
+    const best = Math.max(...rows.map(r => r.n));
+    rows.forEach(r => {
+      g.fillStyle = '#16231D'; g.font = `700 32px ${F}`;
+      r.op.forEach((l, k) => { g.fillText(l, P, y + k * 44); });
+      g.textAlign = 'right'; g.font = `800 34px ${F}`; g.fillStyle = r.n && r.n === best ? '#B07D12' : '#2F6B55';
+      g.fillText(r.n + '명', W - P, y); g.font = `600 24px ${F}`; g.fillStyle = '#7A8780';
+      g.fillText(Math.round(r.n / sum * 100) + '%', W - P - 110, y + 8); g.textAlign = 'left';
+      y += r.op.length * 44 + 4;
+      rr(P, y, W - P * 2, 26, 13); g.fillStyle = '#E2E6DD'; g.fill();
+      if (r.n){ rr(P, y, Math.max(26, (W - P * 2) * r.n / max), 26, 13); g.fillStyle = r.n === best ? '#E6B84A' : '#7FB7A3'; g.fill(); }
+      y += 26 + 26;
+      if (r.nm.length){ y += 8 - 18; g.fillStyle = '#4B5F56'; g.font = `500 24px ${F}`; r.nm.forEach(l => { g.fillText(l, P + 10, y); y += 34; }); y += 18; }
+      y += 26;
+    });
+  }
+  if (miss.length){ y += 16; g.fillStyle = '#B3473A'; g.font = `600 26px ${F}`; miss.forEach(l => { g.fillText(l, P, y); y += 38; }); }
+  const d = new Date(Date.now() + 9 * 3600e3), ds = `${d.getUTCFullYear()}.${d.getUTCMonth() + 1}.${d.getUTCDate()}. ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+  g.fillStyle = '#E9EDE4'; g.fillRect(0, H - 76, W, 76);
+  g.fillStyle = '#4B5F56'; g.font = `600 26px ${F}`; g.textBaseline = 'middle';
+  g.fillText(`참여 ${o.done} / ${o.total}명${o.anon ? ' · 익명 조사' : ''}`, P, H - 38);
+  g.textAlign = 'right'; g.fillText(ds + ' 기준', W - P, H - 38); g.textAlign = 'left';
+  return cv;
+}
+function resShareModal(o){
+  if (!document.getElementById('resImgCss')){
+    const st = document.createElement('style'); st.id = 'resImgCss';
+    st.textContent = `#resImg{position:fixed;inset:0;z-index:300;background:rgba(10,16,13,.75);display:flex;align-items:center;justify-content:center;padding:14px}
+#resImg .rc{background:#F4F7F5;color:#1D2A25;border-radius:18px;width:min(560px,100%);max-height:94vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden;font-size:15px}
+#resImg .rh{display:flex;align-items:center;gap:10px;padding:14px 16px;background:#E3EEE8;border-bottom:1px solid #D2E0D8}
+#resImg .rh b{font-size:17px;flex:1}#resImg .rh button{all:unset;cursor:pointer;font-size:22px;color:#4B5F56;padding:2px 8px}
+#resImg .rb{padding:14px 16px;overflow:auto}
+#resImg .pv{background:#fff;border:1px solid #D2E0D8;border-radius:12px;padding:8px;text-align:center}
+#resImg .pv img{max-width:100%;max-height:46vh;display:inline-block}
+#resImg .op{display:flex;flex-wrap:wrap;gap:6px 16px;margin:12px 0 4px}#resImg .op label{display:flex;align-items:center;gap:6px;cursor:pointer}
+#resImg .bt{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+#resImg .bt button{all:unset;cursor:pointer;flex:1;min-width:130px;text-align:center;padding:11px 8px;border-radius:10px;font-weight:800;border:1.5px solid #B9CFC4;background:#fff;color:#24453A;box-sizing:border-box}
+#resImg .bt .kk{background:#FEE500;border-color:#FEE500;color:#191600}
+#resImg .hw{margin-top:12px;font-size:13.5px;line-height:1.65;color:#33493F;background:#fff;border:1px solid #D2E0D8;border-radius:12px;padding:10px 12px}`;
+    document.head.appendChild(st);
+  }
+  const old = document.getElementById('resImg'); if (old) old.remove();
+  const box = document.createElement('div'); box.id = 'resImg';
+  const S2 = { names: false, missing: false, blob: null, url: '' };
+  const canFile = () => { try { return !!(navigator.canShare && navigator.canShare({ files: [new File([new Blob(['x'], { type: 'image/png' })], 'a.png', { type: 'image/png' })] })); } catch (e) { return false; } };
+  const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+  const fname = () => 'survey-result-' + Date.now().toString(36) + '.png';
+  const note = msg => { const t = box.querySelector('.hw'); if (t) t.innerHTML = msg; };
+  function paint(){
+    const cv = resImgDraw(o, S2);
+    cv.toBlob(b => { S2.blob = b; if (S2.url) URL.revokeObjectURL(S2.url); S2.url = URL.createObjectURL(b); const im = box.querySelector('.pv img'); if (im) im.src = S2.url; }, 'image/png');
+  }
+  box.innerHTML = `<div class="rc" role="dialog" aria-modal="true"><div class="rh"><b>📤 결과를 그림으로 보내기</b><button data-r="x" aria-label="닫기">✕</button></div>
+    <div class="rb"><div class="pv"><img alt="조사 결과 그림"></div>
+      <div class="op">${o.anon || o.kind === '체크' ? '' : '<label><input type="checkbox" data-r="names"> 누가 골랐는지 이름도 넣기</label>'}
+        ${(o.missingNos || []).length ? '<label><input type="checkbox" data-r="missing"> 아직 안 한 번호 넣기</label>' : ''}</div>
+      <div class="bt">${canFile() ? '<button class="kk" data-r="share">카카오톡으로 보내기</button>' : ''}
+        ${navigator.clipboard && window.ClipboardItem && !mobile ? '<button data-r="copy">그림 복사 (카톡에 붙여 넣기)</button>' : ''}
+        <button data-r="save">그림 저장</button></div>
+      <div class="hw">${canFile() ? '<b>[카카오톡으로 보내기]</b>를 누르고 공유 목록에서 <b>카카오톡</b> → 우리 반 단톡방을 고르세요.' : '<b>PC 카카오톡</b>: [그림 복사]를 누른 뒤 단톡방 입력칸에서 <b>Ctrl+V</b> → 전송. (복사가 안 되면 [그림 저장] 후 대화창으로 끌어다 놓기)'}
+        ${o.anon ? '' : '<br>이름은 체크할 때만 그림에 들어가요. 학생 개인 정보가 단톡방에 퍼지지 않게 살펴 주세요.'}</div></div></div>`;
+  box.addEventListener('click', async ev => {
+    if (ev.target === box){ box.remove(); return; }
+    const b = ev.target.closest('[data-r]'); if (!b) return;
+    const r = b.dataset.r;
+    if (r === 'x'){ box.remove(); return; }
+    if (r === 'names' || r === 'missing'){ S2[r] = b.checked; paint(); return; }
+    if (!S2.blob) return;
+    if (r === 'share'){
+      try { await navigator.share({ files: [new File([S2.blob], fname(), { type: 'image/png' })], title: o.q }); }
+      catch (e) { if (e && e.name !== 'AbortError') note('보내기가 안 됐어요. [그림 저장]으로 저장한 뒤 카톡에서 사진으로 보내 주세요.'); }
+      return;
+    }
+    if (r === 'copy'){
+      try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': S2.blob })]); note('✅ <b>복사했어요.</b> PC 카카오톡 단톡방 입력칸을 누르고 <b>Ctrl+V</b> → 전송하세요.'); }
+      catch (e) { note('이 브라우저에서는 그림 복사가 안 돼요. [그림 저장] 후 카톡 대화창으로 끌어다 놓아 주세요.'); }
+      return;
+    }
+    if (r === 'save'){ const a = document.createElement('a'); a.href = S2.url; a.download = fname(); document.body.appendChild(a); a.click(); a.remove(); note('저장했어요. 카톡 대화창에서 <b>사진</b>으로 보내거나, PC에서는 대화창으로 끌어다 놓으세요.'); }
+  });
+  document.body.appendChild(box);
+  paint();
+}
+
+function svShare(s){
+  const R = svSummary(s), stu = S.B.students || [];
+  resShareModal({ cls: S.B.grade + '학년 ' + S.B.klass + '반', q: s.q, desc: s.desc || '', kind: s.kind === '체크' ? '체크' : '선택', options: s.options || [],
+    counts: R.counts, by: R.by.map(L => L.map(x => x.replace(/^\d+\.\s*/, ''))), total: stu.length, done: R.done.length, missingNos: R.missing.map(t => t.no), anon: !!s.anon });
+}
 const msOf = v => v && v.toMillis ? v.toMillis() : (v ? Date.parse(v) || 0 : 0);
 /* ---------- 학생 휴대폰용 보기 주소: 이름을 가린 읽기 전용 사본 (views/{보기 키}) ---------- */
 function maskName(name){
@@ -610,12 +876,12 @@ function maskName(name){
 }
 function viewDoc(B){
   const pick = ['font', 'grade', 'klass', 'notices', 'notes', 'events', 'ddays', 'links', 'quote', 'weatherOn', 'birthdayOn', 'periods', 'specials', 'lunch',
-    'layout', 'ttSource', 'timetable', 'teachers', 'eventDays', 'eventNeis'];
+    'layout', 'ttSource', 'timetable', 'teachers', 'eventDays', 'eventNeis', 'pinKey', 'pinChange'];
   const o = { owner: S.user.uid, ver: 1 };
   pick.forEach(k => { if (B[k] !== undefined) o[k] = B[k]; });
   o.students = (B.students || []).map(t => ({ no: t.no, name: maskName(t.name), bd: t.bd || '' }));
   o.links = (B.links || []).filter(l => l.on !== false);
-  o.events = (B.events || []).concat((S.SEV || []).map(e => ({ id: e.id, title: e.title, start: e.date, end: e.date })));
+  o.events = (B.events || []).concat((S.SEV || []).filter(e => !e.gone).map(e => ({ id: e.id, title: e.title, start: e.date, end: e.date })));
   return o;
 }
 let viewT = null, viewLast = '';
@@ -731,7 +997,7 @@ function render(){
   const nStu = (B.students || []).length;
   const openSv = (B.surveys || []).filter(s => s.open).length, upC = (S.CNS || []).filter(c => c.date >= kstToday()).length;
   $('app').innerHTML = `<header class="top"><h1>${esc(B.grade)}학년 ${esc(B.klass)}반 교실 화면<small>${esc(S.me.name)} 선생님 · ${esc(S.user.email)}</small></h1>
-      <span class="pill">학생 <b>${nStu}</b>명</span>${openSv ? `<span class="pill">진행 중 조사 <b>${openSv}</b></span>` : ''}<button class="b sm mobbtn" data-a="mobile" title="휴대폰에서 쓰기 · 앱 설치">📱 모바일</button>${bellHtml()}<button class="b sm" id="btnOut">로그아웃</button></header>
+      <span class="pill">학생 <b>${nStu}</b>명</span>${openSv ? `<span class="pill">진행 중 조사 <b>${openSv}</b></span>` : ''}<button class="b sm mobbtn" data-a="mobile" title="휴대폰에서 쓰기 · 앱 설치">📱 모바일</button>${isPhone() ? '' : '<button class="b sm mobbtn" data-a="pcinst" title="이 컴퓨터 바탕화면에 앱으로 설치">💻 바탕화면</button>'}${bellHtml()}<button class="b sm" id="btnOut">로그아웃</button></header>
     <nav class="tabs">${T.map(([v, ic, l]) => `<button data-tab="${v}" class="${S.tab === v ? 'on' : ''}"><span class="ic">${ic}</span>${l}${v === 'survey' && openSv ? `<span class="dot">${openSv}</span>` : ''}${v === 'counsel' && upC ? `<span class="dot">${upC}</span>` : ''}</button>`).join('')}</nav>
     <div id="body">${({ flash: vFlash, notice: vNotice, look: vLook, time: vTime, roster: vRoster, survey: vSurvey, counsel: vCounsel, suggest: vSuggest, tv: vTvConnect, op: () => '<div id="opBox"></div>' })[S.tab]()}</div>
     <div class="foot"><p class="privacy">🔒 우리 반 자료는 담임 선생님만 관리하며, 운영자는 열람할 수 없습니다.</p><p class="credit"><button class="updlink" data-a="updhist">📋 업데이트 내역</button>제작자 : 강릉제일고 유준배 선생님</p></div>`;
@@ -947,7 +1213,7 @@ function vTime(){
       <span class="small muted" style="margin-left:10px">TV에 보일 기간</span><select class="in" id="evDays" data-a="evdays">${[7, 14, 30, 60, 90].map(n => `<option value="${n}" ${(+B.eventDays || 30) === n ? 'selected' : ''}>앞으로 ${n}일</option>`).join('')}</select></div>
     <div class="row"><input class="in grow" id="evTitle" data-keep placeholder="일정 이름"><input class="in" type="date" id="evStart" data-keep>~<input class="in" type="date" id="evEnd" data-keep><button class="b y" data-a="evadd">추가</button></div>
     ${ev.length ? `<ul class="list">${ev.map(e => `<li><div class="t">${esc(e.title)} <span class="small muted">${esc(e.start)}${e.end && e.end !== e.start ? ' ~ ' + esc(e.end) : ''}${(e.end || e.start) < today ? ' · 지남' : ''}</span></div><button class="b sm r" data-a="evdel" data-id="${esc(e.id)}">지우기</button></li>`).join('')}</ul>` : ''}
-  ${(S.SEV || []).length ? `<h3 style="margin:16px 0 6px;font-size:15px">학생이 올린 일정 <span class="small muted">잘못 올라온 것은 지워 주세요</span></h3><ul class="list">${S.SEV.map(e => `<li><div class="t">${esc(e.title)} <span class="small muted">${esc(e.date)}${e.date < today ? ' · 지남' : ''}</span></div><button class="b sm r" data-a="sevdel" data-id="${esc(e.id)}">지우기</button></li>`).join('')}</ul>` : ''}
+  ${(S.SEV || []).length ? `<h3 style="margin:16px 0 6px;font-size:15px">학생이 올린 일정 <span class="small muted">학생도 교실 TV에서 [학생 ✕]로 지울 수 있어요 · 학생이 지운 일정은 여기서 되살릴 수 있어요</span></h3><ul class="list">${S.SEV.map(e => `<li><div class="t"><span style="${e.gone ? 'text-decoration:line-through;opacity:.6' : ''}">${esc(e.title)}</span> <span class="small muted">${esc(e.date)}${e.date < today ? ' · 지남' : ''}</span>${e.gone ? ' <span class="tag">학생이 지움</span>' : ''}</div><div class="row">${e.gone ? `<button class="b sm" data-a="sevback" data-id="${esc(e.id)}">되살리기</button>` : ''}<button class="b sm r" data-a="sevdel" data-id="${esc(e.id)}">${e.gone ? '완전히 지우기' : '지우기'}</button></div></li>`).join('')}</ul>` : ''}
   </section>
   ${vBackup()}
   <section class="card"><h2>TV 주소 바꾸기</h2>
@@ -972,7 +1238,7 @@ function vRoster(){
       ${R.map((s, i) => `<tr><td><input class="in" data-rn="${i}" type="number" min="1" max="99" value="${esc(s.no)}"></td><td><input class="in" data-rm="${i}" value="${esc(s.name)}" maxlength="20"></td>
         <td><input class="in" data-rb="${i}" value="${esc(s.bd)}" placeholder="03-05" maxlength="5"></td><td><button class="b sm r" data-a="rdel" data-i="${i}">빼기</button></td></tr>`).join('')}</table>` : '<p class="small muted" style="margin-top:14px">아직 명단이 없어요.</p>'}
     ${R.length || dirty ? `<div class="row" style="margin-top:12px;justify-content:flex-end">${dirty ? '<span class="small" style="color:var(--yellow)">아직 저장하지 않았어요 →</span><button class="b" data-a="rcancel">되돌리기</button>' : ''}<button class="b y" data-a="rsave">명단 저장</button></div>` : ''}
-  </section>`;
+  </section>${vPinCard()}`;
 }
 function rostRead(){
   const R = (S.rost || (S.B.students || []).map(s => ({ no: s.no, name: s.name, bd: s.bd || '' }))).map(x => Object.assign({}, x));
@@ -1099,6 +1365,7 @@ function vSurvey(){
           <div class="bar"><i style="width:${Math.round(R.counts[i] / total * 100)}%"></i></div>${!s.anon && R.by[i].length ? `<div class="nm">${esc(R.by[i].join(', '))}</div>` : ''}</div>`).join('')}
         ${ei >= 0 && R.etcs.length ? `<div class="hint"><b>'기타'로 직접 쓴 답</b><br>${R.etcs.map(x => esc((s.anon ? '' : x.no + '. ' + x.name + ' : ') + x.text)).join('<br>')}</div>` : ''}
         ${s.kind === '체크' && !s.anon ? `<div class="small muted" style="margin-top:8px">체크한 학생</div><div class="nos">${stu.map(t => `<button class="${R.done.indexOf(t.no) >= 0 ? 'on' : ''}" disabled>${t.no}. ${esc(t.name)}</button>`).join('')}</div>` : ''}
+        ${R.done.length ? `<div class="row" style="margin-top:10px;gap:6px"><span class="small muted">답 지우기 (PIN이 없는 학생이 다시 답하게):</span><select class="in" data-svclr="${esc(s.id)}" style="width:auto;padding:4px 8px"><option value="">번호</option>${R.done.slice().sort((a, b) => a - b).map(no => `<option value="${no}">${no}${s.anon ? '' : '. ' + esc((stu.find(t => t.no === no) || {}).name || '')}</option>`).join('')}</select><button class="b sm r" data-a="svclr" data-id="${esc(s.id)}">지우기</button></div>` : ''}
         ${R.missing.length ? `<div class="small" style="margin-top:10px;color:var(--pink)">아직 안 한 학생 ${R.missing.length}명: ${s.anon ? '(익명 조사라 이름은 보이지 않아요)' : esc(R.missing.map(t => t.no + '. ' + t.name).join(', '))}</div>` : (stu.length ? '<div class="small" style="margin-top:10px;color:var(--mint)">모두 참여했어요</div>' : '')}
       </div>` : ''}</div>
       ${S.svEdit === s.id ? svEditForm(s) : ''}
@@ -1106,9 +1373,11 @@ function vSurvey(){
         <button class="b sm" data-a="svtog" data-id="${esc(s.id)}">${s.open ? '마감하기' : '다시 열기'}</button>
         <button class="b sm" data-a="svpub" data-id="${esc(s.id)}">${s.pub ? '결과 숨기기' : 'TV에 결과 공개'}</button>
         <button class="b sm" data-a="svcsv" data-id="${esc(s.id)}">CSV 받기</button>
+        ${s.kind !== '링크' ? `<button class="b sm y" data-a="svshare" data-id="${esc(s.id)}">📤 결과 그림 · 카톡</button>` : ''}
         <button class="b sm r" data-a="svdel" data-id="${esc(s.id)}">지우기</button></div></li>`;
   };
-  return `<section class="card"><h2>새 설문 · 투표 · 조사 만들기</h2>
+  return `<section class="card">${vPinMode('survey')}</section>
+  <section class="card"><h2>새 설문 · 투표 · 조사 만들기</h2>
     <p class="lead">선택형 · 체크형은 학생들이 교실 TV에서 자기 번호를 누르고 바로 답하고, 링크형은 다른 사이트(구글 설문 등)로 연결해 줍니다. ${stu.length || kind === '링크' ? '' : '<b style="color:var(--pink)">먼저 [학급 명단]에 학생을 넣어 주세요.</b>'}</p>
     <div class="row"><div class="seg">${['선택', '체크', '링크'].map(k => `<button data-a="svkind" data-v="${k}" class="${kind === k ? 'on' : ''}">${({ 선택: '선택형 (보기 고르기)', 체크: '체크형 (했어요 / 냈어요)', 링크: '링크형 (구글 설문 등 사이트)' })[k]}</button>`).join('')}</div></div>
     <input type="hidden" id="svKind" value="${kind}">
@@ -1135,8 +1404,15 @@ function vLinkForm(){
 }
 
 /* ---------- 알림 종 ---------- */
-const APP_VER = '2026-10-23b';
+const APP_VER = '2026-10-23c';
 const UPDATES = [
+  { v: '2026-10-23c', title: '10월 23일 업데이트 (3)', items: [
+    '🔑 이미 낸 답을 바꿀 때 [PIN 없이 간단하게 / PIN으로 안전하게] 중에서 골라요 (설문·투표·조사 탭 맨 위)',
+    '🔒 PIN으로 안전하게: 교실 TV에서 이미 낸 답을 바꾸거나 지울 때는 그 학생의 PIN 6자리를 넣어야 해요 (처음 답할 때는 이름만). 숫자판은 TV 오른쪽 아래에 작게 떠서 손으로 가리고 눌러요',
+    '📱 학생은 휴대폰 앱의 [🔑 내 PIN]에서 직접 만들어요. 학급 명단 탭에서 누가 만들었는지 보고, 초기화 · 대신 정하기를 할 수 있어요 (PIN은 선생님 · 운영자도 볼 수 없어요)',
+    '📤 설문·투표·조사 결과를 그림으로 만들어 카카오톡 단톡방에 보내요 (조사마다 [결과 그림 · 카톡])',
+    '💻 위쪽 [바탕화면] 단추: 이 컴퓨터에 앱으로 설치해 바탕화면에서 바로 열어요',
+    '🗓 학생이 올린 일정은 학생도 교실 TV 일정 칸의 [학생 ✕]로 지울 수 있어요. 지운 일정은 시간표 설정 탭에서 되살릴 수 있어요'] },
   { v: '2026-10-23b', title: '10월 23일 업데이트 (2)', items: [
     '📌 탭 순서: 공지·알림장이 맨 앞, TV 연결은 탭으로, 긴급 호출은 맨 뒤로',
     '🔤 화면 꾸미기 → TV 글꼴: 학교안심 글꼴 65종 중에서 골라요',
@@ -1377,6 +1653,31 @@ function mobModal(kind){
     if (m === 'close'){ box.remove(); return; }
     if (m === 'copy'){ try { await navigator.clipboard.writeText(url); } catch (e) { const t = document.createElement('textarea'); t.value = url; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); } toast('주소를 복사했어요.'); return; }
     if (m === 'install' && DEFP){ DEFP.prompt(); try { const r = await DEFP.userChoice; if (r && r.outcome === 'accepted') box.remove(); } catch (e) {} DEFP = null; }
+  });
+  document.body.appendChild(box);
+}
+/* 컴퓨터: 바탕화면 · 작업 표시줄에 앱으로 설치 */
+function pcModal(){
+  const old = $('mobModal'); if (old) old.remove();
+  const alone = isStandalone(), edge = /Edg\//.test(UA), whale = /Whale\//.test(UA), chrome = /Chrome\//.test(UA) && !edge && !whale && !/OPR\//.test(UA);
+  const box = document.createElement('div'); box.id = 'mobModal';
+  box.innerHTML = `<div class="mc" role="dialog" aria-modal="true" aria-labelledby="pcT">
+    <div class="mh"><span class="ic">💻</span><div><b id="pcT">바탕화면에 설치하기</b><span>주소창 없이 프로그램처럼 바로 열려요.</span></div><button class="mx" data-m="close" aria-label="닫기">✕</button></div>
+    <div class="mb">
+      ${alone ? '<div class="ok">✓ 지금 설치된 앱으로 열려 있어요</div>' : `<div class="bt"><button class="ins" data-m="install" ${DEFP ? '' : 'hidden'}>💻 이 컴퓨터에 설치</button></div>
+      <div class="how">
+        ${DEFP ? '<p>위 단추를 누르고 <b>[설치]</b>를 고르면 끝이에요.</p>' : ''}
+        <p><b>크롬</b>: 주소창 오른쪽 끝의 <b>설치 아이콘(모니터에 ↓)</b> → <b>설치</b><br>또는 오른쪽 위 <b>⋮</b> → <b>전송, 저장, 공유</b> → <b>페이지를 앱으로 설치</b></p>
+        <p><b>엣지</b>: 오른쪽 위 <b>⋯</b> → <b>앱</b> → <b>이 사이트를 앱으로 설치</b></p>
+        ${!chrome && !edge ? '<p>⚠ 지금 브라우저에서 설치 메뉴가 안 보이면 <b>크롬</b>이나 <b>엣지</b>로 이 화면을 열어 주세요.</p>' : ''}
+        <p>설치하면 <b>바탕화면 · 시작 메뉴</b>에 <b>교실 화면</b> 아이콘이 생겨요. 아이콘을 오른쪽 클릭 → <b>작업 표시줄에 고정</b>하면 더 빨라요.${edge ? ' (엣지는 설치 뒤 바탕화면 바로 가기 만들기를 물어봐요)' : ''}</p>
+      </div>`}
+    </div></div>`;
+  box.addEventListener('click', async ev => {
+    if (ev.target === box){ box.remove(); return; }
+    const b = ev.target.closest('[data-m]'); if (!b) return;
+    if (b.dataset.m === 'close'){ box.remove(); return; }
+    if (b.dataset.m === 'install' && DEFP){ DEFP.prompt(); try { const r = await DEFP.userChoice; if (r && r.outcome === 'accepted') box.remove(); } catch (e) {} DEFP = null; }
   });
   document.body.appendChild(box);
 }
@@ -1888,6 +2189,7 @@ document.addEventListener('click', async ev => {
       if (await save({ events: (B.events || []).concat([{ id: rid(8), title, start: st, end: en }]) }, '일정을 더했어요.')){ ['evTitle', 'evStart', 'evEnd'].forEach(k => $(k).value = ''); }
       return;
     }
+    case 'sevback': try { await F.updateDoc(F.doc(db, 'boards', S.key, 'sevents', id), { gone: F.deleteField() }); toast('되살렸어요. TV에 다시 나와요.'); } catch (e) { fail(e); } return;
     case 'sevdel': if (!confirm('이 일정을 지울까요?')) return;
       try { await F.deleteDoc(F.doc(db, 'boards', S.key, 'sevents', id)); toast('지웠어요.'); } catch (e) { fail(e); } return;
     case 'evdel': return save({ events: (B.events || []).filter(e => e.id !== id) }, '지웠어요.');
@@ -1985,6 +2287,18 @@ document.addEventListener('click', async ev => {
     case 'svopen': S.openSv = S.openSv === id ? '' : id; render(); return;
     case 'svtog': return save({ surveys: (B.surveys || []).map(s => s.id === id ? Object.assign({}, s, { open: !s.open }) : s) }, '바꿨어요.');
     case 'svpub': return save({ surveys: (B.surveys || []).map(s => s.id === id ? Object.assign({}, s, { pub: !s.pub }) : s) }, '바꿨어요.');
+    case 'svshare': { const s = (B.surveys || []).find(x => x.id === id); if (s) svShare(s); return; }
+    case 'svclr': { const sel = document.querySelector(`[data-svclr="${CSS.escape(id)}"]`); const no = sel && +sel.value; if (!no) return toast('번호를 골라 주세요.'); return ansClear(id, no); }
+    case 'pinmode': {
+      const on = t.dataset.v === 'on';
+      if (on === (B.pinChange !== false)) return;
+      if (on && !B.viewKey && !confirm('학생이 휴대폰에서 PIN을 만들려면 [TV 연결] 탭에서 학생용 주소를 만들어야 해요.\n지금 PIN 방식으로 바꿀까요? (주소는 그다음에 만들어도 돼요)')) return;
+      await save({ pinChange: on }, on ? '🔒 PIN으로 안전하게: 이미 낸 답은 PIN을 넣어야 바꿀 수 있어요.' : '🙂 PIN 없이 간단하게: 이름만 누르면 답을 바꿀 수 있어요.');
+      return;
+    }
+    case 'pinreset': return pinReset(+t.dataset.no);
+    case 'pinset': return pinSetFor(+t.dataset.no);
+    case 'pcinst': pcModal(); return;
     case 'svcsv': { const s = (B.surveys || []).find(x => x.id === id); if (s) csvOf(s); return; }
     case 'svdel': {
       if (!confirm('이 조사와 응답을 모두 지울까요?')) return;
