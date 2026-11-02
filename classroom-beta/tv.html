@@ -772,7 +772,7 @@ html,body{background:var(--bg);color:var(--chalk)}
   var VIEW = !K && V.length >= 20;
   var WANT_EDIT = QS.get('edit') === '1';
   var PV = QS.get('pv') === '1';   /* 관리 화면 안 미리보기: 눌러도 저장 안 됨 */
-  var VER = 'fb-2026-11-15a';
+  var VER = 'fb-2026-11-15b';
   window.__BOOT = { t: K || V, preview: PV ? 1 : 0, phone: VIEW, ver: VER };
   if (VIEW) document.write('<style>#btnMine,#btnEdit,#btnShare{display:none !important}html,body{height:auto !important;overflow:auto !important}</style>');
   var FB = null, B = null, gone = false, SCH = null, schAt = 0, schBusy = false, WX = null, wxAt = 0, wxBusy = false;
@@ -1171,7 +1171,7 @@ html,body{background:var(--bg);color:var(--chalk)}
     if (B.weatherOn !== false) loadWeather();
     var today = ymd(kst()), dow = dowOf(today), g = String(B.grade || ''), k = String(B.klass || ''), sts = students();
     var periods = (B.periods || []).filter(function (p) { return p && p.s && p.e; });
-    var subj = {}, chg = {}, ttNote = '';
+    var subj = {}, chg = {}, ctch = {}, ttNote = '';
     var TT = SCH && SCH.timetable && SCH.timetable[g + '-' + k];
     var CT = CM && CM.timetable && CM.timetable[g + '-' + k];
     var manual = B.ttSource === 'manual', useCm = B.ttSource !== 'manual' && B.ttSource !== 'neis';   /* 기본: 컴시간 → 없으면 나이스 */
@@ -1179,7 +1179,7 @@ html,body{background:var(--bg);color:var(--chalk)}
     else if (manual && hasManual(dow)) subj = manualOf(dow);
     else if (manual) ttNote = '직접 입력한 오늘 시간표가 없어요';
     else if (useCm && CT && CT[today] && CT[today].length) {
-      CT[today].forEach(function (x) { var n = String(x.p); subj[n] = subj[n] && subj[n] !== x.s ? subj[n] + '/' + x.s : x.s; if (x.c) chg[n] = 1; });
+      CT[today].forEach(function (x) { var n = String(x.p); subj[n] = subj[n] && subj[n] !== x.s ? subj[n] + '/' + x.s : x.s; if (x.c) chg[n] = 1; if (x.t && !ctch[n]) ctch[n] = x.t; });
     }
     else if (!SCH) ttNote = schAt ? '시간표를 불러오지 못했어요' : '시간표를 불러오는 중…';
     else if (TT && TT[today] && TT[today].length) {
@@ -1195,7 +1195,7 @@ html,body{background:var(--bg);color:var(--chalk)}
     var Q = B.quote || {};
     return {
       ok: true, now: Date.now(), today: today, label: g + '학년 ' + k + '반', needExt: false, font: B.font || '', sound: VIEW ? { bday: true } : (B.sound || null),
-      periods: periods.map(function (p) { var we = dow === 0 || dow === 6, n = String(Number(p.n)); return { n: p.n, s: p.s, e: p.e, subj: we ? '' : (subj[n] || subj[p.n] || ''), chg: !we && !!(chg[n] || chg[p.n]), teacher: we ? '' : (TCH[n] || TCH[p.n] || '') }; }),
+      periods: periods.map(function (p) { var we = dow === 0 || dow === 6, n = String(Number(p.n)); return { n: p.n, s: p.s, e: p.e, subj: we ? '' : (subj[n] || subj[p.n] || ''), chg: !we && !!(chg[n] || chg[p.n]), teacher: we ? '' : (TCH[n] || TCH[p.n] || ctch[n] || '') }; }),
       ttNote: ttNote, lunch: B.lunch || '',
       meal: M[today] || [], mealErr: SCH ? '' : (schAt ? '급식 정보를 불러오지 못했어요' : '급식을 불러오는 중…'),
       mealTomorrow: { date: tom, meals: M[tom] || [] },
