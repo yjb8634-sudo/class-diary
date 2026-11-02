@@ -90,7 +90,7 @@ function boardCfg_() {
   var c = getConfig_();
   return {
     key: c['교실_키'] || '',
-    source: c['교실_시간표출처'] === 'NEIS' ? 'NEIS' : '직접',
+    source: c['교실_시간표출처'] === 'NEIS' ? 'NEIS' : (c['교실_시간표출처'] === '컴시간' ? '컴시간' : '직접'),
     periods: boardJson_(c['교실_교시'], BOARD_PERIODS),
     lunch: c['교실_점심'] || '12:40~13:40',
     timetable: boardJson_(c['교실_시간표'], {}),
@@ -108,6 +108,7 @@ function boardCfg_() {
     eventDays: Number(c['교실_일정일수']) || 30,
     eventAddOn: (c['교실_학생일정'] || '예') !== '아니오',
     font: String(c['교실_글꼴'] || ''),
+    sound: boardSound_(boardJson_(c['교실_소리'], {})),
     layout: boardLayoutGet_(c),
     quote: boardJson_(c['교실_명언'], { on: true, mode: 'day', list: [] }),
     neis: { key: c['NEIS_키'] || '', atpt: c['NEIS_교육청'] || '', code: c['NEIS_학교코드'] || '', name: c['NEIS_학교명'] || '' },
@@ -448,13 +449,48 @@ function boardNeisTimetable_(d) {
   });
 }
 
+/* 컴시간 시간표: 깃허브가 수업일 30분마다 받아 두는 data/comci.json 에서 우리 반 것만 (10분 동안 저장해 두고 씀) */
+function boardComciClass_() {
+  var c = boardCfg_(), key = 'comci_' + c.grade + '-' + c.klass;
+  var cache = CacheService.getScriptCache(), hit = cache.get(key);
+  if (hit) { try { return JSON.parse(hit); } catch (e) {} }
+  var url = String(getConfig_()['컴시간_주소'] || 'https://yjb8634-sudo.github.io/class-diary/data/comci.json');
+  var out = { days: {}, err: '' };
+  try {
+    var r = UrlFetchApp.fetch(url + '?h=' + Math.floor(Date.now() / 300000), { muteHttpExceptions: true });
+    if (r.getResponseCode() !== 200) throw new Error('HTTP ' + r.getResponseCode());
+    var j = JSON.parse(r.getContentText());
+    out.days = ((j.timetable || {})[c.grade + '-' + c.klass]) || {};
+    out.updated = j.updated || '';
+    if (!Object.keys(out.days).length) out.err = '컴시간에 ' + c.grade + '학년 ' + c.klass + '반 시간표가 없어요';
+  } catch (e) { out.err = '컴시간 시간표를 받지 못했어요'; }
+  try { cache.put(key, JSON.stringify(out), out.err ? 120 : 600); } catch (e) {}
+  return out;
+}
+function boardComciTimetable_(d) {
+  var ymd = Utilities.formatDate(d, tz_(), 'yyyy-MM-dd'), cm = boardComciClass_(), rows = cm.days[ymd] || [];
+  var subj = [], chg = [];
+  rows.forEach(function (x) {
+    var n = Number(x.p);
+    if (n > 0) { subj[n - 1] = subj[n - 1] && subj[n - 1] !== x.s ? subj[n - 1] + '/' + x.s : x.s; if (x.c) chg[n - 1] = true; }
+  });
+  return { subjects: subj, changed: chg, count: rows.length, err: cm.err };
+}
+
 function boardTodayTable_(d) {
   var c = boardCfg_();
   var dow = boardDow_(d);
   if (dow > 5) return { periods: [], note: '주말' };
   var subj = (c.timetable[dow] || []).slice();
-  var note = '', pending = false;
-  if (c.source === 'NEIS') {
+  var note = '', pending = false, chg = [];
+  var src = c.source;
+  if (src === '컴시간') {
+    var cm = boardComciTimetable_(d);
+    if (cm.count) { subj = c.periods.map(function (p, i) { return cm.subjects[i] || ''; }); chg = cm.changed; }
+    else if (c.neis.atpt && c.neis.code) src = 'NEIS';   /* 컴시간에 오늘 자료가 없으면 나이스로 */
+    else note = cm.err || '';
+  }
+  if (src === 'NEIS') {
     var r = boardNeisTimetable_(d);
     if (r.pending) pending = true;
     else if (r.subjects.length) subj = c.periods.map(function (p, i) { return r.subjects[i] || subj[i] || ''; });
@@ -462,7 +498,7 @@ function boardTodayTable_(d) {
     if (r.partial) note = '나이스 인증키가 없어 5교시까지만 받았습니다';
   }
   return {
-    periods: c.periods.map(function (p, i) { return { n: p.n, s: p.s, e: p.e, subj: subj[i] || '', teacher: ((c.teachers[dow] || [])[i] || '').trim() }; })
+    periods: c.periods.map(function (p, i) { return { n: p.n, s: p.s, e: p.e, subj: subj[i] || '', chg: !!chg[i], teacher: ((c.teachers[dow] || [])[i] || '').trim() }; })
       .filter(function (p) { return p.s && p.e; }),
     note: note, pending: pending
   };
@@ -868,7 +904,7 @@ function boardBuildData_(mode) {
     notices: boardNotices_(false).map(function (n) { return { id: n.id, text: n.text, level: n.level, important: n.important, file: n.file, files: n.files }; }),
     notes: noteBoardList_(sts),
     birthdays: boardWeekBirthdays_(now, sts),
-    suggestOn: c.suggestOn, eventAddOn: c.eventAddOn, font: c.font,
+    suggestOn: c.suggestOn, eventAddOn: c.eventAddOn, font: c.font, sound: mode === 'phone' ? { bday: c.sound.bday, fxVol: c.sound.fxVol } : c.sound,
     links: (Array.isArray(c.links) ? c.links : []).filter(function (l) { return l && l.url && l.on !== false; })
       .map(function (l) { return { id: l.id, title: l.title, url: l.url }; }),
     specials: (c.specials || []).filter(function (x) { return x && x.name && x.s && x.e; }),
@@ -1126,12 +1162,21 @@ function apiBoardAdminGet(pw) {
   };
 }
 
+/* 교실 TV 소리: 점심 · 청소시간 음악(유튜브 주소), 효과음(종소리 · 긴급 호출 · 생일 노래) */
+function boardSound_(o) {
+  o = o || {};
+  var n = function (v, d) { v = Number(v); return isNaN(v) ? d : Math.max(5, Math.min(100, Math.round(v))); };
+  var url = String(o.url || '').trim().slice(0, 300);
+  if (url && !/^https:\/\/(www\.|m\.|music\.)?(youtube\.com|youtu\.be)\//.test(url)) url = '';
+  return { lunch: o.lunch === true, clean: o.clean === true, url: url, vol: n(o.vol, 30), offDay: /^\d{4}-\d{2}-\d{2}$/.test(String(o.offDay || '')) ? String(o.offDay) : '',
+    chime: o.chime !== false, flash: o.flash !== false, bday: o.bday !== false, fxVol: n(o.fxVol, 60) };
+}
 function apiBoardSaveSettings(pw, o) {
   boardBust_();
   isAdmin_(pw);
   board준비_();
   o = o || {};
-  if ('source' in o) setConfigValue_('교실_시간표출처', o.source === 'NEIS' ? 'NEIS' : '직접');
+  if ('source' in o) setConfigValue_('교실_시간표출처', o.source === 'NEIS' ? 'NEIS' : (o.source === '컴시간' ? '컴시간' : '직접'));
   if ('periods' in o) setConfigValue_('교실_교시', JSON.stringify((o.periods || []).filter(function (p) { return p.s && p.e; })));
   if ('lunch' in o) setConfigValue_('교실_점심', String(o.lunch || ''));
   if ('timetable' in o) setConfigValue_('교실_시간표', JSON.stringify(o.timetable || {}));
@@ -1159,6 +1204,7 @@ function apiBoardSaveSettings(pw, o) {
     }).filter(function (x) { return x.name && /^\d{1,2}:\d{2}$/.test(x.s) && /^\d{1,2}:\d{2}$/.test(x.e); }).slice(0, 8)));
   }
   if ('eventNeis' in o) setConfigValue_('교실_일정나이스', o.eventNeis ? '예' : '아니오');
+  if ('sound' in o) setConfigValue_('교실_소리', JSON.stringify(boardSound_(o.sound)));
   if ('font' in o) setConfigValue_('교실_글꼴', String(o.font || '').replace(/[^a-z0-9-]/gi, '').slice(0, 40));
   if ('eventAddOn' in o) setConfigValue_('교실_학생일정', o.eventAddOn ? '예' : '아니오');
   if ('eventDays' in o) setConfigValue_('교실_일정일수', String(Math.max(7, Math.min(90, Number(o.eventDays) || 30))));

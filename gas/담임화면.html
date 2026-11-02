@@ -2060,7 +2060,7 @@ function vBoard(){
   const V = {
     flash: () => vFlashBox(),
     notice: () => vNoticeBox() + vNoteBox(),
-    look: () => vPreview() + vFontBox() + `<div class="g2">${vQuoteBox()}${vLookSetBox()}</div>` + vWeatherBox(),
+    look: () => vPreview() + sndBoxHtml(SND_K) + vFontBox() + `<div class="g2">${vQuoteBox()}${vLookSetBox()}</div>` + vWeatherBox(),
     time: () => vTimetableBox() + `<div class="g2">${vEventBox()}${vNeisBox()}</div>`,
     roster: () => vBirthdayBox() + `<section class="box"><h2>학급 명단</h2><p class="small muted">학생 명단(번호 · 이름 · 학번)은 왼쪽 메뉴 <b>명단 · 설정</b>에서 고칩니다. 여기서 고친 명단이 교실 TV에도 그대로 쓰입니다.</p>
       <div class="row" style="margin-top:8px"><button class="btn sm" data-view="roster">명단 · 설정 열기</button></div></section>`,
@@ -2098,11 +2098,13 @@ function vNeisBox(){
 function vTimetableBox(){
   const B = S.B, c = B.cfg, T = S.bt;
   return `<section class="box"><div class="row sb"><h2>시간표</h2>
-      <div class="seg" role="group" aria-label="시간표 출처">${[['직접','직접 입력'],['NEIS','나이스에서 자동']].map(([v, l]) =>
+      <div class="seg" role="group" aria-label="시간표 출처">${[['컴시간','컴시간 자동 (추천)'],['NEIS','나이스에서 자동'],['직접','직접 입력']].map(([v, l]) =>
         `<button data-bact="src" data-v="${v}" aria-pressed="${T.source === v}">${l}</button>`).join('')}</div></div>
-    <p class="small" style="margin:6px 0 2px">지금 교실 TV는 <b>${c.source === 'NEIS' ? '나이스 시간표' : '아래 표에 직접 적은 시간표'}</b>를 씁니다.
+    <p class="small" style="margin:6px 0 2px">지금 교실 TV는 <b>${c.source === 'NEIS' ? '나이스 시간표' : (c.source === '컴시간' ? '컴시간 시간표' : '아래 표에 직접 적은 시간표')}</b>를 씁니다.
       ${c.source === 'NEIS' && !c.neis.key ? '<span style="color:var(--neg)">인증키가 없어 5교시 분량만 받아옵니다.</span>' : ''}</p>
-    <p class="small muted" style="margin:0 0 8px">${T.source === 'NEIS'
+    <p class="small muted" style="margin:0 0 8px">${T.source === '컴시간'
+      ? '일과계에서 <b>수업 교환 · 보강</b>을 입력하면 30분 안에 교실 TV에 반영되고, 바뀐 교시에 노란 <b>변경</b> 표시가 붙습니다. 컴시간 자료가 없는 날은 나이스 → 이 표 순서로 대신 보여 줍니다. 교시 시각과 선생님 이름은 이 표를 씁니다.'
+      : T.source === 'NEIS'
       ? '나이스 시간표는 TV 화면에서 바로 불러오므로 이 표는 비어 있어도 됩니다. 나이스에 없는 칸만 이 표의 과목으로 채웁니다. 교시 시각은 이 표를 씁니다.'
       : '요일별 과목을 적어 두면 칠판이 지금 몇 교시인지 알아서 보여 줍니다.'}</p>
     <div class="row" style="margin-bottom:10px"><button class="btn sm" data-bact="nfill">나이스에서 이번 주 시간표를 표로 가져오기</button>
@@ -2161,6 +2163,41 @@ function fontPickHtml(cur, act){
         <span class="fn">${sel ? '✓ ' : ''}${esc(g)}${L.length > 1 ? ` <span class="fw">${L.map(f => `<button class="fwb${f.id === cur ? ' on' : ''}" data-${act}="font" data-id="${esc(f.id)}">${esc(f.w || '')}</button>`).join('')}</span>` : ''}</span></div>`;
     }).join('')}</div>`;
 }
+/* ---------- 교실 TV 소리 · 음악 설정 ---------- */
+const SND_DEF = { lunch: false, clean: false, url: '', vol: 30, offDay: '', chime: true, flash: true, bday: true, fxVol: 60 };
+function sndCur(){ return Object.assign({}, SND_DEF, SND_SRC() || {}); }
+function ytOk(u){ return /^https:\/\/(www\.|m\.|music\.)?(youtube\.com|youtu\.be)\//.test(String(u || '').trim()) && /([?&]list=[\w-]{10,}|[?&]v=[\w-]{11}|youtu\.be\/[\w-]{11}|\/shorts\/[\w-]{11}|\/live\/[\w-]{11})/.test(u); }
+function sndBoxHtml(K){
+  const o = sndCur(), off = o.offDay === SND_TODAY();
+  const chk = (id, v, l) => `<label class="${K.chk}"><input type="checkbox" id="${id}" ${v ? 'checked' : ''}> ${l}</label>`;
+  return `<section class="${K.box}"><h2>🎵 교실 TV 음악 · 소리</h2>
+    <p class="${K.lead}">점심시간 · 청소시간에 교실 TV가 유튜브 음악을 작게 틀어 주고, <b>다음 수업 1분 전에는 저절로 멈춰요.</b> 학생은 TV에서 멈춤 · 다음 곡 · 소리 크기만 바꿀 수 있어요.
+      아침에 TV를 켜면 화면을 한 번 눌러 주세요 (브라우저 규칙상 한 번 눌러야 소리가 나요).</p>
+    <div class="${K.row}">${chk('sndLunch', o.lunch, '점심시간 음악')}${chk('sndClean', o.clean, '청소시간 음악')}</div>
+    <input class="in" id="sndUrl" style="width:100%;margin-top:8px" inputmode="url" value="${esc(o.url)}" placeholder="유튜브 재생목록 또는 영상 주소 붙여 넣기 (예: https://www.youtube.com/playlist?list=…)">
+    <p class="${K.small}" style="margin-top:4px">유튜브에서 재생목록을 열고 <b>공유 → 복사</b>한 주소를 넣으세요. 재생목록은 섞어서 틀어요. 광고가 나올 수 있어요.</p>
+    <div class="${K.row}" style="margin-top:8px;align-items:center">음악 크기 <input type="range" id="sndVol" min="5" max="100" step="5" value="${o.vol}" style="width:180px"> <span id="sndVolV">${o.vol}</span></div>
+    <div class="${K.row}" style="margin-top:12px">${chk('sndChime', o.chime, '수업 시작 1분 전 종소리')}${chk('sndFlash', o.flash, '긴급 호출 알림음')}${chk('sndBday', o.bday, '생일 이름을 누르면 생일 축하 노래')}</div>
+    <div class="${K.row}" style="margin-top:8px;align-items:center">효과음 크기 <input type="range" id="sndFx" min="10" max="100" step="10" value="${o.fxVol}" style="width:180px"> <span id="sndFxV">${o.fxVol}</span></div>
+    <p class="${K.small}" style="margin-top:6px">⏱ 타이머: 교실 TV 오른쪽 위 ⏱ 단추로 1~50분을 재고, 끝나면 종소리가 세 번 울려요.</p>
+    <div class="${K.row}" style="margin-top:12px;justify-content:flex-end">
+      <button class="${K.btn}" data-${K.act}="sndoff">${off ? '오늘 음악 다시 켜기' : '🔇 오늘은 음악 끄기'}</button>
+      <button class="${K.pri}" data-${K.act}="sndsave">저장</button></div>
+    ${off ? `<p class="${K.small}" style="color:var(--yellow);text-align:right;margin-top:4px">오늘은 음악이 나오지 않아요.</p>` : ''}</section>`;
+}
+function sndRead(){
+  const v = id => document.getElementById(id), o = sndCur();
+  const url = (v('sndUrl').value || '').trim();
+  return Object.assign(o, { lunch: v('sndLunch').checked, clean: v('sndClean').checked, url, vol: +v('sndVol').value, chime: v('sndChime').checked, flash: v('sndFlash').checked, bday: v('sndBday').checked, fxVol: +v('sndFx').value });
+}
+function sndValidate(o){
+  if (o.url && !ytOk(o.url)) return '유튜브 재생목록이나 영상 주소가 아니에요. 유튜브에서 [공유 → 복사]한 주소를 넣어 주세요.';
+  if ((o.lunch || o.clean) && !o.url) return '음악을 켜려면 유튜브 주소를 넣어 주세요.';
+  return '';
+}
+document.addEventListener('input', e => { const t = e.target; if (t.id === 'sndVol' || t.id === 'sndFx'){ const s = document.getElementById(t.id + 'V'); if (s) s.textContent = t.value; } });
+const SND_SRC = () => (S.B.cfg || {}).sound, SND_TODAY = () => S.B.today;
+const SND_K = { box: 'box', lead: 'small muted', row: 'row', chk: 'small row', small: 'small muted', btn: 'btn sm', pri: 'btn pri sm', act: 'bact' };
 function vFontBox(){
   if (!FONTL) fontLoadList(() => { if (S.view === 'board' && bsubGet() === 'look') render(); });
   return `<section class="box"><h2>🔤 TV 글꼴</h2>
@@ -3084,6 +3121,8 @@ document.addEventListener('click', ev => {
       download(`조사_보기별_${s.q.slice(0, 20)}_${S.D.today}.csv`, '\uFEFF' + rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\r\n'), 'text/csv;charset=utf-8');
       return;
     }
+    case 'sndsave': { const o = sndRead(), e = sndValidate(o); if (e) return toast(e, true); boardSave({ sound: o }, '소리 설정을 저장했습니다. 교실 TV에 1분 안에 반영돼요.', true); return; }
+    case 'sndoff': { const o = sndCur(); o.offDay = o.offDay === S.B.today ? '' : S.B.today; boardSave({ sound: o }, o.offDay ? '오늘은 교실 TV 음악을 껐습니다.' : '오늘 음악을 다시 켰습니다.', true); return; }
     case 'saveset': btCollect(); boardSave({counselMode: S.bt.counselMode, counselOn: S.bt.counselOn, suggestOn: S.bt.suggestOn, ddays: S.bt.ddays}, '화면 설정을 저장했습니다.', true); return;
     case 'nkey': btCollect(); boardSave({neisKey: S.bt.neisKey}, '인증키를 저장했습니다.', true); return;
     case 'pvreload': { const f = $('pvFrame'); if (f) f.src = f.src; return; }
@@ -3140,7 +3179,7 @@ document.addEventListener('click', ev => {
           <br><span class="lbl">나이스 시간표 · ${ask} · ${r.hasKey ? '인증키 있음' : '인증키 없음'}</span><br>${tt}${T2.partial ? '<br><span style="color:var(--neg)">인증키가 없어 5교시까지만 받았습니다.</span>' : ''}</div>`;
       }).catch(fail);
       return;
-    case 'src': btCollect(); S.bt.source = t.dataset.v; boardSave({source: t.dataset.v}, t.dataset.v === 'NEIS' ? '이제 교실 TV가 나이스 시간표를 씁니다.' : '이제 교실 TV가 직접 적은 시간표를 씁니다.', true); return;
+    case 'src': btCollect(); S.bt.source = t.dataset.v; boardSave({source: t.dataset.v}, ({NEIS: '이제 교실 TV가 나이스 시간표를 씁니다.', 컴시간: '이제 교실 TV가 컴시간 시간표를 씁니다. 수업 교환이 30분 안에 반영돼요.'})[t.dataset.v] || '이제 교실 TV가 직접 적은 시간표를 씁니다.', true); return;
     case 'padd': {
       btCollect();
       const last = S.bt.periods[S.bt.periods.length - 1];
