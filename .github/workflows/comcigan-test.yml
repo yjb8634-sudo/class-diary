@@ -1,0 +1,87 @@
+# 컴시간 시험: 강릉제일고 시간표를 컴시간 학생용 화면(comci.net)에서 읽어 올 수 있는지 한 번 확인합니다.
+# 저장소 [Actions] → 왼쪽 '컴시간 시험 (한 번만)' → [Run workflow] 를 누르세요. 아무것도 저장하거나 바꾸지 않습니다.
+name: 컴시간 시험 (한 번만)
+
+on:
+  workflow_dispatch:
+    inputs:
+      school:
+        description: '학교 이름 (검색어)'
+        default: '강릉제일'
+        required: true
+      grade:
+        description: '학년'
+        default: '1'
+        required: true
+      klass:
+        description: '반'
+        default: '2'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: 컴시간 읽기 시험
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 도구 설치
+        run: pip install --quiet "comci==0.7.0"
+      - name: 강릉제일고 시간표 읽어 보기
+        env:
+          Q: ${{ inputs.school }}
+          G: ${{ inputs.grade }}
+          K: ${{ inputs.klass }}
+        run: |
+          python - <<'PY'
+          import os, time, json, traceback
+          from datetime import datetime, timedelta, timezone
+          KST = timezone(timedelta(hours=9))
+          today = datetime.now(KST).date()
+          def note(title, msg):
+              msg = str(msg).replace('%', '%25').replace('\r', '').replace('\n', '%0A')
+              print(f'::notice title={title}::{msg}')
+          def fmt(cell):
+              if not cell: return '-'
+              s = (cell.get('subject') or '?')
+              t = cell.get('teacher') or ''
+              return s + (f'({t})' if t else '') + ('★' if cell.get('changed') else '')
+          ok = True
+          try:
+              from comci import search_schools, get_timetable
+              t0 = time.time()
+              sch = search_schools(os.environ['Q'])
+              note('1 학교 검색', f"'{os.environ['Q']}' → {len(sch)}곳 ({time.time()-t0:.1f}초): " + ' / '.join(f"{s.get('region')} {s.get('school_name')} [{s.get('school_code')}]" for s in sch[:6]))
+              pick = next((s for s in sch if '강릉제일고' in str(s.get('school_name'))), sch[0] if sch else None)
+              if not pick: raise SystemExit('학교를 찾지 못했어요')
+              code = pick['school_code']; G = int(os.environ['G']); K = int(os.environ['K'])
+              t0 = time.time()
+              tt = get_timetable(code, grade=G, class_num=K, on=today)
+              lines = []
+              nchg = 0
+              for d in ['월', '화', '수', '목', '금']:
+                  day = tt.get(d) or []
+                  date = next((c.get('calendar_date') for c in day if c), '')
+                  nchg += sum(1 for c in day if c and c.get('changed'))
+                  lines.append(f"{d} {date}: " + ' | '.join(f"{i+1}교시 {fmt(c)}" for i, c in enumerate(day)))
+              note(f'2 {G}학년 {K}반 이번 주 ({time.time()-t0:.1f}초, 바뀐 칸 {nchg}개 ★)', '\n'.join(lines))
+              t0 = time.time()
+              allc = get_timetable(code, on=today)
+              tot = sum(1 for cls in allc.values() for d in cls.values() for c in (d or []) if c and c.get('changed'))
+              note('3 전체 반', f"{len(allc)}개 반을 읽었어요 ({time.time()-t0:.1f}초). 이번 주 바뀐 칸(★) 전체 {tot}개. 반 목록: " + ', '.join(list(allc.keys())[:40]))
+              one = next((c for d in tt.values() for c in (d or []) if c), None)
+              note('4 칸 하나의 모양', json.dumps(one, ensure_ascii=False))
+              nxt = get_timetable(code, grade=G, class_num=K, date_index=2)
+              note('5 다음 주', '월: ' + ' | '.join(fmt(c) for c in (nxt.get('월') or [])))
+          except SystemExit as e:
+              ok = False; note('실패', str(e))
+          except Exception as e:
+              ok = False; note('실패', ''.join(traceback.format_exception_only(type(e), e)).strip()[:900])
+              traceback.print_exc()
+          if not ok: raise SystemExit(1)
+          PY
