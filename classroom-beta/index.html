@@ -9,217 +9,11 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-title" content="교실 화면">
-<!-- 학급 다이어리 공용 디자인 (칠판과 분필) · 2026-10-21a
-     각 화면 맨 끝에 끼워 넣어, 화면마다 다르던 색 · 글꼴 이름을 한 가지 토큰으로 다시 묶습니다. -->
-<script>var FILE_VER = '2026-10-26b'; var THEME_VER = '2026-10-21a';</script>
-<style>
-
-/* ── 글꼴: 학교안심 분필 (KERIS) ──
-   글꼴 파일은 GitHub Pages(class-diary/fonts/)에서 내려받습니다. 자주 쓰는 한글 2,350자와 화면에 쓰인 글자만 담은 가벼운 woff2(약 210KB)를 먼저 쓰고,
-   드문 글자(예: 똠, 뷁)는 다른 글꼴로 대신 나옵니다. 주소가 바뀌면 아래 줄만 고치세요.
-   굵기가 한 가지뿐이라 모든 굵기에 같은 파일을 씁니다(억지로 굵게 만들면 분필 글씨가 뭉개져서). 제목은 크기로 구분합니다. */
-@font-face{font-family:'Bunpil';font-style:normal;font-weight:100 900;font-display:swap;
-  src:url('https://yjb8634-sudo.github.io/class-diary/fonts/Bunpil-R.woff2') format('woff2'),url('https://yjb8634-sudo.github.io/class-diary/fonts/Bunpil-R.woff') format('woff')}
-
-:root{
-  /* ── 색 (칠판과 분필) ──
-     칠판 바탕 · 분필 글씨 · 노란 분필 강조. 색을 바꾸려면 이 묶음만 고치면 모든 화면이 함께 바뀝니다. */
-  --t-surface:#22392E;               /* 칠판 */
-  --t-surface-2:#29443A;             /* 카드 (칠판보다 살짝 밝게) */
-  --t-surface-3:#315044;             /* 입력칸 · 눌린 곳 */
-  --t-ink:#F4F1E8;                   /* 흰 분필 */
-  --t-ink-2:rgba(244,241,232,.86);
-  --t-ink-3:rgba(244,241,232,.64);
-  --t-line:rgba(244,241,232,.18);    /* 분필 선 */
-  --t-line-2:rgba(244,241,232,.34);
-  --t-blue:#2F5D8A;                  /* 파란 분필 (흰 글씨가 잘 읽히는 진한 쪽) */
-  --t-yellow:#FFE27A;                /* 노란 분필 */
-  --t-red:#B8452F;                   /* 빨간 분필 */
-  --t-red-h:#E07058;
-  --t-purple:#6A4C8C;
-  --t-purple-h:#8063A3;
-  --t-wood:#7A5A3A;                  /* 분필받이 나무 */
-
-  /* ── 글꼴: 모든 글자를 한 글꼴로 ── */
-  --t-font:'Bunpil','Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
-  --t-display:var(--t-font); --t-serif:var(--t-font); --t-mono:var(--t-font); --t-sans:var(--t-font);
-
-  /* ── 간격 · 모양 · 움직임 ── */
-  --t-1:18px; --t-2:33.75px; --t-3:48px; --t-4:96px;
-  --t-r:6px;
-  --t-shape:10px 4px 12px 6px;                 /* 손으로 그린 듯 모서리마다 조금씩 다르게 */
-  --t-dur:.65s; --t-ease:cubic-bezier(.33,1,.68,1);
-}
-
-/* ════════ 화면별 색 이름 다시 묶기 ════════ */
-/* 첫 화면 · 21일 · 문제 해결 */
-:root{
-  --bg:var(--t-surface); --card:var(--t-surface-2); --ink:var(--t-ink); --sub:var(--t-ink-3); --line:var(--t-line);
-  --w1:var(--t-blue); --w1b:var(--t-blue); --w2:var(--t-purple); --w2b:var(--t-purple-h);
-  --w3:var(--t-red); --w3b:var(--t-red-h); --gold:var(--t-yellow); --goldb:var(--t-yellow);
-}
-/* 교실 화면 */
-:root{
-  --card2:var(--t-surface-3); --chalk:var(--t-ink); --chalk2:var(--t-ink-2); --chalk3:var(--t-ink-3);
-  --yellow:var(--t-yellow); --yellow-ink:var(--t-surface); --mint:#7FD8C4; --pink:#F2A7A0; --sky:#8FB4FF;
-}
-/* 상담 신청판 */
-:root{
-  --surface:var(--t-surface-2); --surface-2:var(--t-surface-3); --ink-2:var(--t-ink-2); --ink-3:var(--t-ink-3);
-  --line-2:var(--t-line-2); --teal:var(--t-yellow); --teal-ink:var(--t-yellow); --teal-soft:rgba(255,226,122,.14);
-  --amber:#FFC24A; --amber-soft:rgba(255,194,74,.14); --danger:#FF6B6B; --danger-soft:rgba(215,30,30,.18);
-  --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 32px -18px rgba(0,0,0,.7);
-  --font-display:var(--t-display); --font-body:var(--t-sans);
-}
-/* 담임 기록실 */
-:root{
-  --paper:var(--t-surface); --sheet:var(--t-surface-2); --ink2:var(--t-ink-2); --ink3:var(--t-ink-3);
-  --rule:var(--t-line); --rule2:var(--t-line-2); --hover:var(--t-surface-3);
-  --accent:var(--t-yellow); --accent-s:rgba(255,226,122,.12);
-  --pos:#7FD8C4; --pos-s:rgba(127,216,196,.14); --neg:#FF6B6B; --neg-s:rgba(215,30,30,.18);
-  --a-자율:#8FB4FF; --a-진로:#FFC24A; --a-행특:#C89BE0; --a-기타:var(--t-ink-3);
-  --margin:rgba(255,107,107,.5); --serif:var(--t-serif); --sans:var(--t-sans);
-}
-
-/* ════════ 바탕 ════════ */
-html,body{background:var(--t-surface);color:var(--t-ink);font-family:var(--t-sans);
-  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
-body{letter-spacing:-.005em}
-::selection{background:var(--t-yellow);color:var(--t-surface)}
-/* 칠판에 남은 분필 가루 (아주 옅게) */
-body{background-image:radial-gradient(60% 40% at 18% 8%,rgba(244,241,232,.05),transparent 70%),radial-gradient(50% 35% at 85% 70%,rgba(244,241,232,.035),transparent 70%)}
-
-/* ── 제목: 컨덴스드 ── */
-h1,h2,h3,.pt,.inq-h .t b{font-family:var(--t-display);font-weight:600;letter-spacing:-.01em}
-h1{letter-spacing:0}
-/* ── 라벨 · 메타: 모노 ── */
-.lbl,.small.muted,.hint,.cap,.pk,.ist,.chip,.tg,.pill,.src,.mono,.cnt small,.who,.date .hl,.dust{
-  font-family:var(--t-mono);letter-spacing:.01em}
-
-/* ── 입력 ── */
-input,select,textarea,.in,.field{
-  background:var(--t-surface-3);color:var(--t-ink);border:1px solid var(--t-line);
-  border-radius:var(--t-r);font-family:var(--t-sans)}
-input:focus,select:focus,textarea:focus,.in:focus,.field:focus{
-  outline:none;border-color:var(--t-yellow);box-shadow:0 1px 0 0 var(--t-yellow)}
-input::placeholder,textarea::placeholder{color:var(--t-ink-3)}
-input[type=date],input[type=file]{color-scheme:dark}
-label{color:var(--t-ink-2)}
-
-/* ── 단추 ── */
-button,.btn,.act,.go,.jpill,.gt-go,.joinbtn,.homebtn,.sh-x,.gt-x{
-  font-family:var(--t-sans);border-radius:var(--t-shape);
-  transition:background var(--t-dur) var(--t-ease),color var(--t-dur) var(--t-ease),opacity var(--t-dur) var(--t-ease)}
-.act,.go,.gt-go,.btn.pri,.btn.primary,.joinbtn{background:var(--t-blue);color:var(--t-ink);border:0;font-weight:600}
-.act:hover,.go:hover,.gt-go:hover,.btn.pri:hover,.joinbtn:hover{background:var(--t-blue);opacity:.86}
-.act.green{background:var(--t-blue)}
-.act.newround,.act.gold{background:var(--t-yellow);color:var(--t-surface)}
-.btn.neg,.neg{color:var(--t-red-h)}
-
-/* ── 카드 · 상자: 파일 탭 모양 ── */
-.card,.box,.sheetbox,.gt-box,.pick,.inq-s,.it,.rw{
-  background:var(--t-surface-2);border:1.5px solid var(--t-line);
-  border-radius:var(--t-shape);box-shadow:none}
-.card,.box{color:var(--t-ink)}
-hr,.hr,.divider{background:var(--t-line);border-color:var(--t-line)}
-table,th,td{border-color:var(--t-line)!important;color:var(--t-ink)}
-th{color:var(--t-ink-2);font-family:var(--t-mono);font-weight:500}
-a{color:var(--t-ink)}
-a:hover{color:var(--t-yellow)}
-
-/* ── 알림 ── */
-.msg.ok,.note.ok,.gt-note.ok{background:rgba(127,216,196,.14);color:#9FE6D6}
-.msg.err,.note.err,.gt-note.err{background:rgba(215,30,30,.2);color:#FF9B9B}
-
-
-/* ════════ 모든 글자에 한 글꼴 ════════
-   화면마다 따로 적힌 글꼴 이름(Pretendard · Oswald · 명조 등)을 모두 이 글꼴로 덮습니다.
-   손글씨체는 글자 사이를 조이면 겹쳐 보이므로 자간도 0으로 맞춥니다. */
-html body,html body *{font-family:var(--t-font)!important;letter-spacing:0!important;font-weight:400!important}
-/* 제목만 굵게: 화면 제목 · 카드 제목 · 시계 · 지금 수업 · 큰 목록 · 명언 · 시작 화면 문구 */
-html body :is(b,strong,h1,h2,h3,h4,.pt,.ti .tnm,.hm,.big,.num,.quote .q,.brand b,.iw,.gt-head b,.inq-h .t b,.cpl .ttl){font-weight:700!important}
-
-/* ════════ 화면별 손질 ════════ */
-/* 탭 · 표 · 숫자 */
-nav button.on{background:var(--t-yellow)!important;color:var(--t-surface)!important}
-th{background:var(--t-surface-3)!important;color:var(--t-ink-2)!important}
-tr:hover td{background:var(--t-surface-3)}
-.num{background:none!important;-webkit-text-fill-color:var(--t-yellow);color:var(--t-yellow)!important;font-family:var(--t-display)}
-.num.gold{-webkit-text-fill-color:var(--t-yellow)}
-.prw .pc{background:var(--t-surface-3)}
-.prw:hover{border-color:var(--t-line-2)}
-.prw.done{border-color:rgba(255,226,122,.5)}
-.cell{background:var(--t-surface-3)}
-.homebtn,.wlink,.tlink{color:var(--t-ink-2)}
-/* 첫 화면 */
-.ti .tnm{background:none;-webkit-text-fill-color:currentColor;color:var(--t-ink);font-family:var(--t-display)}
-.ti .tcur{color:var(--t-yellow)}
-.ti .tno{font-family:var(--t-mono)}
-.jpill{background:transparent;border:1.5px dashed var(--t-line-2);color:var(--t-ink)}
-.jpill:hover{background:var(--t-blue);border-color:var(--t-blue)}
-#intro,#splash{background:var(--t-surface)}
-#intro .iw{background:none;-webkit-text-fill-color:currentColor;color:var(--t-ink);font-family:var(--t-display)}
-/* 교실 화면: 칠판 톤으로 */
-/* 교실 화면 아래 단추(상담 신청 · 건의사항 · 조사 참여 · 결과 보기): 파란 면을 없애고 배경과 같은 색에 테두리만 */
-.board .act{background:var(--t-surface);color:var(--t-ink);border:1px solid var(--t-line-2);
-  border-radius:var(--t-shape);box-shadow:none;opacity:1;
-  transition:background var(--t-dur) var(--t-ease),border-color var(--t-dur) var(--t-ease)}
-.board .act:hover,.board .act:focus-visible{background:var(--t-surface-3);border-color:var(--t-ink-3);opacity:1}
-.board .act:active{background:var(--t-surface-3)}
-.board .act .ic{background:transparent;border:1px solid var(--t-line-2);color:var(--t-ink)}
-
-.board .card,.board .now{background:var(--t-surface-2);border-color:var(--t-line);border-radius:var(--t-shape)}
-.clock .hm,.now .big{font-family:var(--t-display)}
-.quote .q{font-family:var(--t-serif)}
-/* 상담 · 담임: 밝은 잔재 */
-.cal .slot,.seg,.seg2,.tagpick button,.tabs{background:var(--t-surface-3)}
-.seg button[aria-pressed=true],.seg2 button.on{background:var(--t-yellow);color:var(--t-surface)}
-.box h2,.card h2{color:var(--t-ink)}
-details summary{color:var(--t-ink-2)}
-/* 탐구 노트 */
-.inq-s{background:var(--t-surface-2)}
-.inq-s.done{background:rgba(127,216,196,.08);border-color:rgba(127,216,196,.35)}
-.inq-s.open{border-color:var(--t-yellow)}
-.inq-h .n{color:var(--t-yellow);font-family:var(--t-display)}
-.inq-h .t small{background:var(--t-surface-3);color:var(--t-ink-3)}
-.inq .chk{background:rgba(255,226,122,.08)}
-.inq-from{background:var(--t-surface-3);border-color:var(--t-line)}
-
-
-/* ════════ 인쇄할 때만: 흰 바탕 · 검은 글씨 ════════
-   화면에서는 칠판 톤, 종이에는 잉크를 아끼는 흰 바탕으로 바꿉니다.
-   모든 색이 --t-* 토큰을 거치므로 토큰만 뒤집으면 다섯 화면이 한꺼번에 바뀝니다. */
-@media print{
-  :root{
-    --t-surface:#fff; --t-surface-2:#fff; --t-surface-3:#F3F3F0;
-    --t-ink:#111; --t-ink-2:#333; --t-ink-3:#666;
-    --t-line:rgba(0,0,0,.2); --t-line-2:rgba(0,0,0,.35);
-    --t-blue:#111; --t-yellow:#111; --t-wood:#999; --t-red:#A4261D; --t-red-h:#A4261D; --t-purple:#444; --t-purple-h:#444;
-    --mint:#1B6B4A; --pink:#A4432B; --sky:#3B5B86;
-    --pos:#1B6B4A; --pos-s:#E6F0EA; --neg:#A4432B; --neg-s:#F6E7E2;
-    --a-자율:#3B5B86; --a-진로:#8A6326; --a-행특:#6E3F63; --a-기타:#666;
-    --accent:#111; --accent-s:#EEE; --margin:#E7B9AE;
-    --amber:#8A5A00; --danger:#A4432B; --teal:#111; --teal-ink:#111; --teal-soft:#EEE;
-  }
-  html,body{background:#fff!important;background-image:none!important;color:#111!important;-webkit-print-color-adjust:economy;print-color-adjust:economy}
-  *{box-shadow:none!important;text-shadow:none!important;animation:none!important;transition:none!important}
-  /* 화면 전용 장치는 종이에 내보내지 않음 */
-  #busy,#intro,#splash,.gt,#toast,.homebtn,.joinrow,.hb-top,.hb-foot .links,.cpline{display:none!important}
-  /* 그라데이션 글씨는 종이에서 사라지므로 단색으로 */
-  .num,.ti .tnm,#intro .iw{background:none!important;-webkit-text-fill-color:#111!important;color:#111!important}
-  /* 입력 · 카드는 선만 */
-  input,select,textarea,.in,.field{background:#fff!important;color:#111!important;border-color:rgba(0,0,0,.3)!important}
-  .card,.box,.it,.rw,.inq-s,.pick{background:#fff!important;border-color:rgba(0,0,0,.2)!important}
-  th{background:#F3F3F0!important;color:#111!important}
-  a{color:#111!important;text-decoration:underline}
-  /* 저작권 문구는 맨 아래에 작게 남김 */
-  body::after{content:'© 2026 강릉제일고 교사 유준배 · 무단 복제 · 배포 금지';display:block;margin-top:24px;padding-top:8px;
-    border-top:1px solid rgba(0,0,0,.2);font-size:10px;line-height:1.4;color:#666;text-align:center}
-}
-
-@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
-</style>
-
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<script>try{var __t=localStorage.getItem('cr_theme');if(__t&&__t!=='sky')document.documentElement.dataset.theme=__t;}catch(e){}</script>
+<meta name="theme-color" content="#F2F7FD">
+<style>@font-face{font-family:'Bunpil';font-style:normal;font-weight:100 900;font-display:swap;
+  src:url('https://yjb8634-sudo.github.io/class-diary/fonts/Bunpil-R.woff2') format('woff2'),url('https://yjb8634-sudo.github.io/class-diary/fonts/Bunpil-R.woff') format('woff')}</style>
 <style>
 /* 교실 TV 화면과 같은 칠판 색 */
 :root{
@@ -263,9 +57,6 @@ select.in{padding-right:28px}
 .b svg{width:18px;height:18px}
 /* 탭 */
 nav.tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;margin:0 0 18px;background:transparent!important;padding:0;border:0}
-nav.tabs button{background:#1F2D27!important;border:1px solid rgba(232,228,214,.16)!important;color:#D9D5C7!important;box-shadow:0 1px 0 rgba(0,0,0,.25)}
-nav.tabs button:hover{background:#26372F!important;border-color:rgba(242,209,107,.45)!important;color:#F3F1E7!important}
-nav.tabs button.on{background:#F2D16B!important;border-color:#F2D16B!important;color:#1D2A25!important;font-weight:700;box-shadow:0 2px 10px rgba(242,209,107,.18)}
 nav.tabs button{all:unset;box-sizing:border-box;cursor:pointer;text-align:center;padding:12px 6px;border-radius:var(--shape);background:var(--card);border:1.5px solid var(--line);
   color:var(--chalk2);font-size:15.5px;line-height:1.25;position:relative}
 nav.tabs button:hover{background:var(--card2)}
@@ -408,6 +199,226 @@ table.t td,table.t th{padding:7px 6px;text-align:left;font-size:14.5px;border-bo
 .rost td input{width:100%}
 .credit{text-align:right;font-size:13px;color:var(--chalk3);margin-top:20px}
 @media (max-width:640px){.top h1{font-size:24px} nav.tabs{grid-template-columns:repeat(3,1fr)} nav.tabs button{font-size:13.5px;padding:10px 4px}}
+/* ================= 2026-11 리뉴얼: 밝은 테마 · 왼쪽 메뉴 ================= */
+:root{
+  --bg:#F2F7FD; --card:#FFFFFF; --card2:#F3F7FC; --card3:#E7EFF9; --line:#E2EAF4; --line2:#CCD9EA;
+  --chalk:#15233B; --chalk2:#3A4A64; --chalk3:#6A7A92;
+  --yellow:#2F6FEB; --yellow-ink:#FFFFFF; --mint:#13987A; --pink:#D8505A; --sky:#2F6FEB; --red:#E0565B;
+  --acc-soft:rgba(47,111,235,.10); --acc-line:rgba(47,111,235,.35); --hero1:#E3EEFF; --hero2:#F7FAFF;
+  --shape:14px; --shadow:0 1px 2px rgba(21,35,59,.04),0 6px 22px rgba(21,35,59,.06);
+}
+html[data-theme="mint"]{--bg:#EFF8F5;--card2:#F1F8F5;--card3:#E1F2EC;--line:#DDEDE7;--line2:#C3DDD3;--yellow:#119172;--sky:#119172;--acc-soft:rgba(17,145,114,.10);--acc-line:rgba(17,145,114,.35);--hero1:#DDF3EB;--hero2:#F6FBF9}
+html[data-theme="lavender"]{--bg:#F4F2FC;--card2:#F5F3FC;--card3:#ECE8FA;--line:#E6E2F5;--line2:#D2CCEB;--yellow:#6A4FD8;--sky:#6A4FD8;--acc-soft:rgba(106,79,216,.10);--acc-line:rgba(106,79,216,.35);--hero1:#ECE6FF;--hero2:#F9F7FF}
+html[data-theme="peach"]{--bg:#FDF4EF;--card2:#FCF5F1;--card3:#FAEAE1;--line:#F2E3DA;--line2:#E6CFC2;--yellow:#E06A3B;--sky:#E06A3B;--acc-soft:rgba(224,106,59,.10);--acc-line:rgba(224,106,59,.35);--hero1:#FFE6DA;--hero2:#FFF8F4}
+html[data-theme="beige"]{--bg:#F7F3EA;--card2:#F8F4EB;--card3:#F0E9DA;--line:#ECE4D4;--line2:#DCCFB6;--yellow:#9A6B1F;--sky:#9A6B1F;--acc-soft:rgba(154,107,31,.10);--acc-line:rgba(154,107,31,.35);--hero1:#F3E8CF;--hero2:#FCFAF4}
+html[data-theme="chalk"]{
+  --bg:#1D2A25; --card:#233229; --card2:#2A3A32; --card3:#31443A; --line:rgba(226,222,208,.12); --line2:rgba(226,222,208,.24);
+  --chalk:#E4E0D3; --chalk2:rgba(228,224,211,.82); --chalk3:rgba(228,224,211,.58);
+  --yellow:#E6CD7E; --yellow-ink:#1D2A25; --mint:#8CC6B6; --pink:#DDA29A; --sky:#9BB6DA; --red:#E5735E;
+  --acc-soft:rgba(230,205,126,.10); --acc-line:rgba(230,205,126,.4); --hero1:#24372E; --hero2:#1D2A25; --shadow:none;
+}
+html,body{font-family:'Pretendard Variable',Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
+body{background:var(--bg)}
+.card{border:1px solid var(--line);box-shadow:var(--shadow);border-radius:18px;padding:22px 24px}
+.card > h2{font-size:19px;font-weight:800;letter-spacing:-.02em}
+.in{background:var(--card);color:var(--chalk);border:1px solid var(--line2);border-radius:10px;font-family:inherit}
+.in:focus{outline:none;border-color:var(--yellow);box-shadow:0 0 0 3px var(--acc-soft)}
+.b{border-radius:10px;font-weight:600;background:var(--card);border:1px solid var(--line2);font-family:inherit}
+.b:hover{background:var(--card2);border-color:var(--acc-line)}
+.b.y{box-shadow:0 4px 14px var(--acc-soft)}
+.b.r{color:var(--pink);border-color:rgba(216,80,90,.35)}
+.seg{border-radius:12px;background:var(--card2);border:1px solid var(--line);padding:3px;gap:3px}
+.seg button{border:0;border-radius:9px;font-weight:600}
+.seg button.on{box-shadow:0 2px 8px var(--acc-soft)}
+.tag.y{background:var(--acc-soft);color:var(--yellow)}
+.tag.on{background:rgba(19,152,122,.12)}
+.tag.r{background:rgba(224,86,91,.12);color:var(--pink)}
+.hint{background:var(--acc-soft);border:1px solid var(--acc-line)}
+.pill{background:var(--card);border:1px solid var(--line)}
+.pill b{color:var(--yellow)}
+.bellp,#updModal .updc{background:var(--card);color:var(--chalk);box-shadow:0 24px 60px rgba(21,35,59,.18)}
+.bi:hover{background:var(--card2)}
+.bi.new{background:var(--acc-soft)}
+.bi.new .tt::after{color:var(--yellow-ink)}
+.bell{background:var(--card)}
+.autow .td{background:var(--acc-soft)}
+.pairsteps .addr{color:var(--yellow)}
+#busy{background:rgba(242,247,253,.75);color:var(--chalk)}
+html[data-theme="chalk"] #busy{background:rgba(14,20,17,.7)}
+#toast{box-shadow:0 10px 30px rgba(21,35,59,.25)}
+.fontopt{background:#1D2A25;border-color:#33463C}
+.fontopt .fn{color:#E4E0D3}
+.drop:hover,.drop.over{background:var(--acc-soft)}
+.nos button.on{color:#fff}
+.bar i{background:var(--yellow)}
+table.t th{color:var(--chalk3);font-weight:700;font-size:13px}
+
+#app .pinmode .pmc button.on{background:var(--acc-soft)}
+.tvbox{border-color:var(--acc-line)}
+/* ---- 껍데기: 왼쪽 메뉴 + 본문 ---- */
+.shell{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
+.side{position:sticky;top:0;height:100vh;overflow:auto;background:var(--card);border-right:1px solid var(--line);padding:20px 14px 16px;display:flex;flex-direction:column;gap:6px}
+.brand{display:flex;gap:11px;align-items:center;padding:4px 8px 16px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.brand img{width:40px;height:40px;border-radius:12px}
+.brand b{display:block;font-size:17px;font-weight:800;letter-spacing:-.02em}
+.brand span{display:block;font-size:12.5px;color:var(--chalk3)}
+nav.tabs{display:flex;flex-direction:column;gap:2px;margin:0;padding:0;border:0;background:none}
+nav.tabs .ng{font-size:11.5px;font-weight:800;color:var(--chalk3);letter-spacing:.06em;padding:14px 10px 6px}
+nav.tabs .ng:first-child{padding-top:4px}
+nav.tabs button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:11px;font-size:15px;font-weight:600;color:var(--chalk2);position:relative;transition:background .15s,color .15s}
+nav.tabs button .ic{font-size:18px;width:22px;text-align:center;display:inline-block;margin:0}
+nav.tabs button:hover{background:var(--card2);color:var(--chalk)}
+nav.tabs button.on{background:var(--acc-soft);color:var(--yellow);font-weight:800}
+nav.tabs button.on::before{content:'';position:absolute;left:-14px;top:9px;bottom:9px;width:4px;border-radius:0 4px 4px 0;background:var(--yellow)}
+nav.tabs button .dot{position:static;margin-left:auto;min-width:20px;height:20px;border-radius:10px;background:var(--red);color:#fff;font-size:11.5px;line-height:20px;padding:0 6px;text-align:center;font-weight:700}
+.sidefoot{margin-top:auto;padding:14px 8px 0;border-top:1px solid var(--line)}
+.themes{display:flex;gap:7px;align-items:center;margin-bottom:10px}
+.themes .tl{font-size:12px;color:var(--chalk3);margin-right:2px}
+.themes button{all:unset;cursor:pointer;width:20px;height:20px;border-radius:50%;border:2px solid var(--card);box-shadow:0 0 0 1px var(--line2)}
+.themes button.on{box-shadow:0 0 0 2px var(--yellow)}
+.sidefoot .privacy{font-size:12px}
+.main{min-width:0;padding:22px 32px 70px;max-width:1180px;width:100%}
+.main header.top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.main header.top .tt{flex:1;min-width:240px}
+.main header.top h1{font-size:26px;font-weight:800;letter-spacing:-.03em;line-height:1.25;margin:0;display:flex;align-items:center;gap:10px}
+.main header.top h1 .hi{width:42px;height:42px;border-radius:13px;background:var(--acc-soft);display:inline-flex;align-items:center;justify-content:center;font-size:22px}
+.main{word-break:keep-all}
+.main header.top p{color:var(--chalk3);font-size:14px;margin-top:4px}
+.main .foot{margin-top:24px}
+.wrap{max-width:none;padding:0}
+@media (max-width:900px){
+  .shell{display:block}
+  .side{position:sticky;top:0;z-index:40;height:auto;flex-direction:row;align-items:center;padding:8px 10px;border-right:0;border-bottom:1px solid var(--line);gap:8px;overflow:visible}
+  .brand{border:0;margin:0;padding:0 4px 0 0}
+  .brand span,.sidefoot,nav.tabs .ng{display:none}
+  .brand img{width:32px;height:32px}
+  .brand b{font-size:15px;white-space:nowrap}
+  nav.tabs{flex-direction:row;overflow-x:auto;scrollbar-width:none;gap:4px;flex:1}
+  nav.tabs::-webkit-scrollbar{display:none}
+  nav.tabs button{padding:8px 11px;font-size:14px;white-space:nowrap;flex:none}
+  nav.tabs button.on::before{display:none}
+  nav.tabs button .dot{margin-left:4px}
+  .main{padding:16px 14px 70px}
+  .main header.top h1{font-size:21px}.main header.top h1 .hi{width:34px;height:34px;font-size:18px}
+  .main header.top .pill{display:none}
+  .main header.top .tt{min-width:100%}
+  .main header.top .b.sm{min-height:36px;padding:0 10px;font-size:13.5px}
+  .main header.top .bell{width:36px;height:36px}
+}
+
+/* ---- 도입 애니메이션 ---- */
+#intro{position:fixed;inset:0;z-index:300;background:radial-gradient(1200px 700px at 50% 30%,var(--hero1),var(--bg));display:flex;align-items:center;justify-content:center;cursor:pointer;transition:opacity .6s ease,visibility .6s}
+#intro.out{opacity:0;visibility:hidden}
+#intro .seq{display:flex;flex-direction:column;gap:14px;min-width:min(340px,80vw)}
+#intro .ln{display:flex;align-items:center;gap:14px;font-size:clamp(20px,3.2vw,28px);font-weight:800;color:var(--chalk);opacity:0;transform:translateY(14px);animation:inLn .5s cubic-bezier(.2,.9,.3,1) forwards}
+#intro .ln .ck{width:34px;height:34px;border-radius:50%;background:var(--card);border:2px solid var(--line2);display:inline-flex;align-items:center;justify-content:center;flex:none;position:relative;overflow:hidden}
+#intro .ln .ck::after{content:'✓';color:#fff;font-size:18px;font-weight:900;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--yellow);transform:scale(0);border-radius:50%;animation:ckPop .35s cubic-bezier(.3,1.6,.5,1) forwards;animation-delay:inherit}
+#intro .ln .em{font-size:.9em}
+#intro .ln small{font-size:.58em;font-weight:600;color:var(--chalk3)}
+#intro .fin{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;opacity:0;pointer-events:none}
+#intro.fin .seq{animation:seqOut .45s ease forwards}
+#intro.fin .fin{animation:finIn .7s cubic-bezier(.2,.9,.3,1) .15s forwards}
+#intro .fin img{width:92px;height:92px;border-radius:26px;box-shadow:0 18px 40px var(--acc-soft)}
+#intro .fin b{font-size:clamp(34px,6vw,54px);font-weight:900;letter-spacing:-.04em;color:var(--chalk)}
+#intro .fin span{font-size:clamp(15px,2.2vw,19px);color:var(--chalk2);font-weight:600}
+#intro .skip{position:absolute;right:20px;bottom:20px;font-size:13px;color:var(--chalk3);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:7px 14px}
+@keyframes inLn{to{opacity:1;transform:none}}
+@keyframes ckPop{to{transform:scale(1)}}
+@keyframes seqOut{to{opacity:0;transform:translateY(-16px) scale(.97)}}
+@keyframes finIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+
+/* ---- 소개 페이지 (로그인 전) ---- */
+.lp{word-break:keep-all;min-height:100vh;background:linear-gradient(180deg,var(--hero1),var(--hero2) 520px,var(--bg) 900px)}
+.lp-nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:18px;padding:14px max(20px,calc(50vw - 560px));background:color-mix(in srgb,var(--card) 78%,transparent);backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--line)}
+.lp-nav .lg{display:flex;align-items:center;gap:9px;font-weight:900;font-size:18px;letter-spacing:-.03em;color:var(--chalk);text-decoration:none}
+.lp-nav .lg img{width:30px;height:30px;border-radius:9px}
+.lp-nav nav{display:flex;gap:18px;margin-left:auto}
+.lp-nav nav a{color:var(--chalk2);font-size:14.5px;font-weight:600;text-decoration:none}
+.lp-nav nav a:hover{color:var(--yellow)}
+.lp-in{max-width:1120px;margin:0 auto;padding:0 20px}
+.hero{display:grid;grid-template-columns:1.05fr 1fr;gap:48px;align-items:center;padding:72px 0 56px}
+.hero .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;color:var(--yellow);background:var(--acc-soft);border:1px solid var(--acc-line);padding:6px 12px;border-radius:999px}
+.hero h1{font-size:clamp(32px,4.1vw,50px);line-height:1.18;font-weight:900;letter-spacing:-.045em;margin:18px 0 18px;color:var(--chalk)}
+.hero h1 em{font-style:normal;color:var(--yellow);position:relative;white-space:nowrap}
+.hero h1 em::after{content:'';position:absolute;left:0;right:0;bottom:.06em;height:.26em;background:var(--acc-soft);z-index:-1;border-radius:4px;transform-origin:left;animation:hlIn .9s .5s cubic-bezier(.2,.9,.3,1) both}
+@keyframes hlIn{from{transform:scaleX(0)}}
+.hero p.sub{font-size:17px;line-height:1.75;color:var(--chalk2);max-width:520px}
+.hero p.sub b{color:var(--chalk)}
+.hero .cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}
+.hero .cta .b{min-height:54px;padding:0 24px;font-size:17px;border-radius:14px}
+.hero .gbtn{background:var(--yellow);color:var(--yellow-ink);border-color:transparent;font-weight:800;box-shadow:0 10px 26px var(--acc-soft)}
+.hero .gbtn svg{width:20px;height:20px;background:#fff;border-radius:50%;padding:2px}
+.hero .note{margin-top:14px;font-size:13px;color:var(--chalk3)}
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.9,.3,1)}
+.reveal.on{opacity:1;transform:none}
+/* TV 목업 */
+.tvm{position:relative;filter:drop-shadow(0 30px 50px rgba(21,35,59,.18))}
+.tvm .fr{background:#0F1714;border-radius:18px;padding:12px;aspect-ratio:16/10.2}
+.tvm .sc{position:relative;height:100%;border-radius:8px;background:#1D2A25;color:#E4E0D3;overflow:hidden;display:grid;grid-template-columns:1fr 1.15fr;gap:10px;padding:14px;font-size:12px}
+.tvm .st{position:absolute;left:50%;bottom:-26px;width:26%;height:26px;transform:translateX(-50%);background:linear-gradient(#1A2420,#0C1310);clip-path:polygon(18% 0,82% 0,100% 100%,0 100%)}
+.tvm .clk{font-size:38px;font-weight:800;letter-spacing:-.02em;line-height:1}
+.tvm .cl small{display:block;font-size:11px;color:#A9B3A9;margin-top:4px}
+.tvm .now{margin-top:12px;background:#24342C;border-radius:8px;padding:9px 10px}
+.tvm .now b{display:block;font-size:20px;color:#F2D16B}
+.tvm .tpn{background:#24342C;border-radius:8px;padding:9px 10px;position:relative}
+.tvm .tpn h4{margin:0 0 6px;font-size:11px;color:#A9B3A9;font-weight:700}
+.tvm .nt{font-size:13px;font-weight:700;line-height:1.45;opacity:0;animation:tvNote 9s infinite}
+.tvm .nt i{font-style:normal;background:#E5735E;color:#fff;font-size:9.5px;padding:1px 5px;border-radius:4px;margin-right:5px}
+.tvm .sv{display:grid;gap:5px;margin-top:2px}
+.tvm .sv div{display:grid;grid-template-columns:76px 1fr 20px;white-space:nowrap;align-items:center;gap:6px;font-size:11px}
+.tvm .sv span.b2{height:9px;border-radius:5px;background:#33463C;overflow:hidden}
+.tvm .sv span.b2 i{display:block;height:100%;background:#F2D16B;border-radius:5px;transform-origin:left;animation:tvBar 9s infinite}
+.tvm .tck{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+.tvm .tck span{width:22px;height:22px;border-radius:6px;background:#33463C;font-size:10px;display:flex;align-items:center;justify-content:center;color:#A9B3A9;animation:tvChk 9s infinite}
+.tvm .tap{position:absolute;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.35);border:2px solid #fff;pointer-events:none;opacity:0;animation:tvTap 9s infinite}
+@keyframes tvNote{0%,4%{opacity:0;transform:translateY(6px)}8%,92%{opacity:1;transform:none}100%{opacity:0}}
+@keyframes tvBar{0%,30%{transform:scaleX(0)}45%,92%{transform:scaleX(var(--w))}100%{transform:scaleX(0)}}
+@keyframes tvChk{0%,52%{background:#33463C;color:#A9B3A9}58%,92%{background:#8CC6B6;color:#11241E}100%{background:#33463C}}
+@keyframes tvTap{0%,20%{opacity:0;transform:scale(1.4)}24%{opacity:1;transform:scale(1)}30%{opacity:0;transform:scale(.8)}100%{opacity:0}}
+.tvm .float{position:absolute;background:var(--card);color:var(--chalk);border:1px solid var(--line);border-radius:14px;padding:10px 13px;font-size:13px;font-weight:700;box-shadow:0 14px 30px rgba(21,35,59,.14);display:flex;align-items:center;gap:8px;animation:flt 5s ease-in-out infinite}
+.tvm .float .d{width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:var(--acc-soft);font-size:15px}
+.tvm .f1{left:-30px;bottom:4%}.tvm .f2{right:-22px;top:4%;animation-delay:-2.5s}
+@keyframes flt{50%{transform:translateY(-8px)}}
+/* 섹션 */
+.lp-sec{padding:64px 0 24px}
+.lp-sec .no{font-size:13px;font-weight:800;color:var(--yellow);letter-spacing:.08em}
+.lp-sec h2{font-size:clamp(26px,3.2vw,36px);font-weight:900;letter-spacing:-.04em;margin:8px 0 10px;color:var(--chalk)}
+.lp-sec p.d{color:var(--chalk2);font-size:16px;max-width:640px;line-height:1.7}
+.fgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:28px}
+.fcard{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:var(--shadow);position:relative;transition:transform .25s ease,box-shadow .25s ease}
+.fcard:hover{transform:translateY(-3px);box-shadow:0 18px 40px rgba(21,35,59,.10)}
+.fcard .n{position:absolute;right:20px;top:16px;font-size:44px;font-weight:900;color:var(--line);letter-spacing:-.04em}
+.fcard .ic{width:48px;height:48px;border-radius:14px;background:var(--acc-soft);display:flex;align-items:center;justify-content:center;font-size:24px}
+.fcard h3{font-size:19px;font-weight:800;margin:14px 0 6px;letter-spacing:-.02em}
+.fcard p{color:var(--chalk2);font-size:14.5px;line-height:1.65}
+.fcard ul{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:5px}
+.fcard li{font-size:14px;color:var(--chalk2);padding-left:20px;position:relative}
+.fcard li::before{content:'✓';position:absolute;left:0;color:var(--yellow);font-weight:900}
+.fcard.big{grid-row:span 1;background:linear-gradient(135deg,var(--card),var(--acc-soft))}
+.fcard.small2{opacity:.92}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:28px;counter-reset:st}
+.step{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px}
+.step b{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:800}
+.step b::before{counter-increment:st;content:counter(st);width:30px;height:30px;border-radius:50%;background:var(--yellow);color:var(--yellow-ink);display:inline-flex;align-items:center;justify-content:center;font-size:14px}
+.step p{color:var(--chalk2);font-size:14.5px;margin-top:8px;line-height:1.65}
+.step kbd{font-family:inherit;font-size:13px;background:var(--card2);border:1px solid var(--line2);border-bottom-width:2px;border-radius:6px;padding:1px 7px;font-weight:700;color:var(--chalk)}
+.lp-end{margin:64px 0 0;padding:44px 24px;border-radius:24px;text-align:center;background:linear-gradient(135deg,var(--yellow),color-mix(in srgb,var(--yellow) 70%,#000));color:#fff}
+.lp-end h2{font-size:clamp(24px,3vw,32px);font-weight:900;letter-spacing:-.03em}
+.lp-end p{opacity:.9;margin-top:8px}
+.lp-end .b{margin-top:20px;background:#fff;color:#15233B;border:0;min-height:52px;padding:0 26px;font-size:16.5px;font-weight:800;border-radius:14px}
+.lp-foot{padding:28px 0 40px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--chalk3);font-size:13px}
+@media (max-width:900px){
+  .hero{grid-template-columns:1fr;padding:40px 0 30px;gap:34px}
+  .lp-nav nav{display:none}
+  .fgrid,.steps{grid-template-columns:1fr}
+  .tvm .float{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  #intro{display:none}
+  .reveal{opacity:1;transform:none;transition:none}
+  .tvm *{animation:none!important;opacity:1!important}
+}
+
 </style>
 </head>
 <body>
@@ -495,16 +506,81 @@ async function route(){
   watchBoard();
 }
 
+/* ---------- 첫 화면: 도입 애니메이션 + 소개 ---------- */
+const G_ICON = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-17.1z"/><path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.8-5.8l-7.4-5.7c-2.1 1.4-4.8 2.3-8.4 2.3-6.2 0-11.5-4.1-13.4-9.8l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>';
+function introPlay(){
+  let seen = false; try { seen = sessionStorage.getItem('cr_intro') === '1'; } catch (e) {}
+  if (seen || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) || $('intro')) return;
+  try { sessionStorage.setItem('cr_intro', '1'); } catch (e) {}
+  const L = [['📌', '공지 올리기', '교실 TV에 바로'], ['🗳', '설문 · 투표 · 현황 조사', '학생은 TV에서 답해요'], ['✅', '가정통신문 제출 확인', '누가 냈는지 한눈에'], ['📺', '시계 · 시간표 · 급식', '알아서 바뀌어요']];
+  const el = document.createElement('div'); el.id = 'intro'; el.setAttribute('role', 'presentation');
+  el.innerHTML = `<div class="seq">${L.map((x, k) => `<div class="ln" style="animation-delay:${.25 + k * .48}s"><span class="ck" style="animation-delay:${.55 + k * .48}s"></span><span class="em">${x[0]}</span><span>${x[1]} <small>${x[2]}</small></span></div>`).join('')}</div>
+    <div class="fin"><img src="icon-192.png" alt=""><b>교실 화면</b><span>공지부터 제출 확인까지, 교실 TV 한 번에</span></div>
+    <span class="skip">누르면 건너뛰기</span>`;
+  /* 체크 표시는 줄마다 조금씩 늦게 */
+  el.querySelectorAll('.ck').forEach(c => { c.style.setProperty('animation-delay', c.style.animationDelay); });
+  document.body.appendChild(el);
+  const T = [];
+  const done = () => { T.forEach(clearTimeout); el.classList.add('out'); setTimeout(() => el.remove(), 650); };
+  T.push(setTimeout(() => el.classList.add('fin'), 2600));
+  T.push(setTimeout(done, 4300));
+  el.addEventListener('click', done);
+}
 function vLogin(){
-  $('app').innerHTML = `<div class="center">
-    <img class="logo" src="icon-192.png" alt="">
-    <h1 style="font-size:34px;margin:0 0 8px">교실 화면</h1>
-    <p class="muted" style="margin:0 0 24px;font-size:16px">${esc(SCHOOL.name)} 선생님용<br>우리 반 TV에 시계 · 시간표 · 급식 · 공지를 띄웁니다</p>
-    <button class="b y big" id="btnLogin" style="width:100%">구글 계정으로 시작하기</button>
-    <p class="small muted" style="margin-top:16px">처음이면 학년 · 반을 입력해 가입을 신청하고, 승인되면 바로 쓸 수 있어요.</p>
-    <p class="privacy" style="text-align:center;margin-top:18px">🔒 우리 반 자료는 담임 선생님만 관리하며, 운영자는 열람할 수 없습니다.</p>
-    <p class="credit" style="text-align:center;margin-top:6px">제작자 : 강릉제일고 유준배 선생님</p></div>`;
-  $('btnLogin').onclick = login;
+  const F = [
+    ['📌', '공지 · 알림장 · 가정통신문', '공지를 올리면 교실 TV에 바로 떠요. 가정통신문 · 제출 서류는 <b>누가 냈는지 체크</b>하고, 마감이 다가오면 알림 종이 알려 줘요.', ['중요 공지는 TV 맨 위에 빨갛게', '제출 확인 · 안 낸 학생 번호 표시', '첨부 파일(PDF · 사진)은 TV에서 크게'], 'big'],
+    ['🗳', '설문 · 투표 · 현황 조사', '학생이 교실 TV에서 자기 번호를 누르고 바로 답해요. 결과는 실시간으로 모이고 <b>그림 한 장으로 카톡</b>에 보낼 수 있어요.', ['선택형 · 체크형 · 구글 설문 링크(QR)', '이미 낸 답은 학생 PIN으로만 수정', '결과 공개 · 익명 조사'], 'big'],
+    ['💬', '상담 신청 · 건의함', '학생이 TV에서 빈 시간을 골라 상담을 신청하고, 하고 싶은 말을 건의함에 넣어요.', ['점심 · 방과 후 시간 칸', '선생님만 읽는 건의함']],
+    ['📺', '시계 · 시간표 · 급식 · 음악', '컴시간 시간표(수업 교환 반영) · 나이스 급식 · 일정 · 날씨가 알아서 바뀌어요.', ['바뀐 교시에 [변경] 표시', '점심 · 청소시간 음악, 타이머']]
+  ];
+  $('app').innerHTML = `<div class="lp">
+    <header class="lp-nav"><a class="lg" href="#top"><img src="icon-192.png" alt="">교실 화면</a>
+      <nav><a href="#f">기능</a><a href="#s">시작하기</a><a href="#q">안심하고 쓰기</a></nav>
+      <button class="b sm y" data-go="login">시작하기</button></header>
+    <div class="lp-in" id="top">
+      <section class="hero">
+        <div class="reveal">
+          <span class="eyebrow">🏫 ${esc(SCHOOL.name)} 선생님용 · 무료</span>
+          <h1>공지부터 제출 확인까지,<br><em>교실 TV 한 번에</em></h1>
+          <p class="sub">우리 반 스마트 TV에 <b>공지 · 설문조사 · 현황조사 · 가정통신문 제출 확인</b>을 띄우고, 학생은 TV에서 바로 답해요. 시계 · 시간표 · 급식은 알아서 따라와요.</p>
+          <div class="cta"><button class="b gbtn" id="btnLogin" data-go="login">${G_ICON} 구글 계정으로 시작하기</button><a class="b" href="#s">어떻게 쓰나요?</a></div>
+          <p class="note">처음이면 학년 · 반을 넣어 가입을 신청하고, 승인되면 바로 쓸 수 있어요.</p>
+        </div>
+        <div class="tvm reveal" aria-hidden="true"><div class="fr"><div class="sc">
+            <div><div class="cl"><div class="clk">08:35</div><small>11월 6일 금요일 · 맑음 12°</small></div>
+              <div class="now"><small style="color:#A9B3A9">조회 · 08:30~08:40</small><b>좋은 아침이에요</b></div>
+              <div class="tpn" style="margin-top:10px"><h4>✅ 체험학습 동의서 제출</h4><div class="tck">${Array.from({length: 15}, (_, k) => `<span style="animation-delay:${(k % 5) * .12 + Math.floor(k / 5) * .25}s">${k + 1}</span>`).join('')}</div></div></div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div class="tpn"><h4>📌 공지사항</h4><div class="nt"><i>중요</i>내일 3교시 체육관 집합</div><div class="nt" style="animation-delay:.6s;font-weight:500;color:#C9CDBF">수행평가 마감은 금요일</div></div>
+              <div class="tpn" style="flex:1"><h4>🗳 2학기 희망 도서</h4><div class="sv">
+                <div><span>아몬드</span><span class="b2"><i style="--w:.85"></i></span><span>12</span></div>
+                <div><span>어린 왕자</span><span class="b2"><i style="--w:.55;animation-delay:.25s"></i></span><span>8</span></div>
+                <div><span>불편한 편의점</span><span class="b2"><i style="--w:.35;animation-delay:.5s"></i></span><span>5</span></div></div>
+                <span class="tap" style="right:22%;bottom:18%"></span></div></div>
+          </div></div><div class="st"></div>
+          <div class="float f1"><span class="d">🔔</span>3명이 아직 안 냈어요</div>
+          <div class="float f2"><span class="d">📤</span>결과를 카톡으로</div></div>
+      </section>
+      <section class="lp-sec" id="f"><div class="reveal"><span class="no">01 · 기능</span><h2>담임 업무, TV가 대신 챙겨요</h2>
+        <p class="d">가장 많이 쓰는 건 공지와 설문, 그리고 제출 확인이에요. 시계와 시간표는 그다음이에요.</p></div>
+        <div class="fgrid">${F.map((f, k) => `<article class="fcard reveal ${f[4] || ''}"><span class="n">${String(k + 1).padStart(2, '0')}</span><div class="ic">${f[0]}</div><h3>${f[1]}</h3><p>${f[2]}</p><ul>${f[3].map(x => `<li>${x}</li>`).join('')}</ul></article>`).join('')}</div></section>
+      <section class="lp-sec" id="s"><div class="reveal"><span class="no">02 · 시작하기</span><h2>3분이면 교실 TV가 켜져요</h2></div>
+        <div class="steps">
+          <div class="step reveal"><b>구글 계정으로 로그인</b><p>학년 · 반 · 이름을 넣고 가입을 신청해요. 운영자가 승인하면 바로 쓸 수 있어요.</p></div>
+          <div class="step reveal"><b>교실 TV에서 주소 열기</b><p>TV 브라우저에 <kbd>is.gd/jeiltv</kbd> 를 넣으면 숫자 6자리가 떠요.</p></div>
+          <div class="step reveal"><b>숫자 넣으면 끝</b><p>관리 화면 [TV 연결]에 그 숫자를 넣으면 우리 반 TV로 바뀌어요. 이제 공지 · 설문을 올려 보세요.</p></div></div></section>
+      <section class="lp-sec" id="q"><div class="reveal"><span class="no">03 · 안심하고 쓰기</span><h2>우리 반 자료는 담임 선생님만</h2>
+        <p class="d">🔒 우리 반 자료는 담임 선생님만 관리하며, 운영자는 열람할 수 없습니다. 학생 휴대폰 주소는 이름을 가려서 보여 주고, 백업은 선생님 구글 드라이브에 저장해요.</p></div></section>
+      <section class="lp-end reveal"><h2>내일 아침 조회부터, 공지는 TV 한 번에.</h2><p>설치 없이 지금 바로 시작할 수 있어요.</p><button class="b" data-go="login">구글 계정으로 시작하기</button></section>
+      <footer class="lp-foot"><span>제작자 : 강릉제일고 유준배 선생님</span><span>교실 화면 · ${esc(SCHOOL.name)}</span></footer>
+    </div></div>`;
+  document.querySelectorAll('[data-go="login"]').forEach(b => b.onclick = login);
+  const R = document.querySelectorAll('.lp .reveal');
+  if ('IntersectionObserver' in window){
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting){ e.target.classList.add('on'); io.unobserve(e.target); } }), { threshold: .12 });
+    R.forEach((r, k) => { r.style.transitionDelay = (k < 2 ? k * .12 : 0) + 's'; io.observe(r); });
+  } else R.forEach(r => r.classList.add('on'));
+  introPlay();
 }
 function vJoin(){
   $('app').innerHTML = `<div class="center"><div class="card">
@@ -991,6 +1067,27 @@ function pendBox(kind, label){
 /* ================= 그리기 ================= */
 const TABS = [['notice', '📌', '공지 · 알림장'], ['survey', '🗳', '설문·투표·조사'], ['look', '🎨', '화면 꾸미기'], ['time', '🕘', '시간표 설정'],
   ['roster', '👥', '학급 명단'], ['counsel', '💬', '상담 신청'], ['suggest', '✉️', '건의함'], ['tv', '📺', 'TV 연결'], ['flash', '📣', '긴급 호출 · 쪽지']];
+const TAB_GROUPS = [['자주 쓰는 기능', ['notice', 'survey']], ['교실 TV 꾸미기', ['look', 'time']], ['우리 반', ['roster', 'counsel', 'suggest']], ['연결 · 호출', ['tv', 'flash', 'op']]];
+const TAB_DESC = {
+  notice: '교실 TV 공지, 알림장 · 가정통신문을 올리고 누가 냈는지 확인해요',
+  survey: '학생이 교실 TV에서 바로 답하는 설문 · 투표 · 현황 조사',
+  look: 'TV 미리보기 · 음악과 소리 · 글꼴 · 화면 배치',
+  time: '교시 시각 · 요일별 시간표(컴시간 · 나이스) · 학급 일정 · 백업',
+  roster: '번호 · 이름 · 생일, 그리고 학생 PIN',
+  counsel: '학생이 교실 TV에서 신청한 상담 일정',
+  suggest: '학생들이 교실 TV에서 보낸 건의 (선생님만 읽어요)',
+  tv: '교실 TV 연결, 학생 · 학부모 휴대폰 주소',
+  flash: 'TV 한가운데 크게 띄우는 호출 · 쪽지',
+  op: '선생님 가입 승인 (운영자만)'
+};
+const THEMES = [['sky', '#2F6FEB', '스카이'], ['mint', '#119172', '민트'], ['lavender', '#6A4FD8', '라벤더'], ['peach', '#E06A3B', '피치'], ['beige', '#C9A86A', '베이지'], ['chalk', '#1D2A25', '칠판(어둡게)']];
+function themeNow(){ return document.documentElement.dataset.theme || 'sky'; }
+function themeSet(k){
+  if (k === 'sky') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = k;
+  try { localStorage.setItem('cr_theme', k); } catch (e) {}
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = getComputedStyle(document.body).backgroundColor;
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-theme-set]'); if (b){ themeSet(b.dataset.themeSet); render(); } });
 function render(){
   const B = S.B; if (!B) return;
   const keep = captureDrafts();
@@ -998,11 +1095,21 @@ function render(){
   if (!T.some(t => t[0] === S.tab)) S.tab = 'notice';
   const nStu = (B.students || []).length;
   const openSv = (B.surveys || []).filter(s => s.open).length, upC = (S.CNS || []).filter(c => c.date >= kstToday()).length;
-  $('app').innerHTML = `<header class="top"><h1>${esc(B.grade)}학년 ${esc(B.klass)}반 교실 화면<small>${esc(S.me.name)} 선생님 · ${esc(S.user.email)}</small></h1>
-      <span class="pill">학생 <b>${nStu}</b>명</span>${openSv ? `<span class="pill">진행 중 조사 <b>${openSv}</b></span>` : ''}<button class="b sm mobbtn" data-a="mobile" title="휴대폰에서 쓰기 · 앱 설치">📱 모바일</button>${isPhone() ? '' : '<button class="b sm mobbtn" data-a="pcinst" title="이 컴퓨터 바탕화면에 앱으로 설치">💻 바탕화면</button>'}${bellHtml()}<button class="b sm" id="btnOut">로그아웃</button></header>
-    <nav class="tabs">${T.map(([v, ic, l]) => `<button data-tab="${v}" class="${S.tab === v ? 'on' : ''}"><span class="ic">${ic}</span>${l}${v === 'survey' && openSv ? `<span class="dot">${openSv}</span>` : ''}${v === 'counsel' && upC ? `<span class="dot">${upC}</span>` : ''}</button>`).join('')}</nav>
-    <div id="body">${({ flash: vFlash, notice: vNotice, look: vLook, time: vTime, roster: vRoster, survey: vSurvey, counsel: vCounsel, suggest: vSuggest, tv: vTvConnect, op: () => '<div id="opBox"></div>' })[S.tab]()}</div>
-    <div class="foot"><p class="privacy">🔒 우리 반 자료는 담임 선생님만 관리하며, 운영자는 열람할 수 없습니다.</p><p class="credit"><button class="updlink" data-a="updhist">📋 업데이트 내역</button>제작자 : 강릉제일고 유준배 선생님</p></div>`;
+  const cur = T.find(t => t[0] === S.tab) || T[0];
+  const tabBtn = ([v, ic, l]) => `<button data-tab="${v}" class="${S.tab === v ? 'on' : ''}"><span class="ic">${ic}</span>${l}${v === 'survey' && openSv ? `<span class="dot">${openSv}</span>` : ''}${v === 'counsel' && upC ? `<span class="dot">${upC}</span>` : ''}</button>`;
+  const grp = TAB_GROUPS.map(([g, ids]) => { const L = T.filter(t => ids.includes(t[0])); return L.length ? `<div class="ng">${g}</div>${L.map(tabBtn).join('')}` : ''; }).join('');
+  $('app').innerHTML = `<div class="shell">
+    <aside class="side"><div class="brand"><img src="icon-192.png" alt=""><div><b>교실 화면</b><span>${esc(B.grade)}학년 ${esc(B.klass)}반 · ${esc(S.me.name)} 선생님</span></div></div>
+      <nav class="tabs" aria-label="메뉴">${grp}</nav>
+      <div class="sidefoot"><div class="themes"><span class="tl">색</span>${THEMES.map(([k, c, n]) => `<button data-theme-set="${k}" title="${n}" aria-label="${n} 테마" class="${themeNow() === k ? 'on' : ''}" style="background:${c}"></button>`).join('')}</div>
+        <p class="privacy">🔒 우리 반 자료는 담임 선생님만 관리하며, 운영자는 열람할 수 없습니다.</p></div></aside>
+    <main class="main">
+      <header class="top"><div class="tt"><h1><span class="hi">${cur[1]}</span>${cur[2]}</h1><p>${TAB_DESC[cur[0]] || ''}</p></div>
+        <span class="pill">학생 <b>${nStu}</b>명</span>${openSv ? `<span class="pill">진행 중 조사 <b>${openSv}</b></span>` : ''}<button class="b sm mobbtn" data-a="mobile" title="휴대폰에서 쓰기 · 앱 설치">📱 모바일</button>${isPhone() ? '' : '<button class="b sm mobbtn" data-a="pcinst" title="이 컴퓨터 바탕화면에 앱으로 설치">💻 바탕화면</button>'}${bellHtml()}<button class="b sm" id="btnOut">로그아웃</button></header>
+      <div id="body">${({ flash: vFlash, notice: vNotice, look: vLook, time: vTime, roster: vRoster, survey: vSurvey, counsel: vCounsel, suggest: vSuggest, tv: vTvConnect, op: () => '<div id="opBox"></div>' })[S.tab]()}</div>
+      <div class="foot"><p class="privacy">${esc(S.user.email)}</p><p class="credit"><button class="updlink" data-a="updhist">📋 업데이트 내역</button>제작자 : 강릉제일고 유준배 선생님</p></div>
+    </main></div>`;
+  { const on = document.querySelector('nav.tabs button.on'); if (on && window.innerWidth <= 900) on.scrollIntoView({ inline: 'center', block: 'nearest' }); }
   $('btnOut').onclick = logout;
   { const bb = $('btnBell'); if (bb) bb.onclick = ev => { ev.stopPropagation(); bellToggle(); }; }
   restoreDrafts(keep);
@@ -1484,8 +1591,12 @@ function vLinkForm(){
 }
 
 /* ---------- 알림 종 ---------- */
-const APP_VER = '2026-11-02a';
+const APP_VER = '2026-11-05a';
 const UPDATES = [
+  { v: '2026-11-05a', title: '11월 5일 업데이트 · 새 디자인', items: [
+    '✨ 관리 화면을 새로 꾸몄어요: 밝은 화면, 왼쪽 메뉴(자주 쓰는 기능 · 교실 TV 꾸미기 · 우리 반 · 연결), 탭마다 짧은 설명',
+    '🎨 왼쪽 아래 [색]에서 스카이 · 민트 · 라벤더 · 피치 · 베이지 · 칠판(어둡게) 중 고를 수 있어요 (이 기기에만 저장)',
+    '🚀 첫 화면에 짧은 소개 애니메이션과 기능 안내가 생겼어요 (누르면 건너뛰기)'] },
   { v: '2026-11-02a', title: '11월 2일 업데이트', items: [
     '📋 시간표 설정 탭에서 이번 주 TV 시간표(과목 · 선생님)를 바로 볼 수 있고, [이번 주 시간표로 빈칸 채우기]로 칸을 채울 수 있어요',
     '🕘 TV 시간표가 컴시간을 따라요: 일과계에서 수업 교환 · 보강을 입력하면 30분 안에 교실 TV에 반영되고, 바뀐 교시에 노란 [변경] 표시가 붙어요 (시간표 설정 탭에서 컴시간 / 나이스 / 직접 입력을 고를 수 있어요)'] },
