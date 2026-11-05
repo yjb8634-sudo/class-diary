@@ -108,6 +108,8 @@ function boardCfg_() {
     eventDays: Number(c['교실_일정일수']) || 30,
     eventAddOn: (c['교실_학생일정'] || '예') !== '아니오',
     font: String(c['교실_글꼴'] || ''),
+    tvt: String(c['교실_TV색'] || ''),
+    tvp: String(c['교실_TV무늬'] || ''),
     sound: boardSound_(boardJson_(c['교실_소리'], {})),
     layout: boardLayoutGet_(c),
     quote: boardJson_(c['교실_명언'], { on: true, mode: 'day', list: [] }),
@@ -916,7 +918,7 @@ function boardBuildData_(mode) {
     notices: boardNotices_(false).map(function (n) { return { id: n.id, text: n.text, level: n.level, important: n.important, file: n.file, files: n.files }; }),
     notes: noteBoardList_(sts),
     birthdays: boardWeekBirthdays_(now, sts),
-    suggestOn: c.suggestOn, eventAddOn: c.eventAddOn, font: c.font, sound: mode === 'phone' ? { bday: c.sound.bday, fxVol: c.sound.fxVol } : c.sound,
+    suggestOn: c.suggestOn, eventAddOn: c.eventAddOn, font: c.font, tvt: c.tvt, tvp: c.tvp, sound: mode === 'phone' ? { bday: c.sound.bday, fxVol: c.sound.fxVol } : c.sound,
     links: (Array.isArray(c.links) ? c.links : []).filter(function (l) { return l && l.url && l.on !== false; })
       .map(function (l) { return { id: l.id, title: l.title, url: l.url }; }),
     specials: (c.specials || []).filter(function (x) { return x && x.name && x.s && x.e; }),
@@ -1217,6 +1219,8 @@ function apiBoardSaveSettings(pw, o) {
   }
   if ('eventNeis' in o) setConfigValue_('교실_일정나이스', o.eventNeis ? '예' : '아니오');
   if ('sound' in o) setConfigValue_('교실_소리', JSON.stringify(boardSound_(o.sound)));
+  if ('tvt' in o) setConfigValue_('교실_TV색', ['night', 'wood', 'grape', 'ocean', 'paper'].indexOf(o.tvt) >= 0 ? o.tvt : '');
+  if ('tvp' in o) setConfigValue_('교실_TV무늬', ['glow', 'dots', 'grid', 'stripe'].indexOf(o.tvp) >= 0 ? o.tvp : '');
   if ('font' in o) setConfigValue_('교실_글꼴', String(o.font || '').replace(/[^a-z0-9-]/gi, '').slice(0, 40));
   if ('eventAddOn' in o) setConfigValue_('교실_학생일정', o.eventAddOn ? '예' : '아니오');
   if ('eventDays' in o) setConfigValue_('교실_일정일수', String(Math.max(7, Math.min(90, Number(o.eventDays) || 30))));

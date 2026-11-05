@@ -576,6 +576,21 @@ html[data-theme="chalk"] .flst.r-away{background:#5A3934}
 @media (max-width:520px){.cute{grid-template-columns:1fr}.callm .bt{flex-direction:column}.callm .wh{font-size:32px}}
 #intro .stage .en{font:700 clamp(13px,1.7vw,16px) var(--mono);letter-spacing:.32em;text-transform:uppercase;color:var(--chalk3);margin:-2px 0 6px;animation:inUp .6s 2.32s cubic-bezier(.2,.9,.3,1) both}
 .lp-nav .lg .en{font:700 11px var(--mono);font-style:normal;letter-spacing:.14em;text-transform:uppercase;color:var(--chalk3);margin-left:8px;padding:3px 8px;border-radius:999px;background:var(--card2)}
+
+.tvlk{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-top:12px}
+.tvlk .tvt{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:7px;padding:8px;border-radius:16px;border:2px solid transparent;text-align:center}
+.tvlk .tvt:hover{background:rgba(127,127,127,.08)}
+.tvlk .tvt.on{border-color:currentColor}
+.tvlk .pv{display:grid;grid-template-columns:1.4fr 1fr;gap:5px;padding:7px;border-radius:10px;aspect-ratio:16/9;box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+.tvlk .pv i{border-radius:5px;padding:5px;display:flex;flex-direction:column;gap:4px}
+.tvlk .pv b{display:block;width:40%;height:5px;border-radius:3px}
+.tvlk .pv u{display:block;height:3px;border-radius:2px;opacity:.75;text-decoration:none}
+.tvlk .nm{font-size:13.5px;font-weight:700}
+.tvpk{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px}
+.tvpk .lb{font-size:13.5px;font-weight:700;opacity:.7;margin-right:4px}
+.tvpk .tvp{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:6px 14px 6px 6px;border-radius:999px;border:1.5px solid rgba(127,127,127,.3);font-size:13.5px;font-weight:700}
+.tvpk .tvp.on{border-color:currentColor;box-shadow:inset 0 0 0 1px currentColor}
+.tvpk .sw{width:26px;height:26px;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.1)}
 </style>
 </head>
 <body>
@@ -676,6 +691,9 @@ const IC = {
   tv: '<rect x="2" y="7" width="20" height="15" rx="2"/><path d="m17 2-5 5-5-5"/>',
   flash: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
   op: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
+  cal: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>',
+  sound: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+  backup: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>',
   check: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
   play: '<path d="M7 4v16l13-8z" fill="currentColor" stroke="none"/>',
   bolt: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>'
@@ -1335,18 +1353,21 @@ function pendBox(kind, label){
 }
 
 /* ================= 그리기 ================= */
-const TABS = [['notice', 'notice', '공지 · 알림장'], ['survey', 'survey', '설문 · 투표 · 조사'], ['look', 'look', '화면 꾸미기'], ['time', 'time', '시간표 설정'],
-  ['roster', 'roster', '학급 명단'], ['counsel', 'counsel', '상담 신청'], ['suggest', 'suggest', '건의함'], ['tv', 'tv', 'TV 연결'], ['flash', 'flash', '학생 호출 · 쪽지']];
-const TAB_GROUPS = [['자주 쓰는 기능', ['notice', 'survey']], ['교실 TV 꾸미기', ['look', 'time']], ['우리 반', ['roster', 'counsel', 'suggest']], ['연결 · 호출', ['tv', 'flash', 'op']]];
+const TABS = [['notice', 'notice', '공지 · 알림장'], ['survey', 'survey', '설문 · 투표 · 조사'], ['cal', 'cal', '학급 일정'], ['look', 'look', '화면 꾸미기'], ['time', 'time', '시간표 설정'], ['sound', 'sound', '교실 TV 소리'],
+  ['roster', 'roster', '학급 명단'], ['counsel', 'counsel', '상담 신청'], ['suggest', 'suggest', '건의함'], ['tv', 'tv', 'TV 연결'], ['flash', 'flash', '학생 호출 · 쪽지'], ['backup', 'backup', '백업 · 되살리기']];
+const TAB_GROUPS = [['자주 쓰는 기능', ['notice', 'survey', 'cal']], ['교실 TV 꾸미기', ['look', 'time', 'sound']], ['우리 반', ['roster', 'counsel', 'suggest']], ['연결 · 관리', ['tv', 'flash', 'backup', 'op']]];
 const TAB_DESC = {
   notice: '교실 TV 공지, 알림장 · 가정통신문을 올리고 누가 냈는지 확인해요',
   survey: '학생이 교실 TV에서 바로 답하는 설문 · 투표 · 현황 조사',
-  look: 'TV 미리보기 · 음악과 소리 · 글꼴 · 화면 배치',
-  time: '교시 시각 · 요일별 시간표(컴시간 · 나이스) · 학급 일정 · 백업',
+  cal: '우리 반 일정과 학생이 교실 TV에서 올린 일정',
+  look: 'TV 미리보기 · 글꼴 · 배경색과 무늬 · 화면 배치',
+  time: '학년 · 반, 교시 시각, 요일별 시간표(컴시간 · 나이스)',
+  sound: '점심 · 청소 시간 음악, 수업 1분 전 종소리, 호출 알림음, 생일 노래',
+  backup: '우리 반 자료를 내 구글 드라이브나 파일로 저장하고 되살려요',
   roster: '번호 · 이름 · 생일, 그리고 학생 PIN',
   counsel: '학생이 교실 TV에서 신청한 상담 일정',
   suggest: '학생들이 교실 TV에서 보낸 건의 (선생님만 읽어요)',
-  tv: '교실 TV 연결, 학생 휴대폰 주소',
+  tv: '교실 TV 연결, 학생 휴대폰 주소, TV 주소 바꾸기',
   flash: '학생을 부르고 [네, 갈게요] · [지금 없어요] 답까지 받아요',
   op: '선생님 가입 승인 (운영자만)'
 };
@@ -1390,7 +1411,7 @@ function render(){
     <main class="main">
       <div class="topbar"><span class="pill">학생 <b>${nStu}</b>명</span><button class="b sm mobbtn" data-a="mobile" title="휴대폰에서 쓰기 · 앱 설치">📱 모바일</button>${isPhone() ? '' : '<button class="b sm mobbtn" data-a="pcinst" title="이 컴퓨터 바탕화면에 앱으로 설치">💻 바탕화면</button>'}${bellHtml()}<button class="b sm" id="btnOut">로그아웃</button></div>
       <header class="top"><h1>${cur[2]}</h1><p>${TAB_DESC[cur[0]] || ''}</p></header>
-      <div id="body">${({ flash: vFlash, notice: vNotice, look: vLook, time: vTime, roster: vRoster, survey: vSurvey, counsel: vCounsel, suggest: vSuggest, tv: vTvConnect, op: () => '<div id="opBox"></div>' })[S.tab]()}</div>
+      <div id="body">${({ flash: vFlash, notice: vNotice, look: vLook, time: vTime, cal: vCal, sound: vSound, backup: vBackupTab, roster: vRoster, survey: vSurvey, counsel: vCounsel, suggest: vSuggest, tv: vTvConnect, op: () => '<div id="opBox"></div>' })[S.tab]()}</div>
       <div class="foot"><p class="privacy">${esc(S.user.email)}</p><p class="credit"><button class="updlink" data-a="updhist">📋 업데이트 내역</button>제작자 : 강릉제일고 유준배 선생님</p></div>
     </main></div>`;
   { const on = document.querySelector('nav.tabs button.on'); if (on && window.innerWidth <= 900) on.scrollIntoView({ inline: 'center', block: 'nearest' }); }
@@ -1419,6 +1440,22 @@ function fontLoadList(after){
     const st = document.createElement('style'); st.id = 'pvFonts'; st.textContent = css; document.head.appendChild(st);
     after();
   }).catch(() => { FONTL = []; after(); });
+}
+/* ---------- TV 배경색 · 디자인 고르기 ---------- */
+const TVT = [['chalk', '칠판 초록', '#1D2A25', '#2A3A32', '#E4E0D3', '#E6CD7E'], ['night', '밤하늘', '#151C2E', '#25304F', '#E8ECF6', '#F2D27A'],
+  ['wood', '나무 교실', '#251E19', '#3A2F27', '#F0E6DA', '#EFC879'], ['grape', '포도 보라', '#1F1A2C', '#322947', '#ECE7F6', '#F0D27E'],
+  ['ocean', '깊은 바다', '#122428', '#1F3B40', '#E4F0EF', '#F2D27A'], ['paper', '밝은 종이', '#EEF2F8', '#FFFFFF', '#16213A', '#C98A00']];
+const TVP = [['', '없음'], ['glow', '은은한 빛'], ['dots', '점'], ['grid', '모눈'], ['stripe', '빗금']];
+function tvLookHtml(t, p, act){
+  t = t || 'chalk'; p = p || '';
+  const pat = (k, c) => ({ glow: `radial-gradient(70% 70% at 0 0,${c},transparent 70%),radial-gradient(60% 60% at 100% 100%,${c},transparent 70%)`,
+    dots: `radial-gradient(${c} 1.2px,transparent 1.6px) 0 0/9px 9px`, grid: `linear-gradient(${c} 1px,transparent 1px) 0 0/14px 14px,linear-gradient(90deg,${c} 1px,transparent 1px) 0 0/14px 14px`,
+    stripe: `repeating-linear-gradient(135deg,${c} 0 4px,transparent 4px 12px)` })[k] || 'none';
+  const cur = TVT.find(x => x[0] === t) || TVT[0], pc = cur[0] === 'paper' ? 'rgba(22,33,58,.10)' : 'rgba(255,255,255,.10)';
+  return `<div class="tvlk">${TVT.map(([k, n, bg, cd, ink, ac]) => `<button class="tvt${k === t ? ' on' : ''}" data-${act}="tvt" data-id="${k}" title="${n}">
+      <span class="pv" style="background:${bg}"><i style="background:${cd}"><b style="background:${ac}"></b><u style="background:${ink}"></u><u style="background:${ink};width:60%"></u></i><i style="background:${cd}"><u style="background:${ink}"></u><u style="background:${ink};width:45%"></u></i></span>
+      <span class="nm">${n}</span></button>`).join('')}</div>
+    <div class="tvpk"><span class="lb">배경 무늬</span>${TVP.map(([k, n]) => `<button class="tvp${k === p ? ' on' : ''}" data-${act}="tvp" data-id="${k}"><span class="sw" style="background:${pat(k, pc)};background-color:${cur[2]}"></span>${n}</button>`).join('')}</div>`;
 }
 function fontPickHtml(cur, act){
   cur = cur || 'bunpil';
@@ -1453,7 +1490,10 @@ function vTvConnect(){
         ${B.viewKey ? `<button class="b sm" data-a="viewqr">QR 보기</button><button class="b sm" data-a="copyview">주소 복사</button><button class="b sm" data-a="viewnew">새 주소로 바꾸기</button><button class="b sm r" data-a="viewoff">끄기</button>` : `<button class="b sm y" data-a="viewmake">학생용 주소 만들기</button>`}</div>
         ${B.viewKey ? `<input class="in" readonly value="${esc(viewUrl())}" style="width:100%;margin-top:8px" id="viewUrlIn">
         <p class="lead" style="margin:6px 0 0">시간표 · 급식 · 일정 · 공지 · 알림장 · 링크 조사를 휴대폰에서 볼 수 있어요. 투표 · 상담 신청 · 건의는 교실 TV에서만 됩니다.</p>
-        <label class="chk" style="margin-top:8px"><input type="checkbox" data-a="tog" data-f="phoneBtn" ${B.phoneBtn !== false ? 'checked' : ''}> 교실 TV 오른쪽 위에 <b>[📱 앱 설치]</b> 단추 보이기 (학생이 QR을 찍어 휴대폰에 설치)</label>` : ''}</div></section>`;
+        <label class="chk" style="margin-top:8px"><input type="checkbox" data-a="tog" data-f="phoneBtn" ${B.phoneBtn !== false ? 'checked' : ''}> 교실 TV 오른쪽 위에 <b>[📱 앱 설치]</b> 단추 보이기 (학생이 QR을 찍어 휴대폰에 설치)</label>` : ''}</div></section>
+  <section class="card"><h2>TV 주소 바꾸기</h2>
+    <p class="lead">TV 주소가 학생들에게 퍼졌을 때 새 주소로 바꿉니다. 예전 주소는 바로 막히고, 공지 · 명단 등 내용은 그대로 옮겨집니다. (조사 응답 · 건의는 새로 시작돼요)</p>
+    <button class="b r" data-a="rekey">새 TV 주소 만들기</button></section>`;
 }
 
 /* ---------- 긴급 호출 · 학생 호출 ---------- */
@@ -1583,10 +1623,12 @@ function vLook(){
       <button class="b sm" data-a="pvreload">새로고침</button><a class="b sm" href="${esc(tvUrl())}" target="_blank" rel="noopener">새 탭에서 열기</a></div>
     <div id="pvSlot" class="pvslot"></div>
     <p class="lead" style="margin:8px 0 0">교실 TV와 같은 모습이에요. 눌러 봐도 실제로 저장되지 않아요. 여기서 고친 내용은 몇 초 안에 미리보기에도 바뀝니다.</p></section>
-  ${sndBoxHtml(SND_K)}
   <section class="card"><h2>🔤 TV 글꼴</h2>
     <p class="lead">교실 TV 화면 전체의 글꼴을 바꿉니다. 누르면 몇 초 안에 TV와 위 미리보기에 바뀌어요.</p>
     ${fontPickHtml(S.B.font, 'a')}</section>
+  <section class="card"><h2>🎨 TV 배경색 · 디자인</h2>
+    <p class="lead">교실 TV 화면의 바탕색과 배경 무늬를 바꿉니다. 누르면 몇 초 안에 TV와 위 미리보기에 바뀌어요. 교실이 밝으면 [밝은 종이]가 잘 보일 수 있어요.</p>
+    ${tvLookHtml(S.B.tvt, S.B.tvp, 'a')}</section>
   <section class="card"><h2>화면 배치 조정</h2>
     <p class="lead">TV 화면에서 칸(시계 · 지금 수업 · 시간표 · 일정 · 급식 · 공지)의 위치를 옮기고, 칸 크기 · 너비 · 전체 크기 · 여백을 바꿉니다.
     아래 단추를 누르면 TV 화면이 조절 모드로 열려요. 칸 왼쪽 위 [✥ 옮기기]를 끌어 자리를 바꾸고, 노란 손잡이로 크기를 바꾼 뒤 [저장]을 누르세요.</p>
@@ -1685,8 +1727,14 @@ function vTime(){
   <section class="card"><h2>특별 시간 <span class="sub">조회 · 청소 · 종례처럼 교시가 아닌 시간</span></h2>
     ${SP.map((x, i) => `<div class="row" style="margin-top:8px"><input class="in" data-xn="${i}" value="${esc(x.name)}" style="width:150px"><input class="in" type="time" data-xs="${i}" value="${esc(x.s)}">~<input class="in" type="time" data-xe="${i}" value="${esc(x.e)}"><button class="b sm r" data-a="xdel" data-i="${i}">빼기</button></div>`).join('')}
     <div class="row" style="margin-top:12px"><button class="b sm" data-a="xadd">특별 시간 추가</button></div>
-    <div class="row" style="margin-top:22px;justify-content:flex-end"><button class="b sm" data-a="pdef">강릉제일고 기본값으로</button><button class="b y" data-a="psave">교시 · 특별 시간 저장</button></div></section></div>
-  <section class="card"><h2>학급 일정</h2>
+    <div class="row" style="margin-top:22px;justify-content:flex-end"><button class="b sm" data-a="pdef">강릉제일고 기본값으로</button><button class="b y" data-a="psave">교시 · 특별 시간 저장</button></div></section></div>`;
+}
+
+/* ---------- 학급 일정 ---------- */
+function vCal(){
+  const B = S.B, today = kstToday();
+  const ev = (B.events || []).slice().sort((a, b) => String(a.start).localeCompare(String(b.start)));
+  return `<section class="card"><h2>학급 일정</h2>
     <p class="lead">학교 학사일정(나이스)은 자동으로 나와요. 여기에는 우리 반만의 일정(학급 회의, 반 단체 활동 등)을 더합니다.</p>
     <div class="row" style="margin-bottom:6px"><label class="chk"><input type="checkbox" data-a="tog" data-f="eventAddOn" ${B.eventAddOn !== false ? 'checked' : ''}> 학생이 교실 TV에서 일정 올리기 (일정 칸의 [＋ 일정 추가])</label></div>
     <div class="row" style="margin-bottom:10px"><label class="chk"><input type="checkbox" data-a="tog" data-f="eventNeis" ${B.eventNeis !== false ? 'checked' : ''}> 학교 학사일정(나이스)도 보이기</label>
@@ -1695,11 +1743,14 @@ function vTime(){
     ${ev.length ? `<ul class="list">${ev.map(e => `<li><div class="t">${esc(e.title)} <span class="small muted">${esc(e.start)}${e.end && e.end !== e.start ? ' ~ ' + esc(e.end) : ''}${(e.end || e.start) < today ? ' · 지남' : ''}</span></div><button class="b sm r" data-a="evdel" data-id="${esc(e.id)}">지우기</button></li>`).join('')}</ul>` : ''}
   ${(S.SEV || []).length ? `<h3 style="margin:16px 0 6px;font-size:15px">학생이 올린 일정 <span class="small muted">학생도 교실 TV에서 [학생 ✕]로 지울 수 있어요 · 학생이 지운 일정은 여기서 되살릴 수 있어요</span></h3><ul class="list">${S.SEV.map(e => `<li><div class="t"><span style="${e.gone ? 'text-decoration:line-through;opacity:.6' : ''}">${esc(e.title)}</span> <span class="small muted">${esc(e.date)}${e.date < today ? ' · 지남' : ''}</span>${e.gone ? ' <span class="tag">학생이 지움</span>' : ''}</div><div class="row">${e.gone ? `<button class="b sm" data-a="sevback" data-id="${esc(e.id)}">되살리기</button>` : ''}<button class="b sm r" data-a="sevdel" data-id="${esc(e.id)}">${e.gone ? '완전히 지우기' : '지우기'}</button></div></li>`).join('')}</ul>` : ''}
   </section>
-  ${vBackup()}
-  <section class="card"><h2>TV 주소 바꾸기</h2>
-    <p class="lead">TV 주소가 학생들에게 퍼졌을 때 새 주소로 바꿉니다. 예전 주소는 바로 막히고, 공지 · 명단 등 내용은 그대로 옮겨집니다. (조사 응답 · 건의는 새로 시작돼요)</p>
-    <button class="b r" data-a="rekey">새 TV 주소 만들기</button></section>`;
+`;
 }
+
+/* ---------- 교실 TV 소리 ---------- */
+function vSound(){ return sndBoxHtml(SND_K); }
+
+/* ---------- 백업 · 되살리기 ---------- */
+function vBackupTab(){ return vBackup(); }
 
 /* ---------- 학급 명단 ---------- */
 function vRoster(){
@@ -1887,6 +1938,8 @@ function vLinkForm(){
 const APP_VER = '2026-11-05c';
 const UPDATES = [
   { v: '2026-11-05c', title: '11월 5일 업데이트 · 학생 호출 답장', items: [
+    '🎨 [화면 꾸미기] 탭에서 교실 TV 바탕색(칠판 초록 · 밤하늘 · 나무 교실 · 포도 보라 · 깊은 바다 · 밝은 종이)과 배경 무늬를 고를 수 있어요',
+    '🗂 메뉴 정리: [학급 일정] · [교실 TV 소리] · [백업 · 되살리기]가 따로 탭이 됐고, [TV 주소 바꾸기]는 [TV 연결] 탭 아래로 옮겼어요',
     '🏷 프로그램 이름이 [클래스 뷰 (Class View)]로 바뀌었어요 (자료 · 주소 · 백업은 그대로예요)',
     '🙋 학생을 부르면 교실 TV에 [네, 갈게요] · [지금 그 친구가 없어요] 단추가 나와요. 누른 답이 [학생 호출 · 쪽지] 탭과 알림 종에 바로 와요 (답 받기는 끌 수 있어요)'] },
   { v: '2026-11-05b', title: '11월 5일 업데이트 · 새 디자인', items: [
@@ -1969,7 +2022,7 @@ function bellItems(){
   /* 백업 */
   const lb = B.lastBackup ? Date.parse(B.lastBackup) : 0, hasData = (B.students || []).length || (B.notices || []).length || (B.surveys || []).length;
   if (hasData && Date.now() - lb > 7 * 864e5)
-    out.push({ ic: '💾', tab: 'time', t: Date.parse(today + 'T00:00:00+09:00'), isNew: lsg(seenKey() + '_day') !== today, tt: lb ? '백업한 지 일주일이 지났어요' : '아직 우리 반 백업이 없어요', sm: '시간표 설정 탭 → 우리 반 백업 (버튼 한 번)' });
+    out.push({ ic: '💾', tab: 'backup', t: Date.parse(today + 'T00:00:00+09:00'), isNew: lsg(seenKey() + '_day') !== today, tt: lb ? '백업한 지 일주일이 지났어요' : '아직 우리 반 백업이 없어요', sm: '백업 · 되살리기 탭 (버튼 한 번)' });
   /* 건의 */
   const sg = (S.SUGL || []).filter(x => x.t > seen);
   if (sg.length) out.push({ ic: '✉️', tab: 'suggest', t: Math.max(...sg.map(x => x.t)), isNew: true, tt: `새 건의 ${sg.length}건`, sm: esc(sg[0].text.slice(0, 40)) });
@@ -2516,6 +2569,8 @@ document.addEventListener('click', async ev => {
       return;
     }
     case 'bkpick': $('bkPick').click(); return;
+    case 'tvt': if ((S.B.tvt || 'chalk') === id) return; return save({ tvt: id === 'chalk' ? '' : id }, 'TV 바탕색을 바꿨어요. TV에 곧 반영돼요.');
+    case 'tvp': if ((S.B.tvp || '') === id) return; return save({ tvp: id }, id ? 'TV 배경 무늬를 바꿨어요.' : 'TV 배경 무늬를 껐어요.');
     case 'font': if (S.B.font === id || (!S.B.font && id === 'bunpil')) return; return save({ font: id }, '글꼴을 바꿨어요. TV에 곧 반영돼요.');
     case 'pvreload': if (PVH){ try { PVH.firstChild.contentWindow.location.reload(); } catch (e) { pvKey = ''; placePv(); } } return;
     case 'bellgo': S.bellOpen = false; S.tab = t.dataset.v; try { localStorage.setItem('cr_tab2', S.tab); } catch (e) {} S.edit = ''; render(); window.scrollTo(0, 0); return;

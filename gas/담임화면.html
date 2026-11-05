@@ -332,6 +332,21 @@ dialog::backdrop{background:rgba(20,22,26,.35)}
   .rail{position:static;max-height:260px}
   .log li.it{grid-template-columns:1fr;gap:2px}
 }
+
+.tvlk{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-top:12px}
+.tvlk .tvt{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:7px;padding:8px;border-radius:16px;border:2px solid transparent;text-align:center}
+.tvlk .tvt:hover{background:rgba(127,127,127,.08)}
+.tvlk .tvt.on{border-color:currentColor}
+.tvlk .pv{display:grid;grid-template-columns:1.4fr 1fr;gap:5px;padding:7px;border-radius:10px;aspect-ratio:16/9;box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+.tvlk .pv i{border-radius:5px;padding:5px;display:flex;flex-direction:column;gap:4px}
+.tvlk .pv b{display:block;width:40%;height:5px;border-radius:3px}
+.tvlk .pv u{display:block;height:3px;border-radius:2px;opacity:.75;text-decoration:none}
+.tvlk .nm{font-size:13.5px;font-weight:700}
+.tvpk{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px}
+.tvpk .lb{font-size:13.5px;font-weight:700;opacity:.7;margin-right:4px}
+.tvpk .tvp{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:6px 14px 6px 6px;border-radius:999px;border:1.5px solid rgba(127,127,127,.3);font-size:13.5px;font-weight:700}
+.tvpk .tvp.on{border-color:currentColor;box-shadow:inset 0 0 0 1px currentColor}
+.tvpk .sw{width:26px;height:26px;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.1)}
 </style>
 <?!= include_('테마') ?>
 </head>
@@ -2081,7 +2096,7 @@ function vBoard(){
   const V = {
     flash: () => vFlashBox(),
     notice: () => vNoticeBox() + vNoteBox(),
-    look: () => vPreview() + sndBoxHtml(SND_K) + vFontBox() + `<div class="g2">${vQuoteBox()}${vLookSetBox()}</div>` + vWeatherBox(),
+    look: () => vPreview() + sndBoxHtml(SND_K) + vFontBox() + vTvLookBox() + `<div class="g2">${vQuoteBox()}${vLookSetBox()}</div>` + vWeatherBox(),
     time: () => vTimetableBox() + `<div class="g2">${vEventBox()}${vNeisBox()}</div>`,
     roster: () => vBirthdayBox() + `<section class="box"><h2>학급 명단</h2><p class="small muted">학생 명단(번호 · 이름 · 학번)은 왼쪽 메뉴 <b>명단 · 설정</b>에서 고칩니다. 여기서 고친 명단이 교실 TV에도 그대로 쓰입니다.</p>
       <div class="row" style="margin-top:8px"><button class="btn sm" data-view="roster">명단 · 설정 열기</button></div></section>`,
@@ -2167,6 +2182,28 @@ function fontLoadList(after){
     const st = document.createElement('style'); st.id = 'pvFonts'; st.textContent = css; document.head.appendChild(st);
     after();
   }).catch(() => { FONTL = []; after(); });
+}
+/* ---------- TV 배경색 · 디자인 고르기 ---------- */
+const TVT = [['chalk', '칠판 초록', '#1D2A25', '#2A3A32', '#E4E0D3', '#E6CD7E'], ['night', '밤하늘', '#151C2E', '#25304F', '#E8ECF6', '#F2D27A'],
+  ['wood', '나무 교실', '#251E19', '#3A2F27', '#F0E6DA', '#EFC879'], ['grape', '포도 보라', '#1F1A2C', '#322947', '#ECE7F6', '#F0D27E'],
+  ['ocean', '깊은 바다', '#122428', '#1F3B40', '#E4F0EF', '#F2D27A'], ['paper', '밝은 종이', '#EEF2F8', '#FFFFFF', '#16213A', '#C98A00']];
+const TVP = [['', '없음'], ['glow', '은은한 빛'], ['dots', '점'], ['grid', '모눈'], ['stripe', '빗금']];
+function tvLookHtml(t, p, act){
+  t = t || 'chalk'; p = p || '';
+  const pat = (k, c) => ({ glow: `radial-gradient(70% 70% at 0 0,${c},transparent 70%),radial-gradient(60% 60% at 100% 100%,${c},transparent 70%)`,
+    dots: `radial-gradient(${c} 1.2px,transparent 1.6px) 0 0/9px 9px`, grid: `linear-gradient(${c} 1px,transparent 1px) 0 0/14px 14px,linear-gradient(90deg,${c} 1px,transparent 1px) 0 0/14px 14px`,
+    stripe: `repeating-linear-gradient(135deg,${c} 0 4px,transparent 4px 12px)` })[k] || 'none';
+  const cur = TVT.find(x => x[0] === t) || TVT[0], pc = cur[0] === 'paper' ? 'rgba(22,33,58,.10)' : 'rgba(255,255,255,.10)';
+  return `<div class="tvlk">${TVT.map(([k, n, bg, cd, ink, ac]) => `<button class="tvt${k === t ? ' on' : ''}" data-${act}="tvt" data-id="${k}" title="${n}">
+      <span class="pv" style="background:${bg}"><i style="background:${cd}"><b style="background:${ac}"></b><u style="background:${ink}"></u><u style="background:${ink};width:60%"></u></i><i style="background:${cd}"><u style="background:${ink}"></u><u style="background:${ink};width:45%"></u></i></span>
+      <span class="nm">${n}</span></button>`).join('')}</div>
+    <div class="tvpk"><span class="lb">배경 무늬</span>${TVP.map(([k, n]) => `<button class="tvp${k === p ? ' on' : ''}" data-${act}="tvp" data-id="${k}"><span class="sw" style="background:${pat(k, pc)};background-color:${cur[2]}"></span>${n}</button>`).join('')}</div>`;
+}
+function vTvLookBox(){
+  const c = S.B.cfg || {};
+  return `<section class="box"><h2>🎨 TV 배경색 · 디자인</h2>
+    <p class="small muted">교실 TV 화면의 바탕색과 배경 무늬를 바꿉니다. 누르면 TV와 위 미리보기에 곧 반영돼요. 교실이 밝으면 [밝은 종이]가 잘 보일 수 있어요.</p>
+    ${tvLookHtml(c.tvt, c.tvp, 'bact')}</section>`;
 }
 function fontPickHtml(cur, act){
   cur = cur || 'bunpil';
@@ -2859,11 +2896,11 @@ function vFlashBox(){
   const hhmm = s => { try { const d = new Date(s); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); } catch (e) { return ''; } };
   return `<section class="box"><div class="row sb"><h2>긴급 호출 · 쪽지</h2>
       ${live ? '<span class="tg neg">지금 교실 화면에 떠 있음</span>' : (f && f.ackAt && !f.reply ? `<span class="small muted">마지막 호출 ${esc(hhmm(f.ackAt))} 확인됨</span>` : '')}</div>
-    ${f && f.reply ? `<div class="row" style="margin-top:8px;padding:10px 12px;border-radius:8px;background:${f.reply === 'away' ? '#FCEBE7' : '#E6F4EC'}">
+    ${f && f.reply ? `<div class="row" style="margin-top:8px;padding:10px 12px;border-radius:8px;border:1px solid ${f.reply === 'away' ? 'var(--neg)' : 'var(--pos)'};background:${f.reply === 'away' ? 'var(--neg-s)' : 'var(--pos-s)'}">
         <b style="font-size:16px">${f.reply === 'go' ? '🙋 네, 갈게요' : f.reply === 'away' ? '🙅 지금 그 친구가 없어요' : '✅ 확인했어요'}</b>
         <span class="small muted">${esc(f.who || '')} ${esc(f.text || '')} · ${esc(hhmm(f.ackAt))}에 교실 TV에서 누름</span></div>` : ''}
     ${live && f.ask && !f.reply ? '<p class="small muted" style="margin-top:6px">⏳ 학생 답을 기다리는 중이에요. 답이 오면 여기와 알림으로 바로 알려 드려요.</p>' : ''}
-    <p class="small muted">교실 TV에 큰 글씨로 띄웁니다. 학생이 [확인했어요]를 누르거나 정한 시간이 지나면 저절로 사라집니다. 교실 화면은 15초마다 확인하므로 보내면 곧 뜹니다.</p>
+    <p class="small muted">교실 TV에 큰 글씨로 띄웁니다. 학생을 부르면 TV에 [네, 갈게요] · [지금 그 친구가 없어요] 단추가 나오고, 누른 답이 여기에 와요. 정한 시간이 지나면 저절로 사라집니다. 교실 화면은 15초마다 확인하므로 보내면 곧 뜹니다.</p>
     ${live ? `<div class="row sb" style="margin-top:8px;padding:10px 12px;border:1px solid var(--neg);border-radius:8px">
         <div><b>${esc(f.who || '')}</b> ${esc(f.text || '')}<div class="small muted">${esc(hhmm(f.at))}에 보냄 · ${f.min}분 동안</div></div>
         <button class="btn sm neg" data-bact="flstop">지금 내리기</button></div>` : ''}
@@ -2928,6 +2965,8 @@ document.addEventListener('click', ev => {
   switch (a){
     case 'copyurl': copyText(S.B.url); return;
     case 'copyphone': copyText(S.B.phoneUrl || ''); return;
+    case 'tvt': { if (((S.B.cfg || {}).tvt || 'chalk') === id) return; boardSave({ tvt: id === 'chalk' ? '' : id }, 'TV 바탕색을 바꿨습니다. TV에 곧 반영돼요.', true); return; }
+    case 'tvp': { if (((S.B.cfg || {}).tvp || '') === id) return; boardSave({ tvp: id }, id ? 'TV 배경 무늬를 바꿨습니다.' : 'TV 배경 무늬를 껐습니다.', true); return; }
     case 'font': { const cur = (S.B.cfg || {}).font || 'bunpil'; if (cur === id) return; boardSave({ font: id }, '글꼴을 바꿨습니다. TV에 곧 반영돼요.', true); return; }
     case 'phoneqr': mobModal('phone'); return;
     case 'wx': {

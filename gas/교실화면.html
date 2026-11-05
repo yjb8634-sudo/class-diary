@@ -540,6 +540,17 @@ html,body{background:var(--bg);color:var(--chalk)}
 #flash{background:rgba(14,20,17,.95)}
 #flash.urgent .tag{background:#C9573F}
 #flash.urgent .who{color:#EBB0A4}
+/* ---- TV 배경색 · 무늬: 선생님이 [화면 꾸미기 → TV 배경색 · 디자인]에서 고름 ---- */
+:root{--pat:rgba(255,255,255,.055);--pat2:rgba(255,255,255,.07)}
+html[data-tvt="night"]{--bg:#151C2E;--card:#1C2540;--card2:#25304F;--line:rgba(230,236,250,.09);--chalk:#E8ECF6;--chalk2:rgba(232,236,246,.80);--chalk3:rgba(232,236,246,.56);--yellow:#F2D27A;--yellow-ink:#151C2E;--mint:#8FD0D8;--pink:#E9A5B0;--sky:#9DB8F2;--t-surface:#151C2E;--t-surface-2:#1C2540;--t-surface-3:#25304F;--t-ink:#E8ECF6;--t-ink-2:rgba(232,236,246,.80);--t-ink-3:rgba(232,236,246,.56);--t-line:rgba(230,236,250,.09);--t-line-2:rgba(230,236,250,.22);--t-yellow:#F2D27A}
+html[data-tvt="wood"]{--bg:#251E19;--card:#2F2620;--card2:#3A2F27;--line:rgba(240,228,214,.09);--chalk:#F0E6DA;--chalk2:rgba(240,230,218,.80);--chalk3:rgba(240,230,218,.56);--yellow:#EFC879;--yellow-ink:#251E19;--mint:#9BCDB2;--pink:#E3A592;--sky:#A9C2DE;--t-surface:#251E19;--t-surface-2:#2F2620;--t-surface-3:#3A2F27;--t-ink:#F0E6DA;--t-ink-2:rgba(240,230,218,.80);--t-ink-3:rgba(240,230,218,.56);--t-line:rgba(240,228,214,.09);--t-line-2:rgba(240,228,214,.22);--t-yellow:#EFC879}
+html[data-tvt="grape"]{--bg:#1F1A2C;--card:#28213A;--card2:#322947;--line:rgba(236,231,246,.09);--chalk:#ECE7F6;--chalk2:rgba(236,231,246,.80);--chalk3:rgba(236,231,246,.56);--yellow:#F0D27E;--yellow-ink:#1F1A2C;--mint:#93D2C4;--pink:#EBA6C0;--sky:#AFB9F0;--t-surface:#1F1A2C;--t-surface-2:#28213A;--t-surface-3:#322947;--t-ink:#ECE7F6;--t-ink-2:rgba(236,231,246,.80);--t-ink-3:rgba(236,231,246,.56);--t-line:rgba(236,231,246,.09);--t-line-2:rgba(236,231,246,.22);--t-yellow:#F0D27E}
+html[data-tvt="ocean"]{--bg:#122428;--card:#183034;--card2:#1F3B40;--line:rgba(228,240,239,.09);--chalk:#E4F0EF;--chalk2:rgba(228,240,239,.80);--chalk3:rgba(228,240,239,.56);--yellow:#F2D27A;--yellow-ink:#122428;--mint:#86D6C6;--pink:#EFA9A0;--sky:#90C6EC;--t-surface:#122428;--t-surface-2:#183034;--t-surface-3:#1F3B40;--t-ink:#E4F0EF;--t-ink-2:rgba(228,240,239,.80);--t-ink-3:rgba(228,240,239,.56);--t-line:rgba(228,240,239,.09);--t-line-2:rgba(228,240,239,.22);--t-yellow:#F2D27A}
+html[data-tvt="paper"]{--bg:#EEF2F8;--card:#FFFFFF;--card2:#E5ECF6;--line:rgba(22,33,58,.10);--chalk:#16213A;--chalk2:rgba(22,33,58,.80);--chalk3:rgba(22,33,58,.56);--yellow:#C98A00;--yellow-ink:#FFFFFF;--mint:#16876F;--pink:#C9483D;--sky:#2F6FD0;--pat:rgba(22,33,58,.06);--pat2:rgba(47,111,208,.08);--t-surface:#EEF2F8;--t-surface-2:#FFFFFF;--t-surface-3:#E5ECF6;--t-ink:#16213A;--t-ink-2:rgba(22,33,58,.80);--t-ink-3:rgba(22,33,58,.56);--t-line:rgba(22,33,58,.10);--t-line-2:rgba(22,33,58,.22);--t-yellow:#C98A00}
+html[data-tvp="glow"] body{background-image:radial-gradient(60% 55% at 0% 0%,var(--pat2),transparent 70%),radial-gradient(55% 50% at 100% 100%,var(--pat2),transparent 70%)}
+html[data-tvp="dots"] body{background-image:radial-gradient(var(--pat) 1.5px,transparent 1.9px);background-size:1.6rem 1.6rem}
+html[data-tvp="grid"] body{background-image:linear-gradient(var(--pat) 1px,transparent 1px),linear-gradient(90deg,var(--pat) 1px,transparent 1px);background-size:3rem 3rem}
+html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,var(--pat) 0 .7rem,transparent .7rem 2.2rem)}
 </style>
 </head>
 <body>
@@ -566,7 +577,7 @@ var FILE_VER = '2026-11-05a';
 /* ---- 화면이 멈추면 이유를 보여 주는 감시꾼 ----
  * 본 코드가 보낸 파일 그대로인지(글자 수 · 지문)도 함께 확인해서, 붙여넣기 문제인지 바로 알 수 있게 합니다. */
 var BOARD_FILE_VER = '2026-11-05a';   /* 파일 버전 (점검용) */
-var EXPECT = {"len": 118773, "h": 4141291512}; /*EXPECT*/
+var EXPECT = {"len": 119276, "h": 962837438}; /*EXPECT*/
 window.__boardCheck = function(){
   var m = 'BOARD_MARK_', ss = document.getElementsByTagName('script'), found = 0, t = '';
   for (var i = 0; i < ss.length; i++){ var x = ss[i].text || ''; if (x.indexOf(m + 'START = 1') >= 0){ found++; t = x; } }
@@ -1104,13 +1115,21 @@ function applyFont(id){
     root.setProperty('--t-font', `'${fam}',${rest}`);
   }).catch(() => {});
 }
+/* TV 배경색 · 무늬 */
+const TVT_OK = ['night', 'wood', 'grape', 'ocean', 'paper'], TVP_OK = ['glow', 'dots', 'grid', 'stripe'];
+function applyTvLook(t, p){
+  const h = document.documentElement;
+  if (TVT_OK.indexOf(t) >= 0) h.dataset.tvt = t; else delete h.dataset.tvt;
+  if (TVP_OK.indexOf(p) >= 0) h.dataset.tvp = p; else delete h.dataset.tvp;
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = getComputedStyle(document.body).backgroundColor;
+}
 function load(){
   if (loading) return Promise.resolve();
   loading = true; loadStart = lastTry = Date.now();
   const p = call('apiBoardData', BOOT.preview ? 1 : 0).then(d => {
     lastFail = false;
     D = d; offset = d.now - Date.now(); lastLoad = Date.now();
-    applyFont(d.font);
+    applyFont(d.font); applyTvLook(d.tvt, d.tvp);
     if (d.needExt) mergeExt();   /* 아직 못 받은 부분은 지난번 값으로 먼저 채움 */
     if (!dateKey) dateKey = nowParts().ymd;
     if (!EDIT) LAY = layoutFrom(d.layout);
