@@ -219,6 +219,22 @@ test('학생 일정: TV는 지움 표시만 하고(한 번만), 다른 칸은 �
   await assertSucceeds(deleteDoc(doc(as.t1(), `boards/${KEY}/sevents/ev1`)));
 });
 
+test('학생 호출 답장: TV는 지금 떠 있는 호출에만 한 번 답하고, 읽기 · 지우기는 담임만', async () => {
+  await env.withSecurityRulesDisabled(async ctx => {
+    await updateDoc(doc(ctx.firestore(), `boards/${KEY}`), { flash: { id: 'fl12345a', who: '3번', text: '교무실', level: '알림', until: Date.now() + 300000 } });
+  });
+  await assertFails(setDoc(doc(as.tv(), `boards/${KEY}/freply/oldid999`), { r: 'go', at: serverTimestamp() }));
+  await assertFails(setDoc(doc(as.tv(), `boards/${KEY}/freply/fl12345a`), { r: 'hack', at: serverTimestamp() }));
+  await assertFails(setDoc(doc(as.tv(), `boards/${KEY}/freply/fl12345a`), { r: 'go', at: serverTimestamp(), name: 'x' }));
+  await assertSucceeds(setDoc(doc(as.tv(), `boards/${KEY}/freply/fl12345a`), { r: 'away', at: serverTimestamp() }));
+  await assertFails(setDoc(doc(as.tv(), `boards/${KEY}/freply/fl12345a`), { r: 'go', at: serverTimestamp() }));
+  await assertFails(getDoc(doc(as.tv(), `boards/${KEY}/freply/fl12345a`)));
+  await assertFails(getDoc(doc(as.t2(), `boards/${KEY}/freply/fl12345a`)));
+  await assertSucceeds(getDoc(doc(as.t1(), `boards/${KEY}/freply/fl12345a`)));
+  await assertFails(setDoc(doc(as.tv(), `boards/${KEY2}/freply/fl12345a`), { r: 'go', at: serverTimestamp() }));
+  await assertSucceeds(deleteDoc(doc(as.t1(), `boards/${KEY}/freply/fl12345a`)));
+});
+
 /* ---------- 학생 휴대폰 보기 ---------- */
 test('휴대폰 보기 사본은 주소로 읽기만, 쓰기는 담임만', async () => {
   await assertSucceeds(getDoc(doc(as.tv(), `views/${VKEY}`)));

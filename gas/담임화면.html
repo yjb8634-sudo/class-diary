@@ -342,7 +342,7 @@ dialog::backdrop{background:rgba(20,22,26,.35)}
 <dialog id="dlg"></dialog>
 <input type="file" id="fileIn" hidden>
 <script>
-var FILE_VER = '2026-11-02a';
+var FILE_VER = '2026-11-05a';
 /* 담임 로그인 표: 다른 탭(상담 신청판 · 21일 · 문제해결 담임 탭)에서도 비밀번호를 다시 묻지 않게 함께 씁니다.
  * 마지막으로 쓴 뒤 20분이 지나면 서버에서 저절로 없어지고, [나가기]를 누르면 바로 없어집니다. */
 const AdmTok = {
@@ -778,6 +778,27 @@ setInterval(() => {
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && S.pw && Date.now() - idleAt > IDLE_MIN * 60000) hubLogout(IDLE_MIN + '분 동안 사용하지 않아 안전을 위해 자동으로 나갔어요. 다시 들어와 주세요.');
 });
+/* ---------- 학생 호출 답장 기다리기: 띄운 호출이 떠 있는 동안 15초마다 확인 ---------- */
+let flTimer = null;
+function flWatch(){
+  clearInterval(flTimer);
+  const f0 = S.B && S.B.flash;
+  if (!f0 || !f0.live || !f0.ask || f0.reply) return;
+  const id = f0.id;
+  flTimer = setInterval(() => {
+    if (!S.pw || !S.B){ clearInterval(flTimer); return; }
+    if (document.hidden) return;
+    call('apiBoardFlashStatus', S.pw).then(f => {
+      if (!f || f.id !== id){ clearInterval(flTimer); return; }
+      if (S.B){ S.B.flash = f; }
+      if (f.reply){
+        clearInterval(flTimer);
+        toast((f.who ? f.who + ' · ' : '') + (f.reply === 'go' ? '🙋 네, 갈게요' : f.reply === 'away' ? '🙅 지금 그 친구가 없어요' : '✅ 확인했어요'));
+        if (S.view === 'board') render();
+      } else if (!f.live){ clearInterval(flTimer); if (S.view === 'board') render(); }
+    }).catch(() => {});
+  }, 15000);
+}
 /* ---------- 알림 종: 처리할 일 + 마지막으로 열어 본 뒤 새로 생긴 일 ---------- */
 const AL = {d: null, open: false, busy: false, more: {}};
 const BELL_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16.5V11a6 6 0 1 1 12 0v5.5l1.6 1.9H4.4z"/><path d="M10 20.6a2.2 2.2 0 0 0 4 0"/></svg>';
@@ -2006,7 +2027,7 @@ const DOWS = ['월','화','수','목','금'];
 function loadBoardAdmin(){
   if (S.Bload) return;
   S.Bload = true;
-  call('apiBoardAdminGet', S.pw).then(b => { S.B = b; S.bt = null; S.Bload = false; if (S.view === 'board') render(); })
+  call('apiBoardAdminGet', S.pw).then(b => { S.B = b; S.bt = null; S.Bload = false; if (S.view === 'board') render(); flWatch(); })
     .catch(e => { S.Bload = false; fail(e); });
 }
 function btInit(){
@@ -2837,7 +2858,11 @@ function vFlashBox(){
   const f = S.B.flash, live = f && f.live;
   const hhmm = s => { try { const d = new Date(s); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); } catch (e) { return ''; } };
   return `<section class="box"><div class="row sb"><h2>긴급 호출 · 쪽지</h2>
-      ${live ? '<span class="tg neg">지금 교실 화면에 떠 있음</span>' : (f && f.ackAt ? `<span class="small muted">마지막 호출 ${esc(hhmm(f.ackAt))} 확인됨</span>` : '')}</div>
+      ${live ? '<span class="tg neg">지금 교실 화면에 떠 있음</span>' : (f && f.ackAt && !f.reply ? `<span class="small muted">마지막 호출 ${esc(hhmm(f.ackAt))} 확인됨</span>` : '')}</div>
+    ${f && f.reply ? `<div class="row" style="margin-top:8px;padding:10px 12px;border-radius:8px;background:${f.reply === 'away' ? '#FCEBE7' : '#E6F4EC'}">
+        <b style="font-size:16px">${f.reply === 'go' ? '🙋 네, 갈게요' : f.reply === 'away' ? '🙅 지금 그 친구가 없어요' : '✅ 확인했어요'}</b>
+        <span class="small muted">${esc(f.who || '')} ${esc(f.text || '')} · ${esc(hhmm(f.ackAt))}에 교실 TV에서 누름</span></div>` : ''}
+    ${live && f.ask && !f.reply ? '<p class="small muted" style="margin-top:6px">⏳ 학생 답을 기다리는 중이에요. 답이 오면 여기와 알림으로 바로 알려 드려요.</p>' : ''}
     <p class="small muted">교실 TV에 큰 글씨로 띄웁니다. 학생이 [확인했어요]를 누르거나 정한 시간이 지나면 저절로 사라집니다. 교실 화면은 15초마다 확인하므로 보내면 곧 뜹니다.</p>
     ${live ? `<div class="row sb" style="margin-top:8px;padding:10px 12px;border:1px solid var(--neg);border-radius:8px">
         <div><b>${esc(f.who || '')}</b> ${esc(f.text || '')}<div class="small muted">${esc(hhmm(f.at))}에 보냄 · ${f.min}분 동안</div></div>
@@ -2851,6 +2876,7 @@ function vFlashBox(){
       <span class="small muted">띄울 시간</span>
       <select class="in" id="flMin">${[3, 5, 10, 20].map(m => `<option value="${m}" ${(S.flMin || 5) === m ? 'selected' : ''}>${m}분</option>`).join('')}</select>
       <label class="small row" style="gap:5px"><input type="checkbox" id="flUrg" ${S.flUrg ? 'checked' : ''}> 긴급 (빨간색 · 깜빡임)</label>
+      <label class="small row" style="gap:5px" title="부른 학생이 TV에서 [네, 갈게요] · [지금 그 친구가 없어요] 중에서 눌러요"><input type="checkbox" id="flAsk" ${S.flAsk !== false ? 'checked' : ''}> 답 받기 (갈게요 · 없어요)</label>
       <button class="btn pri" data-bact="flsend">교실 화면에 띄우기</button></div>
     <div class="row" style="margin-top:8px">${['교무실로 와 주세요', '급식실 앞으로 모여 주세요', '종례 늦어요. 교실에서 기다려 주세요', '조용히 자습하세요'].map(x =>
       `<button class="btn txt sm" data-bact="fltext" data-v="${esc(x)}">${esc(x)}</button>`).join('')}</div></section>`;
@@ -2955,10 +2981,11 @@ document.addEventListener('click', ev => {
     case 'flsend': {
       const who = $('flWho2').value.trim(), text = $('flText2').value.trim();
       if (!who && !text) return toast('부를 사람이나 할 말을 적어 주세요.', true);
-      S.flWho = who; S.flText = text; S.flMin = Number($('flMin').value); S.flUrg = $('flUrg').checked;
+      S.flWho = who; S.flText = text; S.flMin = Number($('flMin').value); S.flUrg = $('flUrg').checked; S.flAsk = $('flAsk').checked;
+      const ask = S.flAsk && !!who && !/^(전체|모두)$/.test(who);
       t.disabled = true;
-      call('apiBoardFlashSend', S.pw, {who, text, min: S.flMin, level: S.flUrg ? '긴급' : '알림'})
-        .then(b => { S.B = b; S.flWho = ''; S.flText = ''; toast('교실 화면에 띄웠습니다.'); render(); })
+      call('apiBoardFlashSend', S.pw, {who, text, min: S.flMin, level: S.flUrg ? '긴급' : '알림', ask})
+        .then(b => { S.B = b; S.flWho = ''; S.flText = ''; toast(ask ? '교실 화면에 띄웠습니다. 학생이 답하면 바로 알려 드려요.' : '교실 화면에 띄웠습니다.'); render(); flWatch(); })
         .catch(e => { t.disabled = false; fail(e); });
       return;
     }

@@ -122,6 +122,16 @@ service cloud.firestore {
         allow delete: if ownsBoard();
       }
 
+      // 학생 호출 답장: 교실 TV가 지금 떠 있는 호출(이름 = 호출 id)에 한 번만 답합니다. 읽기 · 지우기는 담임 선생님만.
+      match /freply/{fid} {
+        allow create: if exists(boardPath()) && get(boardPath()).data.get('flash', null) != null
+          && get(boardPath()).data.flash.get('id', '') == fid
+          && request.resource.data.keys().hasOnly(['r', 'at'])
+          && request.resource.data.r in ['go', 'away', 'ok']
+          && request.resource.data.at == request.time;
+        allow read, delete: if ownsBoard();
+      }
+
       // 건의함: 교실 TV는 넣기만, 읽기 · 지우기는 담임 선생님만.
       match /suggest/{sid} {
         allow create: if ownsBoard() && request.resource.data.keys().hasOnly(['text', 'no', 'name', 'at'])

@@ -33,7 +33,14 @@ body{background:var(--bg);color:var(--chalk);font-family:'Pretendard','Apple SD 
 #flash .left{font-size:1.5rem;color:var(--chalk3);font-variant-numeric:tabular-nums}
 #flash .ok{all:unset;cursor:pointer;min-height:6rem;padding:0 4rem;border-radius:1.2rem;background:var(--yellow);
   color:var(--yellow-ink);font-size:2.4rem;font-weight:800;display:flex;align-items:center;box-sizing:border-box}
-@media (orientation:portrait){#flash .who{font-size:4rem}#flash .msg2{font-size:2rem}}
+#flash .ask{display:flex;gap:1.6rem;flex-wrap:wrap;justify-content:center}
+#flash .ask[hidden],#flash .ok[hidden]{display:none}
+#flash .ok.go{background:#8CD6B4;color:#0F2A23}
+#flash .ok.away{background:transparent;color:var(--chalk);box-shadow:inset 0 0 0 .22rem rgba(242,239,228,.55)}
+#flash .ok:active{transform:scale(.97)}
+#flash .sent{font-size:2.6rem;font-weight:800;color:#8CD6B4}
+#flash .sent[hidden]{display:none}
+@media (orientation:portrait){#flash .who{font-size:4rem}#flash .msg2{font-size:2rem}#flash .ok{font-size:1.8rem;padding:0 2.4rem}}
 .newver{position:fixed;left:50%;top:calc(.8rem + var(--st,0px));transform:translateX(-50%);z-index:35;background:var(--yellow);color:var(--yellow-ink);font-weight:800;font-size:1.4rem;
   padding:.8rem 1.4rem;border-radius:1rem;text-decoration:none;box-shadow:0 1rem 2rem rgba(0,0,0,.45)}
 .newver[hidden]{display:none}
@@ -541,12 +548,14 @@ html,body{background:var(--bg);color:var(--chalk)}
 <div class="credit">제작자 : 강릉제일고 유준배 선생님</div>
 <div id="flash" hidden><span class="tag" id="flTag">공지사항</span>
 <div class="who" id="flWho"></div><div class="msg2" id="flMsg"></div>
-<button class="ok" data-fl="ok">확인했어요</button><div class="left" id="flLeft"></div></div>
+<button class="ok" data-fl="ok" id="flOk">확인했어요</button>
+<div class="ask" id="flAsk" hidden><button class="ok go" data-fl="go">🙋 네, 갈게요</button><button class="ok away" data-fl="away">🙅 지금 그 친구가 없어요</button></div>
+<div class="sent" id="flSent" hidden></div><div class="left" id="flLeft"></div></div>
 <a class="newver" id="newVer" target="_top" hidden>화면이 새로 바뀌었어요 · 여기를 눌러 새로 불러오세요</a>
 <div id="ov" class="ov" hidden></div>
 <div id="toast" role="status"></div>
 <script>
-var FILE_VER = '2026-11-02a';
+var FILE_VER = '2026-11-05a';
 /* 글꼴은 화면을 막지 않도록 스크립트로 불러옵니다. */
 (function(){
   var urls = [];   /* 외부 글꼴(Pretendard · 구글 폰트)은 더 이상 받지 않습니다 */
@@ -556,8 +565,8 @@ var FILE_VER = '2026-11-02a';
 })();
 /* ---- 화면이 멈추면 이유를 보여 주는 감시꾼 ----
  * 본 코드가 보낸 파일 그대로인지(글자 수 · 지문)도 함께 확인해서, 붙여넣기 문제인지 바로 알 수 있게 합니다. */
-var BOARD_FILE_VER = '2026-11-02a';   /* 파일 버전 (점검용) */
-var EXPECT = {"len": 88924, "h": 3640802212}; /*EXPECT*/
+var BOARD_FILE_VER = '2026-11-05a';   /* 파일 버전 (점검용) */
+var EXPECT = {"len": 118773, "h": 4141291512}; /*EXPECT*/
 window.__boardCheck = function(){
   var m = 'BOARD_MARK_', ss = document.getElementsByTagName('script'), found = 0, t = '';
   for (var i = 0; i < ss.length; i++){ var x = ss[i].text || ''; if (x.indexOf(m + 'START = 1') >= 0){ found++; t = x; } }
@@ -826,10 +835,11 @@ function paintQuote(){
     (p.q.by ? `<div class="by">— ${esc(p.q.by)}</div>` : '');
 }
 
-let FLASH = null, flashTimer = null;
+let FLASH = null, flashTimer = null, flDone = '';
 function showFlash(f){
   const box = $('flash');
   if (!box) return;
+  if (f && f.id && f.id === flDone) return;   /* 방금 답한 호출은 다시 띄우지 않음 */
   if (!f || !f.id){ FLASH = null; box.hidden = true; clearInterval(flashTimer); return; }
   if (FLASH && FLASH.id === f.id){ FLASH.until = f.until; return; }
   FLASH = f;
@@ -841,6 +851,9 @@ function showFlash(f){
   $('flWho').style.display = f.who ? '' : 'none';
   $('flMsg').textContent = f.text || '';
   $('flMsg').style.display = f.text ? '' : 'none';
+  /* 학생을 부른 호출이면 [네, 갈게요] · [지금 그 친구가 없어요]로 답해요 → 담임 선생님 화면에 바로 보임 */
+  const ask = !!(f.ask && f.who);
+  $('flOk').hidden = ask; $('flAsk').hidden = !ask; $('flSent').hidden = true;
   box.hidden = false;
   clearInterval(flashTimer);
   const tick = () => {
@@ -1823,9 +1836,19 @@ document.addEventListener('click', ev => {
   if (EDIT){ const e = ev.target.closest && ev.target.closest('[data-ed]'); if (e) editAction(e.dataset.ed); return; }
   const fl = ev.target.closest && ev.target.closest('[data-fl]');
   if (fl){
-    const id = FLASH && FLASH.id;
+    const id = FLASH && FLASH.id, r = fl.dataset.fl;
+    flDone = id || '';
+    if (r === 'go' || r === 'away'){
+      /* 답을 보냈다고 잠깐 보여 주고 내립니다 */
+      $('flAsk').hidden = true; const sn = $('flSent');
+      sn.textContent = r === 'go' ? '선생님께 "갈게요"라고 전했어요 👍' : '선생님께 "지금 없어요"라고 전했어요';
+      sn.hidden = false; FLASH = null; clearInterval(flashTimer);
+      if (id && !BOOT.preview) call('apiBoardFlashAck', id, r).catch(() => {});
+      setTimeout(() => { if (!FLASH) showFlash(null); }, 2200);
+      return;
+    }
     showFlash(null);
-    if (id && !BOOT.preview) call('apiBoardFlashAck', id).catch(() => {});
+    if (id && !BOOT.preview) call('apiBoardFlashAck', id, 'ok').catch(() => {});
     return;
   }
   const sc = ev.target.closest && ev.target.closest('[data-sc]');

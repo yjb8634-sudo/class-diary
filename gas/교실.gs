@@ -8,7 +8,7 @@
 
 var BOARD = { NOTICE: '교실공지', SURVEY: '교실조사', RESP: '교실응답', SUGGEST: '교실건의', EVENT: '교실일정' };
 /* 화면 파일을 바꿔 배포할 때마다 이 값을 바꾸면, 켜져 있던 교실 TV에 '새로 불러오기' 안내가 뜹니다. */
-var BOARD_VER = '2026-10-31a';
+var BOARD_VER = '2026-11-05a';
 var BOARD_ETC = '기타 (목록에 없음 · 직접 쓰기)';
 var FILEVER_교실 = '2026-11-02a';
 var BOARD_PERIODS = [
@@ -281,7 +281,7 @@ function boardFileReport_() {
   var lines = count(txt, '\n') + 1;
 
   /* 구글이 파일을 읽을 때 주석을 지우므로, 표식은 모두 '코드'로 넣었습니다. */
-  var NEED = '2026-11-02a';   /* 이 날짜이거나 더 최신이면 정상 */
+  var NEED = '2026-11-05a';   /* 이 날짜이거나 더 최신이면 정상 */
   var vm = txt.match(/BOARD_FILE_VER = '([^']+)'/);
   var L = [];
   L.push('파일 버전: ' + (vm ? vm[1] : '없음 ❌ — 예전 파일입니다. 최신 교실화면.html을 다시 받아 주세요.'));
@@ -511,7 +511,7 @@ function boardFlash_() {
   return f;
 }
 function boardFlashOut_(f) {
-  return f ? { id: f.id, who: f.who, text: f.text, level: f.level, until: f.until } : null;
+  return f ? { id: f.id, who: f.who, text: f.text, level: f.level, ask: !!(f.ask && f.who), until: f.until } : null;
 }
 
 /* 담임 기록실에서 보냅니다. */
@@ -527,6 +527,7 @@ function apiBoardFlashSend(pw, d) {
   setConfigValue_('교실_호출', JSON.stringify({
     id: 'f_' + Utilities.getUuid().slice(0, 8),
     who: who, text: text, level: d.level === '긴급' ? '긴급' : '알림',
+    ask: !!(who && d.ask !== false),   /* 학생이 [네, 갈게요] · [지금 그 친구가 없어요]로 답함 */
     at: new Date().toISOString(),
     until: new Date(Date.now() + min * 60000).toISOString(),
     min: min, ackAt: ''
@@ -543,16 +544,27 @@ function apiBoardFlashStop(pw) {
   return apiBoardAdminGet(pw);
 }
 
-/* 교실 화면에서 [확인했어요]를 누르면 바로 내려가고, 선생님 화면에 확인 시각이 남습니다. */
-function apiBoardFlashAck(t, id) {
+/* 교실 화면에서 [확인했어요] · [네, 갈게요] · [지금 그 친구가 없어요]를 누르면 바로 내려가고,
+ * 선생님 화면에 누른 답과 시각이 남습니다. */
+function apiBoardFlashAck(t, id, r) {
   boardBust_();
   boardAuth_(t);
   var f = boardFlash_();
   if (!f || f.id !== String(id)) return { ok: true };
   f.ackAt = new Date().toISOString();
+  f.reply = (r === 'go' || r === 'away') ? r : 'ok';
   f.until = new Date(Date.now() - 1000).toISOString();
   setConfigValue_('교실_호출', JSON.stringify(f));
   return { ok: true };
+}
+
+/* 담임 기록실이 호출 답장을 기다릴 때 가볍게 확인 */
+function apiBoardFlashStatus(pw) {
+  isAdmin_(pw);
+  var f = boardJson_(getConfig_()['교실_호출'], null);
+  if (!f) return null;
+  f.live = !!(f.until && new Date(f.until).getTime() >= Date.now());
+  return f;
 }
 
 /* 교실 화면이 자주 부르는 가벼운 확인용 */
