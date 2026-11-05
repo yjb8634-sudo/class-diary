@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-title" content="클래스 뷰">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<script>try{var __t=localStorage.getItem('cr_theme');if(__t&&__t!=='sky')document.documentElement.dataset.theme=__t;}catch(e){}</script>
+<script>try{var __t=localStorage.getItem('cr_theme_cur');if(__t&&__t!=='sky')document.documentElement.dataset.theme=__t;}catch(e){}</script>
 <meta name="theme-color" content="#F2F6FD">
 <style>@font-face{font-family:'Bunpil';font-style:normal;font-weight:100 900;font-display:swap;
   src:url('https://yjb8634-sudo.github.io/class-diary/fonts/Bunpil-R.woff2') format('woff2'),url('https://yjb8634-sudo.github.io/class-diary/fonts/Bunpil-R.woff') format('woff')}</style>
@@ -616,7 +616,7 @@ async function start(){
   }
   const { auth, A } = S.fb;
   try { await A.getRedirectResult(auth); } catch (e) { if (!/no-auth-event/.test(String(e.code))) fail(e); }
-  A.onAuthStateChanged(auth, u => { S.user = u && !u.isAnonymous ? u : null; route(); });
+  A.onAuthStateChanged(auth, u => { S.user = u && !u.isAnonymous ? u : null; themeUser(S.user); route(); });
 }
 async function login(){
   const { auth, A } = S.fb;
@@ -747,7 +747,7 @@ function vLogin(){
           <div class="ft reveal"><div class="nb"><b>1</b><span class="bg-y">공지 · 알림장</span></div>
             <h3>한 줄 쓰면,<br>교실 TV에 바로 떠요</h3>
             <p>공지를 적고 <b>[공지 올리기]</b>만 누르세요. 중요 · 긴급 공지는 TV 맨 위에 빨갛게 고정되고, 첨부한 PDF · 사진은 TV에서 크게 열려요.</p>
-            <ul><li>보이는 기간을 정하면 알아서 내려가요</li><li>가정통신문 · 제출 서류 · 준비물은 마감일과 함께</li><li>학부모님께는 이름을 가린 휴대폰 주소로</li></ul></div>
+            <ul><li>보이는 기간을 정하면 알아서 내려가요</li><li>가정통신문 · 제출 서류 · 준비물은 마감일과 함께</li></ul></div>
           <div class="live bg-y reveal"><span class="lb">LIVE</span>
             <div class="app"><div class="ah"><span class="bi2">${mark()}</span>클래스 뷰 <em>● 저장됨</em></div>
               <div class="ac"><b>공지</b><div class="typ" id="lpType"></div>
@@ -802,10 +802,8 @@ function vLogin(){
           <p>🔒 우리 반 자료는 담임 선생님만 관리하며, 운영자는 열람할 수 없습니다.</p></div>
         <div class="safe reveal">
           <div>운영자가 우리 반 자료 보기<b>못 함</b></div>
-          <div>학생 · 학부모 휴대폰 주소<b>이름을 가리고 보기만</b></div>
-          <div>학생 PIN<b>암호(지문)로만 저장 · 선생님도 못 봄</b></div>
-          <div>우리 반 백업<b>선생님 구글 드라이브에만</b></div>
-          <div>교실 TV 주소<b>반마다 긴 무작위 열쇠</b></div></div></section>
+          <div>학생 PIN<b>알아볼 수 없게 바꿔 저장 · 선생님도 못 봄</b></div>
+          <div>우리 반 백업<b>선생님 구글 드라이브에만</b></div></div></section>
 
       <section class="lp-end reveal"><h2>내일 아침 조회부터,<br><span class="hl">공지는 TV 한 번에</span></h2><p>설치 없이 지금 바로 시작할 수 있어요.</p>
         <button class="b y gbtn" data-go="login">${G_ICON} 구글 계정으로 시작하기</button></section>
@@ -1045,7 +1043,7 @@ function vPinCard(){
   const n = stu.filter(t => R[t.no]).length, on = B.pinChange !== false;
   return `<section class="card"><h2>🔑 학생 PIN <span class="sub">${n} / ${stu.length}명 만듦</span></h2>
     <p class="lead">학생이 교실 TV에서 <b>이미 낸 답을 바꾸거나 지울 때</b> 넣는 6자리 숫자예요. 처음 답할 때는 지금처럼 이름만 누르면 됩니다.
-      학생은 휴대폰에 우리 반 앱을 설치하고(TV 오른쪽 위 📱 앱 설치) <b>🔑 내 PIN</b>에서 직접 만들어요. PIN은 지문(암호)으로만 저장돼서 <b>선생님 · 운영자도 볼 수 없어요.</b></p>
+      학생은 휴대폰에 우리 반 앱을 설치하고(TV 오른쪽 위 📱 앱 설치) <b>🔑 내 PIN</b>에서 직접 만들어요. PIN은 알아볼 수 없게 바꿔서 저장돼서 <b>선생님 · 운영자도 볼 수 없어요.</b></p>
     ${vPinMode('roster')}
     ${!on ? '<p class="small muted" style="margin-top:10px">지금은 <b>PIN 없이 간단하게</b> 쓰고 있어요. 위에서 [PIN으로 안전하게]를 고르면 학생 PIN 현황이 여기에 나와요.</p>' : `${!B.viewKey ? `<div class="hint" style="color:var(--pink)">학생이 휴대폰에서 PIN을 만들려면 먼저 <b>TV 연결 탭 → 학생용 주소 만들기</b>를 해 주세요.</div>` : ''}
     ${stu.length ? `<div class="pins">${stu.map(t => { const r = R[t.no]; return `<div class="pn ${r ? 'on' : ''}"><span><b>${t.no}</b> ${esc(t.name)}</span>
@@ -1348,15 +1346,29 @@ const TAB_DESC = {
   roster: '번호 · 이름 · 생일, 그리고 학생 PIN',
   counsel: '학생이 교실 TV에서 신청한 상담 일정',
   suggest: '학생들이 교실 TV에서 보낸 건의 (선생님만 읽어요)',
-  tv: '교실 TV 연결, 학생 · 학부모 휴대폰 주소',
+  tv: '교실 TV 연결, 학생 휴대폰 주소',
   flash: '학생을 부르고 [네, 갈게요] · [지금 없어요] 답까지 받아요',
   op: '선생님 가입 승인 (운영자만)'
 };
 const THEMES = [['sky', '#A6CDFA', '스카이'], ['mint', '#9FDFC6', '민트'], ['lavender', '#C9BDF7', '라벤더'], ['peach', '#F8C3A6', '피치'], ['beige', '#F1D995', '베이지'], ['chalk', '#1D2A25', '칠판(어둡게)']];
 function themeNow(){ return document.documentElement.dataset.theme || 'sky'; }
+/* 화면 색은 로그인한 선생님마다 따로 기억하고, 로그아웃하면(첫 화면) 기본 색으로 돌아가요 */
+function themeApply(k){
+  if (!k || k === 'sky') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = k;
+  const m = document.querySelector('meta[name="theme-color"]'); if (m && document.body) m.content = getComputedStyle(document.body).backgroundColor;
+}
+function themeUser(u){
+  let k = 'sky';
+  try {
+    if (u){ k = localStorage.getItem('cr_theme_' + u.uid) || 'sky'; localStorage.setItem('cr_theme_cur', k); }
+    else localStorage.removeItem('cr_theme_cur');
+    localStorage.removeItem('cr_theme');   /* 예전(모두 같이 쓰던) 저장값 정리 */
+  } catch (e) {}
+  themeApply(k);
+}
 function themeSet(k){
   if (k === 'sky') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = k;
-  try { localStorage.setItem('cr_theme', k); } catch (e) {}
+  try { if (S.user){ localStorage.setItem('cr_theme_' + S.user.uid, k); localStorage.setItem('cr_theme_cur', k); } } catch (e) {}
   const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = getComputedStyle(document.body).backgroundColor;
 }
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-theme-set]'); if (b){ themeSet(b.dataset.themeSet); render(); } });
