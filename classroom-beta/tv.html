@@ -246,6 +246,16 @@ button:active:not(:disabled),.go:active,.slot:active,.opt:active,.nm:active,.chi
 .fpg{all:unset;cursor:pointer;padding:.35rem .9rem;border-radius:.6rem;border:1px solid var(--line);color:var(--chalk2);font-size:1.05rem;max-width:22rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-sizing:border-box}
 .fpg.on{border-color:var(--yellow);color:var(--yellow)}
 .fv iframe{display:block;width:100%;border:0;background:#fff}
+.fv.pg{background:#2b2f2d}
+.fv .pgv{overflow:auto;background:#3a3f3c;display:flex;justify-content:center;align-items:flex-start;-webkit-overflow-scrolling:touch}
+.fv .pgv img{display:block;width:100%;max-width:1200px;height:auto;background:#fff}
+.fv .pgc{font-size:1.25rem;font-weight:700;color:var(--chalk2);min-width:6.5rem;text-align:center}.fv .pgc b{color:var(--yellow)}
+.fv .pgb{margin-left:auto;display:flex;align-items:center;gap:.6rem}
+.fv .pgb .fpn{min-width:9rem;height:3rem}
+.fv.pg .fvh{padding:.5rem .8rem .5rem 1rem}
+.fv .fvh a.fvo{text-decoration:none;color:inherit}
+.fv .hwpmsg{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8rem;padding:2rem;text-align:center;background:var(--card);color:var(--chalk)}
+.fv .hwpmsg b{font-size:1.7rem}.fv .hwpmsg span{font-size:1.25rem;color:var(--chalk2);max-width:40rem;line-height:1.6}
 .ntxt{font-size:2.4rem;font-weight:700;line-height:1.5;white-space:pre-wrap;word-break:keep-all}
 .ntxt .badge{display:inline-block;font-size:1.3rem;background:#E5533D;color:#fff;border-radius:.5rem;padding:.1rem .6rem;margin-right:.7rem;vertical-align:.3rem}
 .desc{font-size:1.8rem;line-height:1.6;white-space:pre-wrap;word-break:keep-all;color:var(--chalk)}
@@ -1464,7 +1474,7 @@ var FILE_VER = '2026-11-05a';
 /* ---- 화면이 멈추면 이유를 보여 주는 감시꾼 ----
  * 본 코드가 보낸 파일 그대로인지(글자 수 · 지문)도 함께 확인해서, 붙여넣기 문제인지 바로 알 수 있게 합니다. */
 var BOARD_FILE_VER = '2026-11-05a';   /* 파일 버전 (점검용) */
-var EXPECT = {"len": 123147, "h": 2060487559}; /*EXPECT*/
+var EXPECT = {"len": 126168, "h": 1363519024}; /*EXPECT*/
 window.__boardCheck = function(){
   var m = 'BOARD_MARK_', ss = document.getElementsByTagName('script'), found = 0, t = '';
   for (var i = 0; i < ss.length; i++){ var x = ss[i].text || ''; if (x.indexOf(m + 'START = 1') >= 0){ found++; t = x; } }
@@ -2547,11 +2557,20 @@ function qrSvg(text, dark, light){
 }
 
 const FSREG = {}; let FSN = 0;
+function findFile(id){
+  const L = [];
+  (D.notices || []).forEach(n => L.push(...filesOf(n)));
+  (Array.isArray(D.notes) ? D.notes : []).forEach(n => { if (n.file) L.push(n.file); (n.files || []).forEach(x => L.push(x)); });
+  (D.surveys || []).forEach(s => { if (s.file) L.push(s.file); });
+  if (OV && OV.files) L.push(...OV.files);
+  Object.values(FSREG).forEach(x => L.push(...x));
+  return L.find(f => f && f.id === id);
+}
 function filesOf(n){ return n.files && n.files.length ? n.files : (n.file ? [n.file] : []); }
 function fileBtn(f){
   const L = Array.isArray(f) ? f : [f], f0 = L[0];
   let key = '';
-  if (L.length > 1){ key = 'fs' + (++FSN); FSREG[key] = L; }
+  key = 'fs' + (++FSN); FSREG[key] = L;   /* 하나여도 TV 화면 안 보기 창으로 (크롬으로 넘어가지 않게) */
   return `<a class="clip press" href="${DRIVE_FILE}${encodeURIComponent(f0.id)}/view" target="_blank" rel="noopener" data-file="1"${key ? ` data-fs="${key}"` : ''} title="${esc(L.map(x => x.name).join(', '))}">${ICON.clip}<span>첨부${L.length > 1 ? ' ' + L.length : ''}</span></a>`;
 }
 /* 여러 파일: 위에 [이전 · n / 전체 · 다음], 아래에 파일 이름 칩 */
@@ -2563,8 +2582,32 @@ function filesView(L, h, fi){
     ${fileView(L[fi], h)}
     <div class="fpt">${L.map((x, i) => `<button class="fpg press ${i === fi ? 'on' : ''}" data-fpg="${i}">${i + 1}. ${esc(x.name)}</button>`).join('')}</div></div>`;
 }
+/* 첨부 보기: PDF(쪽 그림이 있으면)와 사진은 화면 안에서 바로, 한글은 안내, 그 밖은 구글 미리보기 */
+const IMG_URL = id => 'https:' + '/' + '/drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w2000';
+const IMG_ALT = id => 'https:' + '/' + '/lh3.googleusercontent.com/d/' + encodeURIComponent(id) + '=w2000';
+const PGI = {};
+function fileKind(f){
+  const n = String(f.name || ''), m = String(f.mime || '');
+  if (f.pages && f.pages.length) return 'pages';
+  if (/^image\//.test(m) || /\.(jpe?g|png|gif|webp|bmp)$/i.test(n)) return 'img';
+  if (/\.(hwp|hwpx)$/i.test(n) || /hwp/i.test(m)) return 'hwp';
+  return 'drive';
+}
+function pgImg(id){ return `<img src="${IMG_URL(id)}" alt="" loading="lazy" onerror="if(!this.dataset.alt){this.dataset.alt=1;this.src='${IMG_ALT(id)}'}">`; }
 function fileView(f, h){
-  return `<div class="fv"><a class="fvh press" href="${DRIVE_FILE}${encodeURIComponent(f.id)}/view" target="_blank" rel="noopener" data-file="1">${ICON.clip}<span>${esc(f.name)}</span><b class="fvo">크게 열기</b></a>
+  const k = fileKind(f), open = `${DRIVE_FILE}${encodeURIComponent(f.id)}/view`;
+  const hd = (extra) => `<div class="fvh">${ICON.clip}<span>${esc(f.name)}</span>${extra || ''}</div>`;
+  if (k === 'pages'){
+    const n = f.pages.length, i = Math.max(0, Math.min(n - 1, PGI[f.id] || 0));
+    return `<div class="fv pg" data-pgf="${esc(f.id)}">${hd(n > 1 ? `<span class="pgb"><button class="fpn press" data-pg="-1" ${i <= 0 ? 'disabled' : ''}>◀ 앞 쪽</button>
+        <span class="pgc"><b>${i + 1}</b> / ${n}쪽${f.np > n ? ' (앞 ' + n + '쪽만)' : ''}</span><button class="fpn press" data-pg="1" ${i >= n - 1 ? 'disabled' : ''}>다음 쪽 ▶</button></span>` : '')}
+      <div class="pgv" style="height:${h}">${pgImg(f.pages[i])}</div></div>`;
+  }
+  if (k === 'img') return `<div class="fv pg">${hd()}<div class="pgv" style="height:${h}">${pgImg(f.id)}</div></div>`;
+  if (k === 'hwp') return `<div class="fv">${hd(`<a class="fvo press" href="${open}" target="_blank" rel="noopener" data-file="1" data-ext="1">내려받기</a>`)}
+      <div class="hwpmsg" style="min-height:calc(${h} * .5)"><b>한글 파일은 교실 TV에서 미리 볼 수 없어요</b>
+        <span>[내려받기]를 눌러 한컴오피스 Viewer로 열거나, 선생님께 PDF로 올려 달라고 말씀드려 주세요.</span></div></div>`;
+  return `<div class="fv"><a class="fvh press" href="${open}" target="_blank" rel="noopener" data-file="1" data-ext="1">${ICON.clip}<span>${esc(f.name)}</span><b class="fvo">크게 열기</b></a>
     <iframe src="${DRIVE_FILE}${encodeURIComponent(f.id)}/preview" style="height:${h}" title="${esc(f.name)}"></iframe></div>`;
 }
 /* 보기 그리기: '대학 · 과목명'처럼 가운뎃점으로 묶인 보기는 앞부분(대학)별로 모아 보여 줍니다 */
@@ -2759,6 +2802,15 @@ const REASON = {taken: '방금 다른 친구가 먼저 신청했어요. 다른 �
   range: '상담 기간이 아니에요.', roster: '명단과 학번이 맞지 않아요. 선생님께 말해 주세요.', busy: '신청이 몰리고 있어요. 다시 눌러 주세요.'};
 
 document.addEventListener('click', ev => {
+  const pg = ev.target.closest && ev.target.closest('[data-pg]');
+  if (pg){
+    const box = pg.closest('[data-pgf]'), id = box && box.dataset.pgf; if (!id) return;
+    const f = findFile(id); if (!f) return;
+    PGI[id] = Math.max(0, Math.min(f.pages.length - 1, (PGI[id] || 0) + Number(pg.dataset.pg)));
+    const tmp = document.createElement('div'); tmp.innerHTML = fileView(f, box.querySelector('.pgv').style.height);
+    box.replaceWith(tmp.firstElementChild); poke();
+    return;
+  }
   const fa = ev.target.closest && ev.target.closest('a[data-file]');
   if (fa){
     if (EDIT) ev.preventDefault();
@@ -3055,6 +3107,7 @@ document.addEventListener('pointerdown', poke);
 document.addEventListener('keydown', ev => {
   poke();
   if (OV && (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight')){
+    const qb = document.querySelector(ev.key === 'ArrowLeft' ? '#ov [data-pg="-1"]' : '#ov [data-pg="1"]'); if (qb && !qb.disabled){ qb.click(); return; }
     const pb = document.querySelector(ev.key === 'ArrowLeft' ? '[data-fp="-1"]' : '[data-fp="1"]'); if (pb && !pb.disabled){ pb.click(); return; }
   }
   if (ev.key === 'Enter' && ev.target.id === 'edPw'){ const k = document.querySelector('[data-ov="edok"]'); if (k) k.click(); }

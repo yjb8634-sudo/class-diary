@@ -594,6 +594,7 @@ html[data-theme="chalk"] .flst.r-away{background:#5A3934}
 .uic{display:inline-block;width:1.25em;height:1.25em;vertical-align:-.28em;margin:0 .12em;padding:.08em;border-radius:.3em;background:rgba(127,127,127,.16)}
 
 /* ---------- 학교 양식 조사 ---------- */
+.fchip.warn{border-color:var(--pink)!important;color:var(--pink)}
 .fxdrop{all:unset;box-sizing:border-box;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;margin-top:12px;padding:30px 16px;border:2px dashed var(--line);border-radius:22px;cursor:pointer;text-align:center;transition:background .2s,border-color .2s}
 .fxdrop:hover,.fxdrop.over{border-color:var(--yellow);background:rgba(127,127,127,.06)}
 .fxdrop b{font-size:18px}.fxdrop span{font-size:13.5px;color:var(--chalk3)}
@@ -1921,6 +1922,33 @@ async function driveUpload(file, tok, folder){
   return { id: j.id, name: j.name || file.name, mime: j.mimeType || file.type || '' };
 }
 /* 고른 파일들을 올리고 [{id,name,mime}] 를 돌려줍니다 (첫 호출은 반드시 단추를 누른 바로 그 순간에) */
+/* PDF를 쪽마다 그림으로 바꿔 함께 올림 → 교실 TV가 구글 미리보기(크롬) 없이 화면 안에서 넘겨 봐요 */
+const PDFJS_CDN = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/';
+let PDFJS = null;
+async function pdfjs(){
+  if (PDFJS) return PDFJS;
+  await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = PDFJS_CDN + 'build/pdf.min.js'; sc.onload = ok; sc.onerror = () => no(new Error('PDF 도구를 불러오지 못했어요.')); document.head.appendChild(sc); });
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_CDN + 'build/pdf.worker.min.js';
+  return (PDFJS = window.pdfjsLib);
+}
+const isPdf = f => /pdf/i.test(f.type || '') || /\.pdf$/i.test(f.name || '');
+const isHwp = f => /\.(hwp|hwpx)$/i.test(f.name || '');
+async function pdfPages(file, tok, folder, label){
+  const lib = await pdfjs();
+  const pdf = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), cMapUrl: PDFJS_CDN + 'cmaps/', cMapPacked: true, standardFontDataUrl: PDFJS_CDN + 'standard_fonts/' }).promise;
+  const n = Math.min(pdf.numPages, 30), ids = [];
+  for (let p = 1; p <= n; p++){
+    busy(label + ' · TV용 그림 만드는 중 (' + p + '/' + n + '쪽)');
+    const page = await pdf.getPage(p), v0 = page.getViewport({ scale: 1 }), vp = page.getViewport({ scale: Math.min(3, 1600 / v0.width) });
+    const cv = document.createElement('canvas'); cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
+    const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height);
+    await page.render({ canvasContext: cx, viewport: vp }).promise;
+    const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.82));
+    const img = new File([blob], file.name.replace(/\.pdf$/i, '') + '_' + p + '쪽.jpg', { type: 'image/jpeg' });
+    ids.push((await driveUpload(img, tok, folder)).id);
+  }
+  return { pages: ids, np: pdf.numPages };
+}
 async function uploadPending(kind){
   const L = S.pend[kind] || [];
   if (!L.length) return [];
@@ -1930,7 +1958,12 @@ async function uploadPending(kind){
   const out = [];
   for (let i = 0; i < L.length; i++){
     busy('첨부 파일을 올리는 중… (' + (i + 1) + '/' + L.length + ') ' + L[i].name);
-    out.push(await driveUpload(L[i], tok, folder));
+    const up = await driveUpload(L[i], tok, folder);
+    if (isPdf(L[i])){
+      try { Object.assign(up, await pdfPages(L[i], tok, folder, (i + 1) + '/' + L.length + ' ' + L[i].name)); }
+      catch (e){ console.warn('PDF 그림 만들기 실패', e); }   /* 실패해도 원래 파일은 올라감 (TV는 구글 미리보기로) */
+    }
+    out.push(up);
   }
   busy('');
   S.pend[kind] = [];
@@ -1941,6 +1974,7 @@ function addPending(kind, files){
   const multi = kind === 'notice';
   for (const f of files){
     if (f.size > MAXF){ toast(f.name + ' : 20MB보다 큰 파일은 올릴 수 없어요.', true); continue; }
+    if (isHwp(f)) toast('한글 파일은 교실 TV에서 미리 볼 수 없어요. 한글에서 [파일] → [PDF로 저장하기]로 PDF를 만들어 올리면 TV 화면에서 바로 넘겨 볼 수 있어요.', true);
     if (multi) { if (S.pend[kind].length < 10) S.pend[kind].push(f); }
     else S.pend[kind] = [f];
   }
@@ -1951,7 +1985,9 @@ function fileChips(L){ return (L || []).length ? `<div class="files">${L.map(f =
 function pendBox(kind, label){
   const L = S.pend[kind] || [];
   return `<div class="drop" data-pick="${kind}" data-drop="${kind}">📎 ${label} <span class="small">(눌러서 고르거나 여기로 끌어 놓기 · 20MB까지)</span></div>
-    ${L.length ? `<div class="files">${L.map((f, i) => `<span class="fchip"><span>${esc(f.name)}</span><button data-a="unpend" data-k="${kind}" data-i="${i}" aria-label="빼기">×</button></span>`).join('')}</div>` : ''}`;
+    ${L.length ? `<div class="files">${L.map((f, i) => `<span class="fchip${isHwp(f) ? ' warn' : ''}"><span>${isHwp(f) ? '⚠ ' : ''}${esc(f.name)}</span><button data-a="unpend" data-k="${kind}" data-i="${i}" aria-label="빼기">×</button></span>`).join('')}</div>` : ''}
+    ${L.some(isHwp) ? '<p class="small" style="color:var(--pink);margin:6px 0 0">⚠ 한글 파일은 교실 TV에서 미리 볼 수 없어요 (내려받기만 돼요). <b>한글 → [파일] → [PDF로 저장하기]</b>로 PDF를 만들어 올리면 TV 화면에서 쪽을 넘겨 볼 수 있어요.</p>' : ''}
+    ${L.some(isPdf) ? '<p class="small muted" style="margin:6px 0 0">PDF는 올릴 때 쪽마다 그림으로도 바꿔 두어서, 교실 TV 화면 안에서 바로 넘겨 볼 수 있어요. (30쪽까지)</p>' : ''}`;
 }
 
 /* ================= 그리기 ================= */
@@ -2809,6 +2845,8 @@ function vLinkForm(){
 const APP_VER = '2026-11-06a';
 const UPDATES = [
   { v: '2026-11-06a', title: '11월 6일 업데이트 · 학교 양식 자동 채우기', items: [
+    '📑 PDF 첨부는 올릴 때 쪽마다 그림으로도 만들어 두어서, 교실 TV 화면 안에서 [앞 쪽 · 다음 쪽]으로 바로 넘겨 봐요 (크롬으로 넘어가지 않아요). 사진도 화면 안에서 바로 보여요',
+    '⚠ 한글(.hwp) 파일을 첨부하면 TV에서 미리 볼 수 없다고 알려 드려요. 한글 → [파일] → [PDF로 저장하기]로 올려 주세요',
     '📄 [설문 · 투표 · 조사] → [학교 양식]: 학교에서 받은 엑셀(.xlsx) · 한글(.hwpx) 양식을 올리면 학생이 TV에서 답하고, [📥 양식대로 내려받기]로 원래 모양 그대로 채워진 파일을 받아요',
     '✍ 글로 답하는 질문(예: 희망 직업)과 여러 질문을 이어서 답하기가 생겼어요',
     '🎬 앱을 열 때마다 클래스 뷰 도입 애니메이션이 나와요 (누르면 건너뛰기)'] },
