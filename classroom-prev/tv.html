@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>우리 반 교실 화면</title>
+<title>우리 반 클래스 뷰</title>
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="교실 TV">
+<meta name="apple-mobile-web-app-title" content="클래스 뷰 TV">
 <base target="_top">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -39,7 +39,16 @@ body{background:var(--bg);color:var(--chalk);font-family:'Pretendard','Apple SD 
 #flash .left{font-size:1.5rem;color:var(--chalk3);font-variant-numeric:tabular-nums}
 #flash .ok{all:unset;cursor:pointer;min-height:6rem;padding:0 4rem;border-radius:1.2rem;background:var(--yellow);
   color:var(--yellow-ink);font-size:2.4rem;font-weight:800;display:flex;align-items:center;box-sizing:border-box}
-@media (orientation:portrait){#flash .who{font-size:4rem}#flash .msg2{font-size:2rem}}
+#ov .go.ghost{background:transparent;color:var(--chalk2);box-shadow:inset 0 0 0 .15rem var(--line);margin-top:.6rem}
+#ov .qprog{font-size:.62em;font-weight:700;color:var(--yellow);margin-left:.5em;white-space:nowrap}
+#flash .ask{display:flex;gap:1.6rem;flex-wrap:wrap;justify-content:center}
+#flash .ask[hidden],#flash .ok[hidden]{display:none}
+#flash .ok.go{background:#8CD6B4;color:#0F2A23}
+#flash .ok.away{background:transparent;color:var(--chalk);box-shadow:inset 0 0 0 .22rem rgba(242,239,228,.55)}
+#flash .ok:active{transform:scale(.97)}
+#flash .sent{font-size:2.6rem;font-weight:800;color:#8CD6B4}
+#flash .sent[hidden]{display:none}
+@media (orientation:portrait){#flash .who{font-size:4rem}#flash .msg2{font-size:2rem}#flash .ok{font-size:1.8rem;padding:0 2.4rem}}
 .newver{position:fixed;left:50%;top:calc(.8rem + var(--st,0px));transform:translateX(-50%);z-index:35;background:var(--yellow);color:var(--yellow-ink);font-weight:800;font-size:1.4rem;
   padding:.8rem 1.4rem;border-radius:1rem;text-decoration:none;box-shadow:0 1rem 2rem rgba(0,0,0,.45)}
 .newver[hidden]{display:none}
@@ -237,6 +246,16 @@ button:active:not(:disabled),.go:active,.slot:active,.opt:active,.nm:active,.chi
 .fpg{all:unset;cursor:pointer;padding:.35rem .9rem;border-radius:.6rem;border:1px solid var(--line);color:var(--chalk2);font-size:1.05rem;max-width:22rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-sizing:border-box}
 .fpg.on{border-color:var(--yellow);color:var(--yellow)}
 .fv iframe{display:block;width:100%;border:0;background:#fff}
+.fv.pg{background:#2b2f2d}
+.fv .pgv{overflow:auto;background:#3a3f3c;display:flex;justify-content:center;align-items:flex-start;-webkit-overflow-scrolling:touch}
+.fv .pgv img{display:block;width:100%;max-width:1200px;height:auto;background:#fff}
+.fv .pgc{font-size:1.25rem;font-weight:700;color:var(--chalk2);min-width:6.5rem;text-align:center}.fv .pgc b{color:var(--yellow)}
+.fv .pgb{margin-left:auto;display:flex;align-items:center;gap:.6rem}
+.fv .pgb .fpn{min-width:9rem;height:3rem}
+.fv.pg .fvh{padding:.5rem .8rem .5rem 1rem}
+.fv .fvh a.fvo{text-decoration:none;color:inherit}
+.fv .hwpmsg{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8rem;padding:2rem;text-align:center;background:var(--card);color:var(--chalk)}
+.fv .hwpmsg b{font-size:1.7rem}.fv .hwpmsg span{font-size:1.25rem;color:var(--chalk2);max-width:40rem;line-height:1.6}
 .ntxt{font-size:2.4rem;font-weight:700;line-height:1.5;white-space:pre-wrap;word-break:keep-all}
 .ntxt .badge{display:inline-block;font-size:1.3rem;background:#E5533D;color:#fff;border-radius:.5rem;padding:.1rem .6rem;margin-right:.7rem;vertical-align:.3rem}
 .desc{font-size:1.8rem;line-height:1.6;white-space:pre-wrap;word-break:keep-all;color:var(--chalk)}
@@ -526,6 +545,7 @@ body.editing [data-blk].moving{outline:3px solid var(--yellow);opacity:.88;box-s
   .grid [data-blk=now]{order:5}
   .grid [data-blk=clock]{order:6;padding-top:.4rem;border-top:1px solid var(--line)}
 }
+.uic{display:inline-block;width:1.25em;height:1.25em;vertical-align:-.28em;margin:0 .12em;padding:.08em;border-radius:.3em;background:rgba(127,127,127,.16)}
 </style>
 <!-- 학급 다이어리 공용 디자인 (칠판과 분필) · 2026-10-21a
      각 화면 맨 끝에 끼워 넣어, 화면마다 다르던 색 · 글꼴 이름을 한 가지 토큰으로 다시 묶습니다. -->
@@ -749,6 +769,17 @@ html,body{background:var(--bg);color:var(--chalk)}
 #flash{background:rgba(14,20,17,.95)}
 #flash.urgent .tag{background:#C9573F}
 #flash.urgent .who{color:#EBB0A4}
+/* ---- TV 배경색 · 무늬: 선생님이 [화면 꾸미기 → TV 배경색 · 디자인]에서 고름 ---- */
+:root{--pat:rgba(255,255,255,.055);--pat2:rgba(255,255,255,.07)}
+html[data-tvt="night"]{--bg:#151C2E;--card:#1C2540;--card2:#25304F;--line:rgba(230,236,250,.09);--chalk:#E8ECF6;--chalk2:rgba(232,236,246,.80);--chalk3:rgba(232,236,246,.56);--yellow:#F2D27A;--yellow-ink:#151C2E;--mint:#8FD0D8;--pink:#E9A5B0;--sky:#9DB8F2;--t-surface:#151C2E;--t-surface-2:#1C2540;--t-surface-3:#25304F;--t-ink:#E8ECF6;--t-ink-2:rgba(232,236,246,.80);--t-ink-3:rgba(232,236,246,.56);--t-line:rgba(230,236,250,.09);--t-line-2:rgba(230,236,250,.22);--t-yellow:#F2D27A}
+html[data-tvt="wood"]{--bg:#251E19;--card:#2F2620;--card2:#3A2F27;--line:rgba(240,228,214,.09);--chalk:#F0E6DA;--chalk2:rgba(240,230,218,.80);--chalk3:rgba(240,230,218,.56);--yellow:#EFC879;--yellow-ink:#251E19;--mint:#9BCDB2;--pink:#E3A592;--sky:#A9C2DE;--t-surface:#251E19;--t-surface-2:#2F2620;--t-surface-3:#3A2F27;--t-ink:#F0E6DA;--t-ink-2:rgba(240,230,218,.80);--t-ink-3:rgba(240,230,218,.56);--t-line:rgba(240,228,214,.09);--t-line-2:rgba(240,228,214,.22);--t-yellow:#EFC879}
+html[data-tvt="grape"]{--bg:#1F1A2C;--card:#28213A;--card2:#322947;--line:rgba(236,231,246,.09);--chalk:#ECE7F6;--chalk2:rgba(236,231,246,.80);--chalk3:rgba(236,231,246,.56);--yellow:#F0D27E;--yellow-ink:#1F1A2C;--mint:#93D2C4;--pink:#EBA6C0;--sky:#AFB9F0;--t-surface:#1F1A2C;--t-surface-2:#28213A;--t-surface-3:#322947;--t-ink:#ECE7F6;--t-ink-2:rgba(236,231,246,.80);--t-ink-3:rgba(236,231,246,.56);--t-line:rgba(236,231,246,.09);--t-line-2:rgba(236,231,246,.22);--t-yellow:#F0D27E}
+html[data-tvt="ocean"]{--bg:#122428;--card:#183034;--card2:#1F3B40;--line:rgba(228,240,239,.09);--chalk:#E4F0EF;--chalk2:rgba(228,240,239,.80);--chalk3:rgba(228,240,239,.56);--yellow:#F2D27A;--yellow-ink:#122428;--mint:#86D6C6;--pink:#EFA9A0;--sky:#90C6EC;--t-surface:#122428;--t-surface-2:#183034;--t-surface-3:#1F3B40;--t-ink:#E4F0EF;--t-ink-2:rgba(228,240,239,.80);--t-ink-3:rgba(228,240,239,.56);--t-line:rgba(228,240,239,.09);--t-line-2:rgba(228,240,239,.22);--t-yellow:#F2D27A}
+html[data-tvt="paper"]{--bg:#EEF2F8;--card:#FFFFFF;--card2:#E5ECF6;--line:rgba(22,33,58,.10);--chalk:#16213A;--chalk2:rgba(22,33,58,.80);--chalk3:rgba(22,33,58,.56);--yellow:#C98A00;--yellow-ink:#FFFFFF;--mint:#16876F;--pink:#C9483D;--sky:#2F6FD0;--pat:rgba(22,33,58,.06);--pat2:rgba(47,111,208,.08);--t-surface:#EEF2F8;--t-surface-2:#FFFFFF;--t-surface-3:#E5ECF6;--t-ink:#16213A;--t-ink-2:rgba(22,33,58,.80);--t-ink-3:rgba(22,33,58,.56);--t-line:rgba(22,33,58,.10);--t-line-2:rgba(22,33,58,.22);--t-yellow:#C98A00}
+html[data-tvp="glow"] body{background-image:radial-gradient(60% 55% at 0% 0%,var(--pat2),transparent 70%),radial-gradient(55% 50% at 100% 100%,var(--pat2),transparent 70%)}
+html[data-tvp="dots"] body{background-image:radial-gradient(var(--pat) 1.5px,transparent 1.9px);background-size:1.6rem 1.6rem}
+html[data-tvp="grid"] body{background-image:linear-gradient(var(--pat) 1px,transparent 1px),linear-gradient(90deg,var(--pat) 1px,transparent 1px);background-size:3rem 3rem}
+html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,var(--pat) 0 .7rem,transparent .7rem 2.2rem)}
 </style>
 <style>body:not(.cr-owner) #btnEdit,#btnShare{display:none !important}</style>
 </head>
@@ -758,7 +789,9 @@ html,body{background:var(--bg);color:var(--chalk)}
 <div class="credit">제작자 : 강릉제일고 유준배 선생님</div>
 <div id="flash" hidden><span class="tag" id="flTag">공지사항</span>
 <div class="who" id="flWho"></div><div class="msg2" id="flMsg"></div>
-<button class="ok" data-fl="ok">확인했어요</button><div class="left" id="flLeft"></div></div>
+<button class="ok" data-fl="ok" id="flOk">확인했어요</button>
+<div class="ask" id="flAsk" hidden><button class="ok go" data-fl="go">🙋 네, 갈게요</button><button class="ok away" data-fl="away">🙅 지금 그 친구가 없어요</button></div>
+<div class="sent" id="flSent" hidden></div><div class="left" id="flLeft"></div></div>
 <a class="newver" id="newVer" target="_top" hidden>화면이 새로 바뀌었어요 · 여기를 눌러 새로 불러오세요</a>
 <div id="ov" class="ov" hidden></div>
 <div id="toast" role="status"></div>
@@ -772,7 +805,7 @@ html,body{background:var(--bg);color:var(--chalk)}
   var VIEW = !K && V.length >= 20;
   var WANT_EDIT = QS.get('edit') === '1';
   var PV = QS.get('pv') === '1';   /* 관리 화면 안 미리보기: 눌러도 저장 안 됨 */
-  var VER = 'fb-2026-11-15b';
+  var VER = 'fb-2026-11-17a';
   window.__BOOT = { t: K || V, preview: PV ? 1 : 0, phone: VIEW, ver: VER };
   if (VIEW) document.write('<style>#btnMine,#btnEdit,#btnShare{display:none !important}html,body{height:auto !important;overflow:auto !important}</style>');
   var FB = null, B = null, gone = false, SCH = null, schAt = 0, schBusy = false, WX = null, wxAt = 0, wxBusy = false;
@@ -890,9 +923,9 @@ html,body{background:var(--bg);color:var(--chalk)}
     onBody(function () {
       ov = document.createElement('div'); ov.id = 'crPair';
       ov.style.cssText = 'position:fixed;inset:0;z-index:100;background:#1D2A25;color:#E4E0D3;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:3vh 4vw;gap:2.4vh;font-family:inherit';
-      ov.innerHTML = '<div style="font-size:4.2vh;opacity:.85">강릉제일고 · 교실 화면 연결</div>'
+      ov.innerHTML = '<div style="font-size:4.2vh;opacity:.85">강릉제일고 · 클래스 뷰 연결</div>'
         + '<div id="crPairCode" style="font-size:19vh;font-weight:800;letter-spacing:.12em;color:#F2D16B;line-height:1.1;font-variant-numeric:tabular-nums">······</div>'
-        + '<div style="font-size:3.4vh;line-height:1.7;max-width:70rem">담임 선생님 휴대폰(또는 PC)에서 <b>교실 화면 관리</b>에 들어가<br><b style="color:#F2D16B">[TV 연결]</b> 칸에 위 숫자 6자리를 넣어 주세요.</div>'
+        + '<div style="font-size:3.4vh;line-height:1.7;max-width:70rem">담임 선생님 휴대폰(또는 PC)에서 <b>클래스 뷰</b>에 들어가<br><b style="color:#F2D16B">[TV 연결]</b> 칸에 위 숫자 6자리를 넣어 주세요.</div>'
         + '<div id="crPairMsg" style="font-size:2.6vh;opacity:.7">숫자를 받는 중…</div>'
         + '<button id="crPairBtn" style="display:none;font-size:3vh;padding:1.4vh 3vw;border-radius:1.2vh;border:2px solid #F2D16B;background:transparent;color:#F2D16B">새 숫자 받기</button>';
       document.body.appendChild(ov);
@@ -972,7 +1005,7 @@ html,body{background:var(--bg);color:var(--chalk)}
         qs.docs.forEach(function (d) {
           var x = d.data(); if (!x || !x.sid) return;
           (E[x.sid] = E[x.sid] || {})[x.no] = true;
-          if ((x.ch || []).length) (A[x.sid] = A[x.sid] || {})[x.no] = { ch: x.ch || [], etc: x.etc || '' };   /* 체크 취소(빈 답)는 안 한 것으로 */
+          if ((x.ch || []).length || x.etc) (A[x.sid] = A[x.sid] || {})[x.no] = { ch: x.ch || [], etc: x.etc || '' };   /* 체크 취소(빈 답)는 안 한 것으로 · 글로 쓴 답은 글만 */
         });
         ANS = A; EXIST = E; if (B) kick();
       }, function () {});
@@ -1084,7 +1117,7 @@ html,body{background:var(--bg);color:var(--chalk)}
     var f = B && B.flash;
     if (!f || !f.id || !(Number(f.until) > Date.now())) return null;
     try { if (localStorage.getItem('cr_ack') === f.id) return null; } catch (e) {}
-    return { id: f.id, who: f.who || '', text: f.text || '', level: f.level === '긴급' ? '긴급' : '알림', until: new Date(Number(f.until)).toISOString() };
+    return { id: f.id, who: f.who || '', text: f.text || '', level: f.level === '긴급' ? '긴급' : '알림', ask: !!(f.ask && f.who), until: new Date(Number(f.until)).toISOString() };
   }
   function notesOut(today, sts) {
     return ((B && B.notes) || []).filter(function (n) { return n && n.title && (!n.due || addDays(n.due, 1) >= today); })
@@ -1150,7 +1183,8 @@ html,body{background:var(--bg);color:var(--chalk)}
     var A = ANS[s.id] || {}, counts = s.options.map(function () { return 0; }), nos = Object.keys(A).map(Number);
     nos.forEach(function (no) { (A[no].ch || []).forEach(function (i) { if (counts[i] != null) counts[i]++; }); });
     return { id: s.id, q: s.q, options: s.options, multi: !!s.multi, anon: !!s.anon, open: !!s.open, pub: !!s.pub, showMissing: s.showMissing !== false,
-      total: sts.length, count: nos.length, kind: s.kind === '체크' ? '체크' : '선택', desc: s.desc || '', file: s.file || null, etc: !!s.etc,
+      total: sts.length, count: nos.length, kind: s.kind === '체크' ? '체크' : s.kind === '글' ? '글' : '선택', desc: s.desc || '', file: s.file || null, etc: !!s.etc,
+      req: s.req !== false, grp: s.grp || '', gi: Number(s.gi) || 0, gn: Number(s.gn) || 0, nx: s.nx || '', sub: !!s.sub, gname: s.gname || '',
       doneNos: nos, anyNos: Object.keys(EXIST[s.id] || {}).map(Number), counts: s.pub ? counts : null };
   }
   /* TV 칸 위치(order)는 Firestore에 2중 배열로 못 넣어서 'a,b' 글자로 저장합니다 */
@@ -1194,7 +1228,7 @@ html,body{background:var(--bg);color:var(--chalk)}
       .map(function (n) { var lv = Number(n.level) || 0; return { id: n.id, text: n.text, level: lv, important: lv >= 1, file: null, files: n.files || [] }; });
     var Q = B.quote || {};
     return {
-      ok: true, now: Date.now(), today: today, label: g + '학년 ' + k + '반', needExt: false, font: B.font || '', sound: VIEW ? { bday: true } : (B.sound || null),
+      ok: true, now: Date.now(), today: today, label: g + '학년 ' + k + '반', needExt: false, font: B.font || '', tvt: B.tvt || '', tvp: B.tvp || '', sound: VIEW ? { bday: true } : (B.sound || null),
       periods: periods.map(function (p) { var we = dow === 0 || dow === 6, n = String(Number(p.n)); return { n: p.n, s: p.s, e: p.e, subj: we ? '' : (subj[n] || subj[p.n] || ''), chg: !we && !!(chg[n] || chg[p.n]), teacher: we ? '' : (TCH[n] || TCH[p.n] || ctch[n] || '') }; }),
       ttNote: ttNote, lunch: B.lunch || '',
       meal: M[today] || [], mealErr: SCH ? '' : (schAt ? '급식 정보를 불러오지 못했어요' : '급식을 불러오는 중…'),
@@ -1219,8 +1253,8 @@ html,body{background:var(--bg);color:var(--chalk)}
   function pinOn() { return !VIEW && !!(B && B.pinKey) && B.pinChange !== false; }
   function soon() { return Promise.reject(new Error('공용판에서는 아직 준비 중인 기능이에요.')); }
   function needFb() { if (!FB || !B) throw new Error('연결하는 중이에요. 잠시 뒤 다시 눌러 주세요.'); }
-  function usePf(no) {
-    var p = PROOF[no]; delete PROOF[no];
+  function usePf(no, keep) {
+    var p = PROOF[no]; if (!keep) delete PROOF[no];   /* 여러 질문을 잇달아 바꿀 때는 마지막 질문까지 같은 확인증 */
     if (!p || Date.now() - p.t > 9 * 60e3) throw new Error('이미 낸 답을 바꾸려면 PIN을 먼저 넣어 주세요.');
     return p.pid;
   }
@@ -1239,7 +1273,16 @@ html,body{background:var(--bg);color:var(--chalk)}
     },
     apiBoardExt: function () { return API.apiBoardData(); },
     apiBoardFlashPoll: function () { return ready.then(function () { return { flash: B ? flashOut() : null, ver: VER }; }); },
-    apiBoardFlashAck: function (id) { try { localStorage.setItem('cr_ack', String(id)); } catch (e) {} kick(); return Promise.resolve({ ok: true }); },
+    apiBoardFlashAck: function (id, r) {
+      id = String(id || '');
+      try { localStorage.setItem('cr_ack', id); } catch (e) {}
+      kick();
+      if (VIEW || !FB || !id || ['go', 'away', 'ok'].indexOf(r) < 0) return Promise.resolve({ ok: true });
+      /* 학생 호출 답장: 담임 선생님 화면에 바로 보여요 (먼저 누른 답 하나만) */
+      var F = FB.F;
+      return F.setDoc(F.doc(FB.db, 'boards', K, 'freply', id), { r: r, at: F.serverTimestamp() })
+        .then(function () { return { ok: true, sent: true }; }, function () { return { ok: true, sent: false }; });
+    },
     /* 이미 낸 답을 바꿀 때: PIN이 맞으면 보안 규칙이 확인증을 만들어 줍니다 (PIN은 TV에 남기지 않음) */
     apiBoardCheckPin: function (no, pin, change) {
       if (!change) return Promise.resolve({ ok: true });
@@ -1286,19 +1329,24 @@ html,body{background:var(--bg);color:var(--chalk)}
       if (!s) throw new Error('없어진 조사입니다.');
       if (!s.open) throw new Error('이미 마감된 조사입니다.');
       var st = student(no);
-      var ch = (choices || []).map(Number).filter(function (i) { return i >= 0 && i < s.options.length; });
+      var ch = (choices || []).map(Number).filter(function (i) { return i >= 0 && i < (s.options || []).length; });
       ch = ch.filter(function (v, i) { return ch.indexOf(v) === i; });
       if (s.kind === '체크') ch = [0];
-      if (!ch.length) throw new Error('보기를 하나 이상 골라 주세요.');
-      if (!s.multi) ch = ch.slice(0, 1);
       var etc = '';
-      if (s.etc && ch.indexOf(s.options.length - 1) >= 0) {
+      if (s.kind === '글') {
+        ch = [];
+        etc = String(etcText || '').replace(/\s+/g, ' ').trim().slice(0, 100);
+        if (!etc) throw new Error('답을 적어 주세요.');
+      }
+      else if (!ch.length) throw new Error('보기를 하나 이상 골라 주세요.');
+      if (!s.multi) ch = ch.slice(0, 1);
+      if (s.kind !== '글' && s.etc && ch.indexOf(s.options.length - 1) >= 0) {
         etc = String(etcText || '').replace(/\s+/g, ' ').trim().slice(0, 100);
         if (!etc) throw new Error("'기타'를 골랐으면 내용을 적어 주세요.");
       }
       var again = !!(ANS[s.id] && ANS[s.id][st.no]), exists = !!(EXIST[s.id] && EXIST[s.id][st.no]);
       var F = FB.F, d = { sid: s.id, no: st.no, ch: ch, etc: etc, at: F.serverTimestamp() };
-      if (exists && pinOn()) d.pf = usePf(st.no);
+      if (exists && pinOn()) d.pf = usePf(st.no, !!(s.nx && survey(s.nx) && survey(s.nx).open));
       return F.setDoc(F.doc(FB.db, 'boards', K, 'answers', s.id + '_' + st.no), d).then(function () {
         (ANS[s.id] = ANS[s.id] || {})[st.no] = { ch: ch, etc: etc }; (EXIST[s.id] = EXIST[s.id] || {})[st.no] = true;
         return { ok: true, again: again, survey: summary(s, students()) };
@@ -1415,7 +1463,7 @@ html,body{background:var(--bg);color:var(--chalk)}
 })();
 </script>
 <script>
-var FILE_VER = '2026-11-02a';
+var FILE_VER = '2026-11-05a';
 /* 글꼴은 화면을 막지 않도록 스크립트로 불러옵니다. */
 (function(){
   var urls = [];   /* 외부 글꼴(Pretendard · 구글 폰트)은 더 이상 받지 않습니다 */
@@ -1425,8 +1473,8 @@ var FILE_VER = '2026-11-02a';
 })();
 /* ---- 화면이 멈추면 이유를 보여 주는 감시꾼 ----
  * 본 코드가 보낸 파일 그대로인지(글자 수 · 지문)도 함께 확인해서, 붙여넣기 문제인지 바로 알 수 있게 합니다. */
-var BOARD_FILE_VER = '2026-11-02a';   /* 파일 버전 (점검용) */
-var EXPECT = {"len": 88924, "h": 3640802212}; /*EXPECT*/
+var BOARD_FILE_VER = '2026-11-05a';   /* 파일 버전 (점검용) */
+var EXPECT = {"len": 126168, "h": 1363519024}; /*EXPECT*/
 window.__boardCheck = function(){
   var m = 'BOARD_MARK_', ss = document.getElementsByTagName('script'), found = 0, t = '';
   for (var i = 0; i < ss.length; i++){ var x = ss[i].text || ''; if (x.indexOf(m + 'START = 1') >= 0){ found++; t = x; } }
@@ -1644,11 +1692,11 @@ function paintData(){
   const canJoin = !D.phone || D.phoneJoin;
   let a = '';
   const items = [];   /* 조사 · 결과 · 링크 (많아질 수 있는 것) */
-  sv.filter(s => s.open && canJoin).forEach(s => {
+  sv.filter(s => s.open && !s.sub && canJoin).forEach(s => {
     items.push(`<button class="act sv" data-sv="${esc(s.id)}"><span class="ic">${ICON.check}</span><span class="tx">
-      <b>${esc(s.q)}</b><span>${s.kind === '체크' ? '체크하기' : '조사 참여하기'} · ${s.count} / ${s.total}명${s.file ? ' · 첨부 있음' : ''}</span></span></button>`);
+      <b>${esc(s.gname || s.q)}</b><span>${s.kind === '체크' ? '체크하기' : '조사 참여하기'}${s.gn > 1 ? ' · 질문 ' + s.gn + '개' : ''} · ${s.count} / ${s.total}명${s.file ? ' · 첨부 있음' : ''}</span></span></button>`);
   });
-  sv.filter(s => !s.open && s.pub).slice(0, 1).forEach(s => {
+  sv.filter(s => !s.open && s.pub && !s.sub).slice(0, 1).forEach(s => {
     items.push(`<button class="act rs" data-rs="${esc(s.id)}"><span class="ic">${ICON.chart}</span><span class="tx">
       <b>${esc(s.q)}</b><span>조사 결과 보기</span></span></button>`);
   });
@@ -1695,10 +1743,11 @@ function paintQuote(){
     (p.q.by ? `<div class="by">— ${esc(p.q.by)}</div>` : '');
 }
 
-let FLASH = null, flashTimer = null;
+let FLASH = null, flashTimer = null, flDone = '';
 function showFlash(f){
   const box = $('flash');
   if (!box) return;
+  if (f && f.id && f.id === flDone) return;   /* 방금 답한 호출은 다시 띄우지 않음 */
   if (!f || !f.id){ FLASH = null; box.hidden = true; clearInterval(flashTimer); return; }
   if (FLASH && FLASH.id === f.id){ FLASH.until = f.until; return; }
   FLASH = f;
@@ -1710,6 +1759,9 @@ function showFlash(f){
   $('flWho').style.display = f.who ? '' : 'none';
   $('flMsg').textContent = f.text || '';
   $('flMsg').style.display = f.text ? '' : 'none';
+  /* 학생을 부른 호출이면 [네, 갈게요] · [지금 그 친구가 없어요]로 답해요 → 담임 선생님 화면에 바로 보임 */
+  const ask = !!(f.ask && f.who);
+  $('flOk').hidden = ask; $('flAsk').hidden = !ask; $('flSent').hidden = true;
   box.hidden = false;
   clearInterval(flashTimer);
   const tick = () => {
@@ -1960,13 +2012,21 @@ function applyFont(id){
     root.setProperty('--t-font', `'${fam}',${rest}`);
   }).catch(() => {});
 }
+/* TV 배경색 · 무늬 */
+const TVT_OK = ['night', 'wood', 'grape', 'ocean', 'paper'], TVP_OK = ['glow', 'dots', 'grid', 'stripe'];
+function applyTvLook(t, p){
+  const h = document.documentElement;
+  if (TVT_OK.indexOf(t) >= 0) h.dataset.tvt = t; else delete h.dataset.tvt;
+  if (TVP_OK.indexOf(p) >= 0) h.dataset.tvp = p; else delete h.dataset.tvp;
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = getComputedStyle(document.body).backgroundColor;
+}
 function load(){
   if (loading) return Promise.resolve();
   loading = true; loadStart = lastTry = Date.now();
   const p = call('apiBoardData', BOOT.preview ? 1 : 0).then(d => {
     lastFail = false;
     D = d; offset = d.now - Date.now(); lastLoad = Date.now();
-    applyFont(d.font);
+    applyFont(d.font); applyTvLook(d.tvt, d.tvp);
     if (d.needExt) mergeExt();   /* 아직 못 받은 부분은 지난번 값으로 먼저 채움 */
     if (!dateKey) dateKey = nowParts().ymd;
     if (!EDIT) LAY = layoutFrom(d.layout);
@@ -2193,10 +2253,10 @@ function drawOv(){
       <div class="lkq">${qrSvg(u, '#14201B', '#FFFFFF')}</div>
       <div class="lkt"><p class="lead">① 휴대폰 <b>카메라</b>로 QR 코드를 비추면 우리 반 화면이 열려요.</p>
         <div class="appsteps">② 열린 화면을 앱처럼 설치해요<br>
-          · 안드로이드: 오른쪽 위 <b>⋮</b> → <b>홈 화면에 추가</b> (또는 <b>앱 설치</b>)<br>
-          · 아이폰: 아래쪽 <b>공유 □↑</b> → <b>홈 화면에 추가</b></div>
+          · 안드로이드: 오른쪽 위 <b><svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"/></svg></b> → <b>홈 화면에 추가</b> (또는 <b>앱 설치</b>)<br>
+          · 아이폰: 아래쪽 <b>공유 <svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 9H6.5A1.5 1.5 0 0 0 5 10.5v9A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 17.5 9H16"/><path d="M12 14V3M8 7l4-4 4 4"/></svg></b> → <b>홈 화면에 추가</b></div>
         ${D.pinChange && D.phoneApp ? '<div class="appsteps">③ 설치한 앱에서 <b>🔑 내 PIN</b>을 만들어요 · 교실 TV에서 낸 답을 바꿀 때 써요</div>' : ''}
-        <p class="lkn">카카오톡 · 네이버 앱으로 열렸다면 <b>⋮</b> → <b>다른 브라우저로 열기</b>를 누른 뒤 설치해요.</p>
+        <p class="lkn">카카오톡 · 네이버 앱으로 열렸다면 <b><svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"/></svg></b> → <b>다른 브라우저로 열기</b>를 누른 뒤 설치해요.</p>
         <p class="lku">${esc(u)}</p></div></div></div>`;
     return;
   }
@@ -2304,6 +2364,8 @@ function drawOv(){
   if (o.kind === 'survey'){
     const s = survey();
     if (!s){ closeOv(); return; }
+    /* 학교 양식 조사처럼 질문이 여러 개면: 제목에 '질문 2 / 3' */
+    const prog = s.gn > 1 ? ` <span class="qprog">질문 ${s.gi + 1} / ${s.gn}</span>` : '';
     if (o.step === 'intro'){
       el.innerHTML = head(esc(s.q)) + `<div class="ovb">${s.desc ? `<div class="desc">${esc(s.desc)}</div>` : ''}
         ${s.file ? fileView(s.file, s.desc ? '48vh' : '58vh') : ''}
@@ -2316,17 +2378,20 @@ function drawOv(){
         ${done ? '<button class="go" style="max-width:34rem;background:var(--pink);color:#3A0F0B" data-ov="uncheck">체크 취소하기</button>'
           : '<button class="go" style="max-width:34rem" data-ov="docheck">체크하기</button>'}</div></div>`;
     } else if (o.step === 'who'){
-      const missing = s.showMissing ? D.students.filter(x => !s.doneNos.includes(x.no)).map(x => x.no) : null;
-      el.innerHTML = head(esc(s.q), o.intro) + `<div class="ovb"><p class="lead">${s.kind === '체크' ? '내 이름을 눌러 체크해 주세요' : '내 이름을 눌러 주세요'} · <b>${s.count} / ${s.total}</b>명${s.multi ? ' · 여러 개 고를 수 있어요' : ''}
-        ${missing && missing.length ? `<br><span style="font-size:1.25rem">아직 안 한 번호: ${missing.join(', ')}</span>` : ''}</p>${namesGrid(s.doneNos)}</div>`;
+      const dn = s.gn > 1 ? chainDone(s) : s.doneNos;
+      const missing = s.showMissing ? D.students.filter(x => !dn.includes(x.no)).map(x => x.no) : null;
+      el.innerHTML = head(esc(s.gname || s.q), o.intro) + `<div class="ovb"><p class="lead">${s.kind === '체크' ? '내 이름을 눌러 체크해 주세요' : '내 이름을 눌러 주세요'}${s.gn > 1 ? ' · 질문 ' + s.gn + '개에 차례로 답해요' : ''} · <b>${s.gn > 1 ? dn.length : s.count} / ${s.total}</b>명${s.multi ? ' · 여러 개 고를 수 있어요' : ''}
+        ${missing && missing.length ? `<br><span style="font-size:1.25rem">아직 안 한 번호: ${missing.join(', ')}</span>` : ''}</p>${namesGrid(dn)}</div>`;
     } else if (o.step === 'pick'){
-      el.innerHTML = head(esc(s.q), true) + `<div class="ovb"><p class="lead"><b>${esc(nameOf(o.no))}</b> 학생${s.doneNos.includes(o.no) ? ' · 이미 답했어요. 다시 고르면 바뀌어요' : ''}${s.multi ? ' · 여러 개 고를 수 있어요' : ''}</p>
-        ${optsHtml(s, o)}
-        <button class="go${s.options.length > 8 ? ' stick' : ''}" data-ov="submit" ${o.sel.length && !(s.etc && o.sel.includes(s.options.length - 1) && !etcText()) ? '' : 'disabled'}>제출하기${s.multi && o.sel.length ? ' (' + o.sel.length + '개)' : ''}</button></div>`;
+      const txt = s.kind === '글', more = !!(s.nx && (D.surveys || []).some(x => x.id === s.nx && x.open));
+      el.innerHTML = head(esc(s.q) + prog, true) + `<div class="ovb"><p class="lead"><b>${esc(nameOf(o.no))}</b> 학생${s.doneNos.includes(o.no) ? (txt ? ' · 이미 답했어요. 다시 쓰면 바뀌어요' : ' · 이미 답했어요. 다시 고르면 바뀌어요') : ''}${s.multi ? ' · 여러 개 고를 수 있어요' : ''}</p>
+        ${txt ? etcBox() : optsHtml(s, o)}
+        ${txt && s.req === false ? `<button class="go ghost" data-ov="qskip">건너뛰기 (적을 게 없어요)</button>` : ''}
+        <button class="go${s.options.length > 8 || txt ? ' stick' : ''}" data-ov="submit" ${(txt ? etcText() : o.sel.length && !(s.etc && o.sel.includes(s.options.length - 1) && !etcText())) ? '' : 'disabled'}>${more ? '다음 질문 →' : '제출하기'}${s.multi && o.sel.length ? ' (' + o.sel.length + '개)' : ''}</button></div>`;
     } else if (o.step === 'done'){
       const msg = o.unchecked ? '체크를 취소했어요.' : (s.kind === '체크' ? '체크했어요.' : (o.again ? '답을 바꿨어요.' : '답이 저장됐어요.'));
-      el.innerHTML = head(esc(s.q)) + `<div class="ovb"><div class="done-msg"><div class="big">${o.unchecked ? '' : '고마워요, '}${esc(nameOf(o.no))}${o.unchecked ? '' : '!'}</div>
-        <p>${msg} ${s.count} / ${s.total}명</p>${s.counts && s.kind !== '체크' ? resultBars(s) : ''}</div></div>`;
+      el.innerHTML = head(esc(s.gname || s.q)) + `<div class="ovb"><div class="done-msg"><div class="big">${o.unchecked ? '' : '고마워요, '}${esc(nameOf(o.no))}${o.unchecked ? '' : '!'}</div>
+        <p>${s.gn > 1 && !o.unchecked ? (o.again ? '답을 바꿨어요.' : '모든 질문에 답했어요.') : msg} ${s.count} / ${s.total}명</p>${s.counts && s.kind !== '체크' && s.kind !== '글' ? resultBars(s) : ''}</div></div>`;
     }
   } else if (o.kind === 'result'){
     const s = survey();
@@ -2492,11 +2557,20 @@ function qrSvg(text, dark, light){
 }
 
 const FSREG = {}; let FSN = 0;
+function findFile(id){
+  const L = [];
+  (D.notices || []).forEach(n => L.push(...filesOf(n)));
+  (Array.isArray(D.notes) ? D.notes : []).forEach(n => { if (n.file) L.push(n.file); (n.files || []).forEach(x => L.push(x)); });
+  (D.surveys || []).forEach(s => { if (s.file) L.push(s.file); });
+  if (OV && OV.files) L.push(...OV.files);
+  Object.values(FSREG).forEach(x => L.push(...x));
+  return L.find(f => f && f.id === id);
+}
 function filesOf(n){ return n.files && n.files.length ? n.files : (n.file ? [n.file] : []); }
 function fileBtn(f){
   const L = Array.isArray(f) ? f : [f], f0 = L[0];
   let key = '';
-  if (L.length > 1){ key = 'fs' + (++FSN); FSREG[key] = L; }
+  key = 'fs' + (++FSN); FSREG[key] = L;   /* 하나여도 TV 화면 안 보기 창으로 (크롬으로 넘어가지 않게) */
   return `<a class="clip press" href="${DRIVE_FILE}${encodeURIComponent(f0.id)}/view" target="_blank" rel="noopener" data-file="1"${key ? ` data-fs="${key}"` : ''} title="${esc(L.map(x => x.name).join(', '))}">${ICON.clip}<span>첨부${L.length > 1 ? ' ' + L.length : ''}</span></a>`;
 }
 /* 여러 파일: 위에 [이전 · n / 전체 · 다음], 아래에 파일 이름 칩 */
@@ -2508,8 +2582,32 @@ function filesView(L, h, fi){
     ${fileView(L[fi], h)}
     <div class="fpt">${L.map((x, i) => `<button class="fpg press ${i === fi ? 'on' : ''}" data-fpg="${i}">${i + 1}. ${esc(x.name)}</button>`).join('')}</div></div>`;
 }
+/* 첨부 보기: PDF(쪽 그림이 있으면)와 사진은 화면 안에서 바로, 한글은 안내, 그 밖은 구글 미리보기 */
+const IMG_URL = id => 'https:' + '/' + '/drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w2000';
+const IMG_ALT = id => 'https:' + '/' + '/lh3.googleusercontent.com/d/' + encodeURIComponent(id) + '=w2000';
+const PGI = {};
+function fileKind(f){
+  const n = String(f.name || ''), m = String(f.mime || '');
+  if (f.pages && f.pages.length) return 'pages';
+  if (/^image\//.test(m) || /\.(jpe?g|png|gif|webp|bmp)$/i.test(n)) return 'img';
+  if (/\.(hwp|hwpx)$/i.test(n) || /hwp/i.test(m)) return 'hwp';
+  return 'drive';
+}
+function pgImg(id){ return `<img src="${IMG_URL(id)}" alt="" loading="lazy" onerror="if(!this.dataset.alt){this.dataset.alt=1;this.src='${IMG_ALT(id)}'}">`; }
 function fileView(f, h){
-  return `<div class="fv"><a class="fvh press" href="${DRIVE_FILE}${encodeURIComponent(f.id)}/view" target="_blank" rel="noopener" data-file="1">${ICON.clip}<span>${esc(f.name)}</span><b class="fvo">크게 열기</b></a>
+  const k = fileKind(f), open = `${DRIVE_FILE}${encodeURIComponent(f.id)}/view`;
+  const hd = (extra) => `<div class="fvh">${ICON.clip}<span>${esc(f.name)}</span>${extra || ''}</div>`;
+  if (k === 'pages'){
+    const n = f.pages.length, i = Math.max(0, Math.min(n - 1, PGI[f.id] || 0));
+    return `<div class="fv pg" data-pgf="${esc(f.id)}">${hd(n > 1 ? `<span class="pgb"><button class="fpn press" data-pg="-1" ${i <= 0 ? 'disabled' : ''}>◀ 앞 쪽</button>
+        <span class="pgc"><b>${i + 1}</b> / ${n}쪽${f.np > n ? ' (앞 ' + n + '쪽만)' : ''}</span><button class="fpn press" data-pg="1" ${i >= n - 1 ? 'disabled' : ''}>다음 쪽 ▶</button></span>` : '')}
+      <div class="pgv" style="height:${h}">${pgImg(f.pages[i])}</div></div>`;
+  }
+  if (k === 'img') return `<div class="fv pg">${hd()}<div class="pgv" style="height:${h}">${pgImg(f.id)}</div></div>`;
+  if (k === 'hwp') return `<div class="fv">${hd(`<a class="fvo press" href="${open}" target="_blank" rel="noopener" data-file="1" data-ext="1">내려받기</a>`)}
+      <div class="hwpmsg" style="min-height:calc(${h} * .5)"><b>한글 파일은 교실 TV에서 미리 볼 수 없어요</b>
+        <span>[내려받기]를 눌러 한컴오피스 Viewer로 열거나, 선생님께 PDF로 올려 달라고 말씀드려 주세요.</span></div></div>`;
+  return `<div class="fv"><a class="fvh press" href="${open}" target="_blank" rel="noopener" data-file="1" data-ext="1">${ICON.clip}<span>${esc(f.name)}</span><b class="fvo">크게 열기</b></a>
     <iframe src="${DRIVE_FILE}${encodeURIComponent(f.id)}/preview" style="height:${h}" title="${esc(f.name)}"></iframe></div>`;
 }
 /* 보기 그리기: '대학 · 과목명'처럼 가운뎃점으로 묶인 보기는 앞부분(대학)별로 모아 보여 줍니다 */
@@ -2597,17 +2695,18 @@ function kbHtml(){
 }
 function etcShowHtml(){
   const K = OV.kb, t = K.txt + hgCompose(K.st);
-  return t ? esc(t) + '<span class="caret"></span>' : `<span class="ph">${OV && OV.kind === 'event' ? '예) 영어 단어 시험' : '여기에 책 제목(과 지은이)을 적어 주세요'}</span><span class="caret"></span>`;
+  return t ? esc(t) + '<span class="caret"></span>' : `<span class="ph">${OV && OV.kind === 'event' ? '예) 영어 단어 시험' : txtQ() ? '여기에 답을 적어 주세요' : '여기에 책 제목(과 지은이)을 적어 주세요'}</span><span class="caret"></span>`;
 }
+function txtQ(){ const s = OV && OV.kind === 'survey' ? survey() : null; return !!(s && s.kind === '글'); }
 function etcBox(){
   const K = OV.kb || (OV.kb = {txt: '', st: null, mode: 'ko', shift: false, native: false});
   if (BOOT.phone || K.native){
     const ev = OV && OV.kind === 'event';
-    return `<div class="etcbox" id="etcBox"><p class="lead">${ev ? '일정 내용을 적어 주세요 (30자까지)' : '목록에 없는 답을 적어 주세요 (100자까지)'}</p>
-      <input class="etcin" id="etcIn" maxlength="${ev ? 30 : 100}" autocomplete="off" value="${esc(K.txt + hgCompose(K.st))}" placeholder="${ev ? '예) 영어 단어 시험' : '예) 코스모스 — 칼 세이건'}">
+    return `<div class="etcbox" id="etcBox"><p class="lead">${ev ? '일정 내용을 적어 주세요 (30자까지)' : txtQ() ? '답을 적어 주세요 (100자까지)' : '목록에 없는 답을 적어 주세요 (100자까지)'}</p>
+      <input class="etcin" id="etcIn" maxlength="${ev ? 30 : 100}" autocomplete="off" value="${esc(K.txt + hgCompose(K.st))}" placeholder="${ev ? '예) 영어 단어 시험' : txtQ() ? '여기에 답을 적어 주세요' : '예) 코스모스 — 칼 세이건'}">
       ${BOOT.phone ? '' : '<button class="etcsw" data-ov="kbx" data-k="screen">화면 자판으로 쓰기</button>'}</div>`;
   }
-  return `<div class="etcbox" id="etcBox"><p class="lead">${OV && OV.kind === 'event' ? '일정 내용을 아래 자판으로 적어 주세요 (30자까지)' : '목록에 없는 답을 아래 자판으로 적어 주세요 (100자까지)'}</p>
+  return `<div class="etcbox" id="etcBox"><p class="lead">${OV && OV.kind === 'event' ? '일정 내용을 아래 자판으로 적어 주세요 (30자까지)' : txtQ() ? '답을 아래 자판으로 적어 주세요 (100자까지)' : '목록에 없는 답을 아래 자판으로 적어 주세요 (100자까지)'}</p>
     <div class="etcshow" id="etcShow">${etcShowHtml()}</div>${kbHtml()}
     <button class="etcsw" data-ov="kbx" data-k="native">기기 키보드로 쓰기</button></div>`;
 }
@@ -2654,6 +2753,7 @@ function submitState(){
   }
   const s = survey(), g = document.querySelector('#ov [data-ov="submit"]');
   if (!s || !g) return;
+  if (s.kind === '글'){ g.disabled = !etcText(); return; }
   const ei = s.etc ? s.options.length - 1 : -1;
   g.disabled = !OV.sel.length || (OV.sel.includes(ei) && !etcText());
 }
@@ -2661,6 +2761,26 @@ function resultBars(s){
   const max = Math.max(1, ...s.counts);
   return `<div class="res" style="width:100%">${s.options.map((op, i) => `<div class="rw"><span>${esc(op)}</span>
     <span class="rb"><i style="width:${Math.round(s.counts[i] / max * 100)}%"></i></span><span class="rn">${s.counts[i]}명</span></div>`).join('')}</div>`;
+}
+/* 질문이 여러 개인 조사: 묶음의 질문들 (첫 질문부터 차례로) */
+function chainOf(s0){ const L = []; let s = s0; while (s && L.indexOf(s) < 0){ L.push(s); s = (D.surveys || []).find(x => x.id === s.nx && x.open); } return L; }
+/* 꼭 답할 질문을 모두 답한 번호 */
+function chainDone(s0){ const L = chainOf(s0).filter(s => s.req !== false); return D.students.map(x => x.no).filter(no => L.every(s => (s.doneNos || []).includes(no))); }
+/* 이름을 누르면 아직 안 한 질문부터 (모두 했으면 첫 질문부터 = 바꾸기) */
+function jumpFirstOpen(no){
+  const s0 = survey(); if (!s0 || !(s0.gn > 1)) return;
+  const n = chainOf(s0).find(s => s.req !== false && !(s.doneNos || []).includes(no));
+  if (n) OV.id = n.id;
+}
+/* 질문이 여러 개인 조사(학교 양식): 다음 질문으로. 이미 답한 질문을 바꾸려면 PIN */
+function goNextQ(){
+  const s = survey(); if (!s || !s.nx) return false;
+  const n = (D.surveys || []).find(x => x.id === s.nx && x.open); if (!n) return false;
+  OV.id = n.id; OV.sel = []; OV.kb = null;
+  if (!OV.cpin && changeNeedsPin(OV.no)){ OV.pin = ''; OV.pinMsg = ''; OV.pinBad = false; OV.busy = false; OV.step = (D.students.find(x => x.no === OV.no) || {}).hasPin === false ? 'nopin' : 'cpin'; drawOv(); return true; }
+  OV.step = n.kind === '체크' ? 'check' : 'pick'; drawOv();
+  const b = document.querySelector('#ov .ovb'); if (b) b.scrollTop = 0;
+  return true;
 }
 function refreshSurveyOverlay(){ if (OV && OV.step === 'who') drawOv(); }
 /* 이름(과 PIN)이 정해진 뒤 다음 화면으로 */
@@ -2682,6 +2802,15 @@ const REASON = {taken: '방금 다른 친구가 먼저 신청했어요. 다른 �
   range: '상담 기간이 아니에요.', roster: '명단과 학번이 맞지 않아요. 선생님께 말해 주세요.', busy: '신청이 몰리고 있어요. 다시 눌러 주세요.'};
 
 document.addEventListener('click', ev => {
+  const pg = ev.target.closest && ev.target.closest('[data-pg]');
+  if (pg){
+    const box = pg.closest('[data-pgf]'), id = box && box.dataset.pgf; if (!id) return;
+    const f = findFile(id); if (!f) return;
+    PGI[id] = Math.max(0, Math.min(f.pages.length - 1, (PGI[id] || 0) + Number(pg.dataset.pg)));
+    const tmp = document.createElement('div'); tmp.innerHTML = fileView(f, box.querySelector('.pgv').style.height);
+    box.replaceWith(tmp.firstElementChild); poke();
+    return;
+  }
   const fa = ev.target.closest && ev.target.closest('a[data-file]');
   if (fa){
     if (EDIT) ev.preventDefault();
@@ -2692,9 +2821,19 @@ document.addEventListener('click', ev => {
   if (EDIT){ const e = ev.target.closest && ev.target.closest('[data-ed]'); if (e) editAction(e.dataset.ed); return; }
   const fl = ev.target.closest && ev.target.closest('[data-fl]');
   if (fl){
-    const id = FLASH && FLASH.id;
+    const id = FLASH && FLASH.id, r = fl.dataset.fl;
+    flDone = id || '';
+    if (r === 'go' || r === 'away'){
+      /* 답을 보냈다고 잠깐 보여 주고 내립니다 */
+      $('flAsk').hidden = true; const sn = $('flSent');
+      sn.textContent = r === 'go' ? '선생님께 "갈게요"라고 전했어요 👍' : '선생님께 "지금 없어요"라고 전했어요';
+      sn.hidden = false; FLASH = null; clearInterval(flashTimer);
+      if (id && !BOOT.preview) call('apiBoardFlashAck', id, r).catch(() => {});
+      setTimeout(() => { if (!FLASH) showFlash(null); }, 2200);
+      return;
+    }
     showFlash(null);
-    if (id && !BOOT.preview) call('apiBoardFlashAck', id).catch(() => {});
+    if (id && !BOOT.preview) call('apiBoardFlashAck', id, 'ok').catch(() => {});
     return;
   }
   const sc = ev.target.closest && ev.target.closest('[data-sc]');
@@ -2724,7 +2863,7 @@ document.addEventListener('click', ev => {
   }
   if (b.dataset.sv){
     const s = (D.surveys || []).find(x => x.id === b.dataset.sv), intro = !!(s && (s.desc || s.file));
-    openOv({kind: 'survey', id: b.dataset.sv, step: intro ? 'intro' : 'who', intro}); return;
+    openOv({kind: 'survey', id: b.dataset.sv, step: intro ? 'intro' : 'who', intro, again: false}); return;
   }
   if (b.id === 'b21' || b.id === 'bPbl'){
     const kind = b.id === 'b21' ? 'p21' : 'pbl';
@@ -2758,7 +2897,7 @@ document.addEventListener('click', ev => {
     if (OV.kind === 'mypin'){ OV.step = OV.step === 'has' || OV.step === 'new1' || OV.step === 'new2' ? 'who' : (OV.step === 'ok' ? 'who' : 'has'); OV.pin = ''; OV.p1 = ''; OV.old = ''; OV.pinMsg = ''; drawOv(); return; }
     if (OV.step === 'pin' || OV.step === 'cpin' || OV.step === 'nopin'){ OV.step = 'who'; OV.pin = ''; OV.cpin = ''; OV.pinMsg = ''; OV.busy = false; drawOv(); return; }
     if (OV.kind === 'mine'){ OV.step = 'who'; OV.open = ''; drawOv(); return; }
-    if (OV.kind === 'survey') OV.step = (OV.step === 'who' && OV.intro) ? 'intro' : 'who';
+    if (OV.kind === 'survey'){ const s0 = survey(); if (s0 && s0.gi > 0){ const f = (D.surveys || []).find(x => x.grp === s0.grp && x.gi === 0); if (f) OV.id = f.id; OV.cpin = ''; OV.again = false; } OV.step = (OV.step === 'who' && OV.intro) ? 'intro' : 'who'; }
     else if (OV.kind === 'suggest') OV.step = 'write';
     else if (OV.kind === 'event') OV.step = 'who';
     else OV.step = OV.step === 'confirm' ? 'slot' : 'who';
@@ -2823,6 +2962,7 @@ document.addEventListener('click', ev => {
   }
   if (a === 'who'){
     OV.no = Number(b.dataset.no); OV.cpin = '';
+    if (OV.kind === 'survey') jumpFirstOpen(OV.no);
     if (changeNeedsPin(OV.no)){
       OV.pin = ''; OV.pinMsg = ''; OV.pinBad = false; OV.busy = false;
       OV.step = (D.students.find(s => s.no === OV.no) || {}).hasPin === false ? 'nopin' : 'cpin';
@@ -2904,7 +3044,14 @@ document.addEventListener('click', ev => {
     etcPaint(k === 'shift' || k === 'ko' || k === 'en' || k === 'num');
     return;
   }
+  if (a === 'qskip'){
+    if (goNextQ()) return;
+    OV.step = 'done'; drawOv(); paintData();
+    clearTimeout(idleT); idleT = setTimeout(() => { if (OV){ OV.step = 'who'; drawOv(); poke(); } }, 3500);
+    return;
+  }
   if (a === 'submit' && BOOT.preview){
+    if (goNextQ()) return;
     OV.again = false; OV.step = 'done'; drawOv(); toast('미리보기: 실제로는 저장되지 않았어요');
     clearTimeout(idleT); idleT = setTimeout(() => { if (OV){ OV.step = 'who'; drawOv(); poke(); } }, 3500);
     return;
@@ -2914,7 +3061,9 @@ document.addEventListener('click', ev => {
     call('apiBoardAnswer', OV.id, OV.no, OV.sel, pinOf(OV.no), etcText()).then(r => {
       const i = D.surveys.findIndex(s => s.id === r.survey.id);
       if (i >= 0) D.surveys[i] = r.survey;
-      OV.again = r.again; OV.step = 'done'; drawOv(); paintData();
+      OV.again = OV.again || r.again;
+      if (goNextQ()) return;
+      OV.step = 'done'; drawOv(); paintData();
       clearTimeout(idleT); idleT = setTimeout(() => { if (OV){ OV.step = 'who'; drawOv(); poke(); } }, 3500);
     }).catch(e => { b.disabled = false; toast(e.message, true); });
     return;
@@ -2958,6 +3107,7 @@ document.addEventListener('pointerdown', poke);
 document.addEventListener('keydown', ev => {
   poke();
   if (OV && (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight')){
+    const qb = document.querySelector(ev.key === 'ArrowLeft' ? '#ov [data-pg="-1"]' : '#ov [data-pg="1"]'); if (qb && !qb.disabled){ qb.click(); return; }
     const pb = document.querySelector(ev.key === 'ArrowLeft' ? '[data-fp="-1"]' : '[data-fp="1"]'); if (pb && !pb.disabled){ pb.click(); return; }
   }
   if (ev.key === 'Enter' && ev.target.id === 'edPw'){ const k = document.querySelector('[data-ov="edok"]'); if (k) k.click(); }

@@ -4,222 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
-<title>교실 화면 관리</title>
+<title>클래스 뷰 (Class View)</title>
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="apple-mobile-web-app-title" content="교실 화면">
-<!-- 학급 다이어리 공용 디자인 (칠판과 분필) · 2026-10-21a
-     각 화면 맨 끝에 끼워 넣어, 화면마다 다르던 색 · 글꼴 이름을 한 가지 토큰으로 다시 묶습니다. -->
-<script>var FILE_VER = '2026-10-26b'; var THEME_VER = '2026-10-21a';</script>
-<style>
-
-/* ── 글꼴: 학교안심 분필 (KERIS) ──
-   글꼴 파일은 GitHub Pages(class-diary/fonts/)에서 내려받습니다. 자주 쓰는 한글 2,350자와 화면에 쓰인 글자만 담은 가벼운 woff2(약 210KB)를 먼저 쓰고,
-   드문 글자(예: 똠, 뷁)는 다른 글꼴로 대신 나옵니다. 주소가 바뀌면 아래 줄만 고치세요.
-   굵기가 한 가지뿐이라 모든 굵기에 같은 파일을 씁니다(억지로 굵게 만들면 분필 글씨가 뭉개져서). 제목은 크기로 구분합니다. */
-@font-face{font-family:'Bunpil';font-style:normal;font-weight:100 900;font-display:swap;
-  src:url('https://yjb8634-sudo.github.io/class-diary/fonts/Bunpil-R.woff2') format('woff2'),url('https://yjb8634-sudo.github.io/class-diary/fonts/Bunpil-R.woff') format('woff')}
-
-:root{
-  /* ── 색 (칠판과 분필) ──
-     칠판 바탕 · 분필 글씨 · 노란 분필 강조. 색을 바꾸려면 이 묶음만 고치면 모든 화면이 함께 바뀝니다. */
-  --t-surface:#22392E;               /* 칠판 */
-  --t-surface-2:#29443A;             /* 카드 (칠판보다 살짝 밝게) */
-  --t-surface-3:#315044;             /* 입력칸 · 눌린 곳 */
-  --t-ink:#F4F1E8;                   /* 흰 분필 */
-  --t-ink-2:rgba(244,241,232,.86);
-  --t-ink-3:rgba(244,241,232,.64);
-  --t-line:rgba(244,241,232,.18);    /* 분필 선 */
-  --t-line-2:rgba(244,241,232,.34);
-  --t-blue:#2F5D8A;                  /* 파란 분필 (흰 글씨가 잘 읽히는 진한 쪽) */
-  --t-yellow:#FFE27A;                /* 노란 분필 */
-  --t-red:#B8452F;                   /* 빨간 분필 */
-  --t-red-h:#E07058;
-  --t-purple:#6A4C8C;
-  --t-purple-h:#8063A3;
-  --t-wood:#7A5A3A;                  /* 분필받이 나무 */
-
-  /* ── 글꼴: 모든 글자를 한 글꼴로 ── */
-  --t-font:'Bunpil','Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
-  --t-display:var(--t-font); --t-serif:var(--t-font); --t-mono:var(--t-font); --t-sans:var(--t-font);
-
-  /* ── 간격 · 모양 · 움직임 ── */
-  --t-1:18px; --t-2:33.75px; --t-3:48px; --t-4:96px;
-  --t-r:6px;
-  --t-shape:10px 4px 12px 6px;                 /* 손으로 그린 듯 모서리마다 조금씩 다르게 */
-  --t-dur:.65s; --t-ease:cubic-bezier(.33,1,.68,1);
-}
-
-/* ════════ 화면별 색 이름 다시 묶기 ════════ */
-/* 첫 화면 · 21일 · 문제 해결 */
-:root{
-  --bg:var(--t-surface); --card:var(--t-surface-2); --ink:var(--t-ink); --sub:var(--t-ink-3); --line:var(--t-line);
-  --w1:var(--t-blue); --w1b:var(--t-blue); --w2:var(--t-purple); --w2b:var(--t-purple-h);
-  --w3:var(--t-red); --w3b:var(--t-red-h); --gold:var(--t-yellow); --goldb:var(--t-yellow);
-}
-/* 교실 화면 */
-:root{
-  --card2:var(--t-surface-3); --chalk:var(--t-ink); --chalk2:var(--t-ink-2); --chalk3:var(--t-ink-3);
-  --yellow:var(--t-yellow); --yellow-ink:var(--t-surface); --mint:#7FD8C4; --pink:#F2A7A0; --sky:#8FB4FF;
-}
-/* 상담 신청판 */
-:root{
-  --surface:var(--t-surface-2); --surface-2:var(--t-surface-3); --ink-2:var(--t-ink-2); --ink-3:var(--t-ink-3);
-  --line-2:var(--t-line-2); --teal:var(--t-yellow); --teal-ink:var(--t-yellow); --teal-soft:rgba(255,226,122,.14);
-  --amber:#FFC24A; --amber-soft:rgba(255,194,74,.14); --danger:#FF6B6B; --danger-soft:rgba(215,30,30,.18);
-  --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 32px -18px rgba(0,0,0,.7);
-  --font-display:var(--t-display); --font-body:var(--t-sans);
-}
-/* 담임 기록실 */
-:root{
-  --paper:var(--t-surface); --sheet:var(--t-surface-2); --ink2:var(--t-ink-2); --ink3:var(--t-ink-3);
-  --rule:var(--t-line); --rule2:var(--t-line-2); --hover:var(--t-surface-3);
-  --accent:var(--t-yellow); --accent-s:rgba(255,226,122,.12);
-  --pos:#7FD8C4; --pos-s:rgba(127,216,196,.14); --neg:#FF6B6B; --neg-s:rgba(215,30,30,.18);
-  --a-자율:#8FB4FF; --a-진로:#FFC24A; --a-행특:#C89BE0; --a-기타:var(--t-ink-3);
-  --margin:rgba(255,107,107,.5); --serif:var(--t-serif); --sans:var(--t-sans);
-}
-
-/* ════════ 바탕 ════════ */
-html,body{background:var(--t-surface);color:var(--t-ink);font-family:var(--t-sans);
-  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
-body{letter-spacing:-.005em}
-::selection{background:var(--t-yellow);color:var(--t-surface)}
-/* 칠판에 남은 분필 가루 (아주 옅게) */
-body{background-image:radial-gradient(60% 40% at 18% 8%,rgba(244,241,232,.05),transparent 70%),radial-gradient(50% 35% at 85% 70%,rgba(244,241,232,.035),transparent 70%)}
-
-/* ── 제목: 컨덴스드 ── */
-h1,h2,h3,.pt,.inq-h .t b{font-family:var(--t-display);font-weight:600;letter-spacing:-.01em}
-h1{letter-spacing:0}
-/* ── 라벨 · 메타: 모노 ── */
-.lbl,.small.muted,.hint,.cap,.pk,.ist,.chip,.tg,.pill,.src,.mono,.cnt small,.who,.date .hl,.dust{
-  font-family:var(--t-mono);letter-spacing:.01em}
-
-/* ── 입력 ── */
-input,select,textarea,.in,.field{
-  background:var(--t-surface-3);color:var(--t-ink);border:1px solid var(--t-line);
-  border-radius:var(--t-r);font-family:var(--t-sans)}
-input:focus,select:focus,textarea:focus,.in:focus,.field:focus{
-  outline:none;border-color:var(--t-yellow);box-shadow:0 1px 0 0 var(--t-yellow)}
-input::placeholder,textarea::placeholder{color:var(--t-ink-3)}
-input[type=date],input[type=file]{color-scheme:dark}
-label{color:var(--t-ink-2)}
-
-/* ── 단추 ── */
-button,.btn,.act,.go,.jpill,.gt-go,.joinbtn,.homebtn,.sh-x,.gt-x{
-  font-family:var(--t-sans);border-radius:var(--t-shape);
-  transition:background var(--t-dur) var(--t-ease),color var(--t-dur) var(--t-ease),opacity var(--t-dur) var(--t-ease)}
-.act,.go,.gt-go,.btn.pri,.btn.primary,.joinbtn{background:var(--t-blue);color:var(--t-ink);border:0;font-weight:600}
-.act:hover,.go:hover,.gt-go:hover,.btn.pri:hover,.joinbtn:hover{background:var(--t-blue);opacity:.86}
-.act.green{background:var(--t-blue)}
-.act.newround,.act.gold{background:var(--t-yellow);color:var(--t-surface)}
-.btn.neg,.neg{color:var(--t-red-h)}
-
-/* ── 카드 · 상자: 파일 탭 모양 ── */
-.card,.box,.sheetbox,.gt-box,.pick,.inq-s,.it,.rw{
-  background:var(--t-surface-2);border:1.5px solid var(--t-line);
-  border-radius:var(--t-shape);box-shadow:none}
-.card,.box{color:var(--t-ink)}
-hr,.hr,.divider{background:var(--t-line);border-color:var(--t-line)}
-table,th,td{border-color:var(--t-line)!important;color:var(--t-ink)}
-th{color:var(--t-ink-2);font-family:var(--t-mono);font-weight:500}
-a{color:var(--t-ink)}
-a:hover{color:var(--t-yellow)}
-
-/* ── 알림 ── */
-.msg.ok,.note.ok,.gt-note.ok{background:rgba(127,216,196,.14);color:#9FE6D6}
-.msg.err,.note.err,.gt-note.err{background:rgba(215,30,30,.2);color:#FF9B9B}
-
-
-/* ════════ 모든 글자에 한 글꼴 ════════
-   화면마다 따로 적힌 글꼴 이름(Pretendard · Oswald · 명조 등)을 모두 이 글꼴로 덮습니다.
-   손글씨체는 글자 사이를 조이면 겹쳐 보이므로 자간도 0으로 맞춥니다. */
-html body,html body *{font-family:var(--t-font)!important;letter-spacing:0!important;font-weight:400!important}
-/* 제목만 굵게: 화면 제목 · 카드 제목 · 시계 · 지금 수업 · 큰 목록 · 명언 · 시작 화면 문구 */
-html body :is(b,strong,h1,h2,h3,h4,.pt,.ti .tnm,.hm,.big,.num,.quote .q,.brand b,.iw,.gt-head b,.inq-h .t b,.cpl .ttl){font-weight:700!important}
-
-/* ════════ 화면별 손질 ════════ */
-/* 탭 · 표 · 숫자 */
-nav button.on{background:var(--t-yellow)!important;color:var(--t-surface)!important}
-th{background:var(--t-surface-3)!important;color:var(--t-ink-2)!important}
-tr:hover td{background:var(--t-surface-3)}
-.num{background:none!important;-webkit-text-fill-color:var(--t-yellow);color:var(--t-yellow)!important;font-family:var(--t-display)}
-.num.gold{-webkit-text-fill-color:var(--t-yellow)}
-.prw .pc{background:var(--t-surface-3)}
-.prw:hover{border-color:var(--t-line-2)}
-.prw.done{border-color:rgba(255,226,122,.5)}
-.cell{background:var(--t-surface-3)}
-.homebtn,.wlink,.tlink{color:var(--t-ink-2)}
-/* 첫 화면 */
-.ti .tnm{background:none;-webkit-text-fill-color:currentColor;color:var(--t-ink);font-family:var(--t-display)}
-.ti .tcur{color:var(--t-yellow)}
-.ti .tno{font-family:var(--t-mono)}
-.jpill{background:transparent;border:1.5px dashed var(--t-line-2);color:var(--t-ink)}
-.jpill:hover{background:var(--t-blue);border-color:var(--t-blue)}
-#intro,#splash{background:var(--t-surface)}
-#intro .iw{background:none;-webkit-text-fill-color:currentColor;color:var(--t-ink);font-family:var(--t-display)}
-/* 교실 화면: 칠판 톤으로 */
-/* 교실 화면 아래 단추(상담 신청 · 건의사항 · 조사 참여 · 결과 보기): 파란 면을 없애고 배경과 같은 색에 테두리만 */
-.board .act{background:var(--t-surface);color:var(--t-ink);border:1px solid var(--t-line-2);
-  border-radius:var(--t-shape);box-shadow:none;opacity:1;
-  transition:background var(--t-dur) var(--t-ease),border-color var(--t-dur) var(--t-ease)}
-.board .act:hover,.board .act:focus-visible{background:var(--t-surface-3);border-color:var(--t-ink-3);opacity:1}
-.board .act:active{background:var(--t-surface-3)}
-.board .act .ic{background:transparent;border:1px solid var(--t-line-2);color:var(--t-ink)}
-
-.board .card,.board .now{background:var(--t-surface-2);border-color:var(--t-line);border-radius:var(--t-shape)}
-.clock .hm,.now .big{font-family:var(--t-display)}
-.quote .q{font-family:var(--t-serif)}
-/* 상담 · 담임: 밝은 잔재 */
-.cal .slot,.seg,.seg2,.tagpick button,.tabs{background:var(--t-surface-3)}
-.seg button[aria-pressed=true],.seg2 button.on{background:var(--t-yellow);color:var(--t-surface)}
-.box h2,.card h2{color:var(--t-ink)}
-details summary{color:var(--t-ink-2)}
-/* 탐구 노트 */
-.inq-s{background:var(--t-surface-2)}
-.inq-s.done{background:rgba(127,216,196,.08);border-color:rgba(127,216,196,.35)}
-.inq-s.open{border-color:var(--t-yellow)}
-.inq-h .n{color:var(--t-yellow);font-family:var(--t-display)}
-.inq-h .t small{background:var(--t-surface-3);color:var(--t-ink-3)}
-.inq .chk{background:rgba(255,226,122,.08)}
-.inq-from{background:var(--t-surface-3);border-color:var(--t-line)}
-
-
-/* ════════ 인쇄할 때만: 흰 바탕 · 검은 글씨 ════════
-   화면에서는 칠판 톤, 종이에는 잉크를 아끼는 흰 바탕으로 바꿉니다.
-   모든 색이 --t-* 토큰을 거치므로 토큰만 뒤집으면 다섯 화면이 한꺼번에 바뀝니다. */
-@media print{
-  :root{
-    --t-surface:#fff; --t-surface-2:#fff; --t-surface-3:#F3F3F0;
-    --t-ink:#111; --t-ink-2:#333; --t-ink-3:#666;
-    --t-line:rgba(0,0,0,.2); --t-line-2:rgba(0,0,0,.35);
-    --t-blue:#111; --t-yellow:#111; --t-wood:#999; --t-red:#A4261D; --t-red-h:#A4261D; --t-purple:#444; --t-purple-h:#444;
-    --mint:#1B6B4A; --pink:#A4432B; --sky:#3B5B86;
-    --pos:#1B6B4A; --pos-s:#E6F0EA; --neg:#A4432B; --neg-s:#F6E7E2;
-    --a-자율:#3B5B86; --a-진로:#8A6326; --a-행특:#6E3F63; --a-기타:#666;
-    --accent:#111; --accent-s:#EEE; --margin:#E7B9AE;
-    --amber:#8A5A00; --danger:#A4432B; --teal:#111; --teal-ink:#111; --teal-soft:#EEE;
-  }
-  html,body{background:#fff!important;background-image:none!important;color:#111!important;-webkit-print-color-adjust:economy;print-color-adjust:economy}
-  *{box-shadow:none!important;text-shadow:none!important;animation:none!important;transition:none!important}
-  /* 화면 전용 장치는 종이에 내보내지 않음 */
-  #busy,#intro,#splash,.gt,#toast,.homebtn,.joinrow,.hb-top,.hb-foot .links,.cpline{display:none!important}
-  /* 그라데이션 글씨는 종이에서 사라지므로 단색으로 */
-  .num,.ti .tnm,#intro .iw{background:none!important;-webkit-text-fill-color:#111!important;color:#111!important}
-  /* 입력 · 카드는 선만 */
-  input,select,textarea,.in,.field{background:#fff!important;color:#111!important;border-color:rgba(0,0,0,.3)!important}
-  .card,.box,.it,.rw,.inq-s,.pick{background:#fff!important;border-color:rgba(0,0,0,.2)!important}
-  th{background:#F3F3F0!important;color:#111!important}
-  a{color:#111!important;text-decoration:underline}
-  /* 저작권 문구는 맨 아래에 작게 남김 */
-  body::after{content:'© 2026 강릉제일고 교사 유준배 · 무단 복제 · 배포 금지';display:block;margin-top:24px;padding-top:8px;
-    border-top:1px solid rgba(0,0,0,.2);font-size:10px;line-height:1.4;color:#666;text-align:center}
-}
-
-@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
-</style>
-
+<meta name="apple-mobile-web-app-title" content="클래스 뷰">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<script>try{var __t=localStorage.getItem('cr_theme_cur');if(__t&&__t!=='sky')document.documentElement.dataset.theme=__t;}catch(e){}</script>
+<meta name="theme-color" content="#F2F6FD">
+<style>@font-face{font-family:'Bunpil';font-style:normal;font-weight:100 900;font-display:swap;
+  src:url('https://yjb8634-sudo.github.io/class-diary/fonts/Bunpil-R.woff2') format('woff2'),url('https://yjb8634-sudo.github.io/class-diary/fonts/Bunpil-R.woff') format('woff')}</style>
 <style>
 /* 교실 TV 화면과 같은 칠판 색 */
 :root{
@@ -263,9 +57,6 @@ select.in{padding-right:28px}
 .b svg{width:18px;height:18px}
 /* 탭 */
 nav.tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;margin:0 0 18px;background:transparent!important;padding:0;border:0}
-nav.tabs button{background:#1F2D27!important;border:1px solid rgba(232,228,214,.16)!important;color:#D9D5C7!important;box-shadow:0 1px 0 rgba(0,0,0,.25)}
-nav.tabs button:hover{background:#26372F!important;border-color:rgba(242,209,107,.45)!important;color:#F3F1E7!important}
-nav.tabs button.on{background:#F2D16B!important;border-color:#F2D16B!important;color:#1D2A25!important;font-weight:700;box-shadow:0 2px 10px rgba(242,209,107,.18)}
 nav.tabs button{all:unset;box-sizing:border-box;cursor:pointer;text-align:center;padding:12px 6px;border-radius:var(--shape);background:var(--card);border:1.5px solid var(--line);
   color:var(--chalk2);font-size:15.5px;line-height:1.25;position:relative}
 nav.tabs button:hover{background:var(--card2)}
@@ -408,6 +199,441 @@ table.t td,table.t th{padding:7px 6px;text-align:left;font-size:14.5px;border-bo
 .rost td input{width:100%}
 .credit{text-align:right;font-size:13px;color:var(--chalk3);margin-top:20px}
 @media (max-width:640px){.top h1{font-size:24px} nav.tabs{grid-template-columns:repeat(3,1fr)} nav.tabs button{font-size:13.5px;padding:10px 4px}}
+/* ================= 2026-11 리뉴얼 (쌤패스 느낌: 연하늘 · 남색 굵은 제목 · 알약 단추 · 파스텔) ================= */
+:root{
+  --bg:#F2F6FD; --card:#FFFFFF; --card2:#EEF3FB; --card3:#E4ECF8; --line:#E3EAF5; --line2:#D3DDEC;
+  --chalk:#14213D; --chalk2:#3E4C66; --chalk3:#6B7891;
+  --yellow:#2D6BE4; --yellow-ink:#FFFFFF; --mint:#2E8B57; --pink:#D9534F; --sky:#2D6BE4; --red:#E5534B;
+  --btn:#A6CDFA; --btn-h:#93C0F8; --btn-ink:#14213D; --hl:#A6CDFA;
+  --acc-soft:rgba(45,107,228,.09); --acc-line:rgba(45,107,228,.30);
+  --p-yellow:#F9E49C; --p-peach:#F8CFB8; --p-lime:#D9EEAA; --p-lav:#DED6F8; --p-sky:#ABCEF8; --p-green:#DDF0CB; --g-ink:#2F6B1F;
+  --shape:999px; --shadow:none;
+  --mono:ui-monospace,'SFMono-Regular','JetBrains Mono',Menlo,Consolas,monospace;
+}
+html[data-theme="mint"]{--bg:#EEF8F4;--card2:#E7F4EE;--card3:#DAEEE5;--line:#DDEDE6;--line2:#C7E0D5;--yellow:#118062;--sky:#118062;--btn:#9FDFC6;--btn-h:#8BD5B9;--hl:#9FDFC6;--acc-soft:rgba(17,128,98,.09);--acc-line:rgba(17,128,98,.3)}
+html[data-theme="lavender"]{--bg:#F4F2FD;--card2:#EEEBFA;--card3:#E4DFF7;--line:#E6E2F6;--line2:#D6D0EE;--yellow:#5B44C8;--sky:#5B44C8;--btn:#C9BDF7;--btn-h:#BBADF4;--hl:#C9BDF7;--acc-soft:rgba(91,68,200,.09);--acc-line:rgba(91,68,200,.3)}
+html[data-theme="peach"]{--bg:#FDF4EF;--card2:#FBECE4;--card3:#F8E1D5;--line:#F3E3DA;--line2:#EAD2C5;--yellow:#C8552A;--sky:#C8552A;--btn:#F8C3A6;--btn-h:#F5B190;--hl:#F8C3A6;--acc-soft:rgba(200,85,42,.09);--acc-line:rgba(200,85,42,.3)}
+html[data-theme="beige"]{--bg:#F8F4EA;--card2:#F2ECDD;--card3:#EBE2CD;--line:#ECE4D3;--line2:#DFD3BA;--yellow:#8A5F14;--sky:#8A5F14;--btn:#F1D995;--btn-h:#ECCF7C;--hl:#F1D995;--acc-soft:rgba(138,95,20,.09);--acc-line:rgba(138,95,20,.3)}
+html[data-theme="chalk"]{
+  --bg:#1D2A25; --card:#233229; --card2:#2A3A32; --card3:#31443A; --line:rgba(226,222,208,.12); --line2:rgba(226,222,208,.24);
+  --chalk:#E9E6DA; --chalk2:rgba(233,230,218,.82); --chalk3:rgba(233,230,218,.58);
+  --yellow:#E6CD7E; --yellow-ink:#1D2A25; --mint:#8CC6B6; --pink:#E9A097; --sky:#9BB6DA; --red:#E5735E;
+  --btn:#E6CD7E; --btn-h:#EED793; --btn-ink:#1D2A25; --hl:rgba(230,205,126,.45);
+  --acc-soft:rgba(230,205,126,.10); --acc-line:rgba(230,205,126,.4);
+  --p-yellow:#5A5232; --p-peach:#5A4136; --p-lime:#43502F; --p-lav:#46415A; --p-sky:#344A5E; --p-green:#33503A; --g-ink:#BFE3A6;
+}
+html,body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;-webkit-font-smoothing:antialiased;letter-spacing:-.012em;word-break:keep-all}
+body{background:var(--bg)}
+/* 카드 · 글자 */
+.card{border:1px solid var(--line);border-radius:28px;padding:28px 30px;box-shadow:none;margin-bottom:20px}
+.card > h2{font-size:22px;font-weight:800;letter-spacing:-.03em;margin-bottom:6px}
+.card > h2 .sub{font-weight:600}
+.lead{font-size:15px;line-height:1.7;color:var(--chalk2)}
+.small{font-size:14px}
+/* 입력 · 단추 */
+.in{background:var(--card);color:var(--chalk);border:1.5px solid var(--line2);border-radius:14px;font-family:inherit;min-height:46px;padding:10px 14px}
+.in:focus{outline:none;border-color:var(--yellow);box-shadow:0 0 0 4px var(--acc-soft)}
+.b{border-radius:999px;font-weight:700;background:var(--card2);border:0;color:var(--chalk);font-family:inherit;min-height:44px;padding:0 18px;transition:background .15s,transform .1s}
+.b:hover{background:var(--card3)}
+.b.y{background:var(--btn);color:var(--btn-ink);box-shadow:none}
+.b.y:hover{background:var(--btn-h);filter:none}
+.b.r{background:transparent;color:var(--pink);box-shadow:inset 0 0 0 1.5px rgba(217,83,79,.35)}
+.b.sm{min-height:36px;padding:0 14px;font-size:14px}
+.b.big{min-height:58px;font-size:18px;padding:0 28px}
+.seg{border-radius:999px;background:var(--card2);border:0;padding:4px;gap:4px}
+.seg button{border:0!important;border-radius:999px;font-weight:700;padding:9px 16px;color:var(--chalk2)}
+.seg button.on{background:var(--btn);color:var(--btn-ink)}
+.chk input{accent-color:var(--yellow)}
+.tag{border-radius:999px;padding:2px 10px;font-weight:700;background:var(--card2);color:var(--chalk2)}
+.tag.on{background:var(--p-green);color:var(--g-ink)}
+.tag.y{background:var(--p-yellow);color:#5C4A08}
+.tag.r{background:#FBE1DF;color:#B23A33}
+html[data-theme="chalk"] .tag.y{color:#F2E3B0}html[data-theme="chalk"] .tag.r{background:#5A3934;color:#F2C1B9}
+.hint{background:var(--card2);border:0;border-radius:16px;padding:12px 16px;color:var(--chalk2)}
+.pill{background:var(--card);border:1px solid var(--line);border-radius:999px;font-weight:600}
+.pill b{color:var(--chalk)}
+.list > li{border-top:1px solid var(--line)}
+table.t th{color:var(--chalk3);font-weight:700;font-size:13px}
+.bar{border-radius:999px;background:var(--card2)}.bar i{background:var(--btn);border-radius:999px}
+.drop{border:1.5px dashed var(--line2);border-radius:18px;background:var(--card)}
+.drop:hover,.drop.over{background:var(--acc-soft);border-color:var(--yellow)}
+.nos button{border-radius:999px}.nos button.on{background:var(--p-green);color:var(--g-ink)}
+.fchip{border-radius:999px;background:var(--card2);border:0}
+details.past{border-radius:18px}
+.bellp,#updModal .updc{background:var(--card);color:var(--chalk);border:1px solid var(--line);border-radius:24px;box-shadow:0 24px 60px rgba(20,33,61,.16)}
+.bi{border-radius:14px}.bi:hover{background:var(--card2)}.bi.new{background:var(--acc-soft)}
+.bi.new .tt::after{background:var(--btn);color:var(--btn-ink)}
+.bell{background:var(--card);border:1px solid var(--line);border-radius:999px}
+.bupd{border-radius:16px}
+.autow .td{background:var(--acc-soft)}
+.chgb{background:var(--p-yellow);color:#5C4A08}
+.pairsteps .addr{color:var(--yellow)}
+.sedit{border-radius:18px;border-color:var(--acc-line)}
+#busy{background:rgba(242,246,253,.78);color:var(--chalk)}
+html[data-theme="chalk"] #busy{background:rgba(14,20,17,.7)}
+#toast{background:var(--chalk);color:var(--card);border-radius:999px;font-weight:700;box-shadow:0 12px 30px rgba(20,33,61,.25)}
+#toast.bad{background:#C9443D;color:#fff}
+.fontopt{background:#1D2A25;border-color:#33463C;border-radius:18px}
+.fontopt .fn{color:#E4E0D3}
+.pvslot{border-radius:20px}
+#app .pinmode .pmc button{border-radius:20px}
+#app .pinmode .pmc button.on{background:var(--acc-soft);border-color:var(--yellow)}
+#app .pn{border-radius:16px;background:var(--card)}
+.tvbox{border-color:var(--acc-line)}
+#mobModal .mc{border-radius:28px}
+
+/* ---- 껍데기: 왼쪽 메뉴 + 본문 ---- */
+.shell{display:grid;grid-template-columns:272px minmax(0,1fr);min-height:100vh}
+.side{position:sticky;top:0;height:100vh;overflow:auto;background:transparent;padding:26px 18px 18px 26px;display:flex;flex-direction:column;gap:4px}
+.brand{display:flex;gap:12px;align-items:center;padding:0 6px 22px}
+.brand .bi2{width:44px;height:44px;border-radius:14px;background:var(--btn);display:flex;align-items:center;justify-content:center;color:var(--btn-ink)}
+.brand .bi2 svg{width:24px;height:24px}
+.brand b{display:block;font-size:20px;font-weight:900;letter-spacing:-.04em;color:var(--chalk)}
+.brand span{display:block;font-size:12.5px;color:var(--chalk3);font-weight:600;margin-top:1px}
+nav.tabs{display:flex;flex-direction:column;gap:3px;margin:0;padding:0;border:0;background:none}
+nav.tabs .ng{height:12px}
+nav.tabs button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:14px;padding:12px 18px;border-radius:999px;font-size:16px;font-weight:600;color:var(--chalk2);position:relative;transition:background .15s,color .15s}
+nav.tabs button .ic{display:inline-flex;width:22px;height:22px;margin:0}
+nav.tabs button .ic svg{width:22px;height:22px}
+nav.tabs button:hover{background:var(--card2);color:var(--chalk)}
+nav.tabs button.on{background:var(--btn);color:var(--btn-ink);font-weight:800}
+nav.tabs button.on::before{display:none}
+nav.tabs button .dot{position:static;margin-left:auto;min-width:22px;height:22px;border-radius:999px;background:var(--p-yellow);color:#5C4A08;font:700 12px/22px var(--mono);padding:0 7px;text-align:center}
+.sidefoot{margin-top:auto;padding-top:18px}
+.stcard{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:14px 16px;font-size:14px;font-weight:700;color:var(--chalk);display:flex;align-items:center;gap:10px}
+.stcard i{width:9px;height:9px;border-radius:50%;background:#4CAF50;flex:none;box-shadow:0 0 0 4px rgba(76,175,80,.15)}
+.stcard small{display:block;font-weight:600;color:var(--chalk3);font-size:12.5px}
+.themes{display:flex;gap:8px;align-items:center;margin:14px 6px 0}
+.themes .tl{font-size:12.5px;color:var(--chalk3);font-weight:700;margin-right:2px}
+.themes button{all:unset;cursor:pointer;width:20px;height:20px;border-radius:50%;box-shadow:0 0 0 1px var(--line2)}
+.themes button.on{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--chalk)}
+.sidefoot .privacy{font-size:12px;color:var(--chalk3);margin:12px 6px 0;line-height:1.55}
+.main{min-width:0;padding:30px 44px 70px 30px;max-width:1240px;width:100%}
+.main .topbar{display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.main header.top{display:block;margin-bottom:24px}
+.main header.top h1{font-size:44px;font-weight:900;letter-spacing:-.05em;line-height:1.15;margin:0;color:var(--chalk)}
+.main header.top p{color:var(--chalk2);font-size:17px;margin-top:10px;line-height:1.6}
+.main header.top p b{color:var(--chalk)}
+.main .foot{margin-top:28px}
+.wrap{max-width:none;padding:0}
+@media (max-width:980px){
+  .shell{display:block}
+  .side{position:sticky;top:0;z-index:40;height:auto;flex-direction:row;align-items:center;padding:10px 12px;gap:8px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);overflow:visible}
+  .brand{padding:0}.brand span,.sidefoot,nav.tabs .ng{display:none}
+  .brand .bi2{width:34px;height:34px;border-radius:11px}.brand b{display:none}
+  nav.tabs{flex-direction:row;overflow-x:auto;scrollbar-width:none;gap:4px;flex:1}
+  nav.tabs::-webkit-scrollbar{display:none}
+  nav.tabs button{padding:9px 14px;font-size:14.5px;white-space:nowrap;flex:none;gap:8px}
+  nav.tabs button .ic,nav.tabs button .ic svg{width:18px;height:18px}
+  nav.tabs button .dot{margin-left:2px}
+  .main{padding:16px 14px 70px}
+  .main header.top h1{font-size:30px}.main header.top p{font-size:15px}
+  .main .topbar .pill{display:none}
+  .card{padding:22px 18px;border-radius:22px}
+}
+
+/* ---- 도입 애니메이션 ---- */
+
+/* ---- 소개 페이지 ---- */
+.lp{min-height:100vh;background:var(--bg);color:var(--chalk)}
+.lp-nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:26px;padding:12px max(20px,calc(50vw - 600px));background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:saturate(1.3) blur(12px);border-bottom:1px solid var(--line)}
+.lp-nav .lg{display:flex;align-items:center;gap:10px;font-weight:900;font-size:22px;letter-spacing:-.05em;color:var(--chalk);text-decoration:none}
+.lp-nav .lg .bi2{width:38px;height:38px;border-radius:12px;background:var(--btn);display:flex;align-items:center;justify-content:center;color:var(--btn-ink)}
+.lp-nav .lg .bi2 svg{width:22px;height:22px}
+.lp-nav nav{display:flex;gap:28px;margin-left:auto}
+.lp-nav nav a{color:var(--chalk2);font-size:16px;font-weight:700;text-decoration:none}
+.lp-nav nav a:hover{color:var(--chalk)}
+.lp-nav .b{min-height:46px;padding:0 22px;font-size:16px}
+.lp-in{max-width:1200px;margin:0 auto;padding:0 24px}
+.hero{display:grid;grid-template-columns:1.1fr 1fr;gap:56px;align-items:center;padding:56px 0 40px}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;font-size:15px;font-weight:700;color:var(--chalk2);background:var(--card);border:1px solid var(--line);padding:9px 16px;border-radius:999px}
+.eyebrow i{width:10px;height:10px;border-radius:50%;background:#5DAF4E;box-shadow:0 0 0 4px rgba(93,175,78,.18)}
+.hero h1{font-size:clamp(44px,6vw,84px);line-height:1.08;font-weight:900;letter-spacing:-.065em;margin:26px 0 22px;color:var(--chalk);position:relative}
+.hl{position:relative;z-index:0;white-space:nowrap}
+.hl::before{content:'';position:absolute;left:-.04em;right:-.04em;bottom:.02em;height:.42em;background:var(--hl);z-index:-1;transform-origin:left;animation:hlIn .9s .6s cubic-bezier(.2,.9,.3,1) both}
+@keyframes hlIn{from{transform:scaleX(0)}}
+.stamp{position:absolute;display:inline-block;font:900 .26em/1 var(--mono);letter-spacing:.08em;color:#2F7A3B;border:.07em solid #2F7A3B;border-radius:.3em;padding:.16em .4em;transform:rotate(12deg);background:var(--bg);animation:stampIn .5s 1.3s cubic-bezier(.3,1.6,.5,1) both;white-space:nowrap}
+@keyframes stampIn{from{transform:rotate(30deg) scale(2.2);opacity:0}}
+.hero p.sub{font-size:20px;line-height:1.75;color:var(--chalk2);max-width:600px;font-weight:500}
+.hero p.sub b{color:var(--chalk);font-weight:700}
+.hero .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:32px}
+.hero .cta .b{min-height:64px;padding:0 30px;font-size:19px;font-weight:800}
+.hero .gbtn svg{width:22px;height:22px;background:#fff;border-radius:50%;padding:3px}
+.b.ol{background:transparent;box-shadow:inset 0 0 0 2px var(--chalk);color:var(--chalk)}
+.b.ol:hover{background:var(--card)}
+.b.ol .mn{font:700 13px var(--mono);background:var(--card2);border-radius:999px;padding:3px 9px;margin-left:4px}
+.hero .chks{display:flex;gap:20px;flex-wrap:wrap;margin-top:26px;font-size:16px;font-weight:700;color:var(--chalk2)}
+.hero .chks span::before{content:'✓';color:#2F7A3B;margin-right:6px;font-weight:900}
+.newc{display:flex;flex-direction:column;align-items:flex-start;gap:10px;margin-top:26px}
+.newc a{display:inline-flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:9px 18px 9px 10px;font-size:15.5px;font-weight:700;color:var(--chalk);text-decoration:none}
+.newc a i{font:800 12px var(--mono);font-style:normal;background:var(--chalk);color:var(--card);border-radius:999px;padding:4px 10px;letter-spacing:.06em}
+.newc a:nth-child(2) i{background:var(--p-peach);color:#7A3A1C}
+.newc a:hover{border-color:var(--line2)}
+/* 평소 vs 교실 화면 */
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
+.cmp .cc{background:var(--card);border:1px solid var(--line);border-radius:28px;padding:24px 22px}
+.cmp .cc.on{background:color-mix(in srgb,var(--btn) 45%,var(--card));border-color:transparent}
+.cmp h3{display:flex;align-items:center;justify-content:space-between;font-size:24px;font-weight:900;letter-spacing:-.04em;margin:0 0 16px}
+.cmp h3 em{font-style:normal;font-size:14px;font-weight:800;padding:5px 12px;border-radius:999px;background:#FBE1DF;color:#C0392B}
+.cmp .on h3 em{background:var(--p-green);color:var(--g-ink)}
+.cmp ol{list-style:none;margin:0;padding:0;counter-reset:c}
+.cmp li{counter-increment:c;display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:15.5px;color:var(--chalk2);font-weight:500}
+.cmp li::before{content:counter(c);width:26px;height:26px;border-radius:50%;background:#FDECEA;color:#D04A3E;font:800 13px/26px var(--mono);text-align:center;flex:none}
+.cmp li.fd{opacity:.42}
+.cmp .cap{grid-column:1/-1;text-align:center;font-size:16px;font-weight:800;color:var(--chalk2);margin-top:6px}
+/* 미니 TV (교실 화면 쪽 카드 안) */
+.mtv{background:#0F1714;border-radius:16px;padding:8px;box-shadow:0 0 0 2px var(--chalk)}
+.mtv .sc{border-radius:10px;background:#1D2A25;color:#E4E0D3;padding:10px;display:grid;gap:7px;font-size:11px}
+.mtv .r1{display:flex;align-items:baseline;justify-content:space-between}
+.mtv .clk{font-size:26px;font-weight:800;letter-spacing:-.02em}
+.mtv .bx{background:#26372F;border-radius:8px;padding:7px 9px}
+.mtv .bx h4{margin:0 0 4px;font-size:10px;color:#A9B3A9;font-weight:700}
+.mtv .nt{font-size:12px;font-weight:700;opacity:0;animation:tvNote 8s infinite}
+.mtv .nt i{font-style:normal;background:#E5735E;color:#fff;font-size:9px;padding:1px 5px;border-radius:4px;margin-right:4px}
+.mtv .sv div{display:grid;grid-template-columns:58px 1fr 14px;align-items:center;gap:6px;margin-top:3px;white-space:nowrap}
+.mtv .b2{height:7px;border-radius:5px;background:#3A4D43;overflow:hidden}
+.mtv .b2 i{display:block;height:100%;background:#F2D16B;border-radius:5px;transform-origin:left;animation:tvBar 8s infinite}
+.mtv .ck{display:flex;flex-wrap:wrap;gap:3px}
+.mtv .ck span{width:17px;height:17px;border-radius:5px;background:#3A4D43;font-size:8.5px;display:flex;align-items:center;justify-content:center;color:#A9B3A9;animation:tvChk 8s infinite}
+@keyframes tvNote{0%,4%{opacity:0;transform:translateY(5px)}9%,92%{opacity:1;transform:none}100%{opacity:0}}
+@keyframes tvBar{0%,28%{transform:scaleX(0)}44%,92%{transform:scaleX(var(--w))}100%{transform:scaleX(0)}}
+@keyframes tvChk{0%,50%{background:#3A4D43;color:#A9B3A9}57%,92%{background:#8CC6B6;color:#11241E}100%{background:#3A4D43}}
+/* 파스텔 칩 */
+.pchips{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;padding:36px 0 8px}
+.pchips span{display:inline-flex;align-items:center;gap:9px;padding:13px 22px;border-radius:999px;font-size:17px;font-weight:800;color:#1F2A3C}
+.pchips span svg{width:20px;height:20px}
+.pchips .c1{background:var(--p-yellow)}.pchips .c2{background:var(--p-peach)}.pchips .c3{background:var(--p-lime)}.pchips .c4{background:var(--p-lav)}.pchips .c5{background:var(--p-sky)}
+.pchips .c6{background:transparent;box-shadow:inset 0 0 0 2px var(--chalk);color:var(--chalk)}
+.pchips .br{flex-basis:100%;height:0;padding:0}
+/* 섹션 */
+.lp-sec{padding:96px 0 24px}
+.secno{display:inline-block;font:700 15px var(--mono);letter-spacing:.06em;background:var(--btn);color:var(--btn-ink);border-radius:999px;padding:6px 16px}
+.sech{text-align:center}
+.sech h2{font-size:clamp(34px,4.6vw,60px);font-weight:900;letter-spacing:-.06em;line-height:1.15;margin:20px 0 14px}
+.sech p{color:var(--chalk2);font-size:18px;line-height:1.7;max-width:760px;margin:0 auto}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;margin-top:84px}
+.frow.rev > .ft{order:2}
+.ft .nb{display:flex;align-items:center;gap:12px}
+.ft .nb b{width:48px;height:48px;border-radius:50%;background:var(--chalk);color:var(--card);display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:800}
+.ft .nb span{font-size:15px;font-weight:800;padding:7px 14px;border-radius:999px}
+.ft h3{font-size:clamp(30px,3.6vw,46px);font-weight:900;letter-spacing:-.055em;line-height:1.18;margin:20px 0 16px}
+.ft p{font-size:17.5px;line-height:1.8;color:var(--chalk2)}
+.ft p b{color:var(--chalk)}
+.ft ul{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:12px}
+.ft li{display:flex;gap:12px;align-items:flex-start;font-size:16.5px;color:var(--chalk2);font-weight:500;line-height:1.55}
+.ft li::before{content:'';flex:none;width:24px;height:24px;border-radius:50%;margin-top:1px;background:var(--p-yellow) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2314213D' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center/13px no-repeat}
+.live{position:relative;border-radius:36px;padding:52px 40px 26px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.live .lb{position:absolute;left:22px;top:20px;display:inline-flex;align-items:center;gap:7px;background:#14213D;color:#fff;border-radius:999px;padding:6px 13px;font:700 13px var(--mono);letter-spacing:.08em}
+.live .lb::before{content:'';width:8px;height:8px;border-radius:50%;background:#E5534B;animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.25}}
+.live .cap{font-size:15px;font-weight:800;color:#14213D}
+.app{width:min(440px,100%);background:#F7FAFE;border:2px solid #14213D;border-radius:24px;padding:16px;color:#14213D;box-shadow:0 18px 40px rgba(20,33,61,.12)}
+.app .ah{display:flex;align-items:center;gap:8px;font-weight:900;font-size:17px;letter-spacing:-.04em;margin-bottom:12px}
+.app .ah .bi2{width:30px;height:30px;border-radius:9px;background:#A6CDFA;display:flex;align-items:center;justify-content:center}
+.app .ah .bi2 svg{width:17px;height:17px}
+.app .ah em{margin-left:auto;font-style:normal;font-size:12px;font-weight:700;background:#DDF0CB;color:#2F6B1F;border-radius:999px;padding:4px 10px}
+.app .ac{background:#fff;border:1px solid #E3EAF5;border-radius:16px;padding:14px}
+.app .ac + .ac{margin-top:10px}
+.app .ac b{font-size:15px;font-weight:800}
+.app .ac small{display:block;color:#6B7891;font-size:12.5px;margin-top:3px}
+.app .typ{border:1.5px solid #14213D;border-radius:12px;padding:10px 12px;margin-top:10px;font-size:14px;font-weight:600;min-height:44px;white-space:pre-wrap}
+.app .typ::after{content:'';display:inline-block;width:2px;height:1.1em;background:#14213D;vertical-align:-2px;margin-left:1px;animation:blink 1s steps(1) infinite}
+.app .go{margin-top:10px;background:#A6CDFA;border-radius:999px;text-align:center;padding:11px;font-weight:800;font-size:14.5px}
+.app .lvls{display:flex;gap:6px;margin-top:10px}
+.app .lvls span{font-size:12.5px;font-weight:700;border-radius:999px;padding:5px 12px;background:#EEF3FB}
+.app .lvls span.on{background:#14213D;color:#fff}
+.app .opts{display:grid;gap:8px;margin-top:10px}
+.app .opt2{display:grid;grid-template-columns:92px 1fr 30px;align-items:center;gap:10px;font-size:13.5px;font-weight:700}
+.app .opt2 .b3{height:12px;border-radius:999px;background:#EEF3FB;overflow:hidden}
+.app .opt2 .b3 i{display:block;height:100%;border-radius:999px;background:#A6CDFA;transform-origin:left;animation:barGrow 6s infinite}
+@keyframes barGrow{0%,12%{transform:scaleX(0)}35%,90%{transform:scaleX(var(--w))}100%{transform:scaleX(0)}}
+.app .nums{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:10px}
+.app .nums span{aspect-ratio:1;border-radius:9px;background:#EEF3FB;display:flex;align-items:center;justify-content:center;font:700 12px var(--mono);color:#6B7891;animation:numOk 7s infinite}
+@keyframes numOk{0%,8%{background:#EEF3FB;color:#6B7891}14%,90%{background:#DDF0CB;color:#2F6B1F}100%{background:#EEF3FB}}
+.app .miss{margin-top:10px;font-size:13px;font-weight:700;color:#C0392B;background:#FDECEA;border-radius:999px;padding:7px 12px;display:inline-block}
+.bg-y{background:var(--p-yellow)}.bg-l{background:var(--p-lime)}.bg-p{background:var(--p-peach)}.bg-v{background:var(--p-lav)}.bg-s{background:var(--p-sky)}
+/* 시작하기 · 안심 */
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:44px;counter-reset:st}
+.step{background:var(--card);border:1px solid var(--line);border-radius:28px;padding:28px}
+.step b{display:flex;align-items:center;gap:12px;font-size:20px;font-weight:900;letter-spacing:-.04em}
+.step b::before{counter-increment:st;content:counter(st);width:36px;height:36px;border-radius:50%;background:var(--card2);color:var(--chalk);display:inline-flex;align-items:center;justify-content:center;font:800 15px var(--mono)}
+.step p{color:var(--chalk2);font-size:15.5px;margin-top:12px;line-height:1.7}
+.step kbd{font:700 14px var(--mono);background:var(--card2);border-radius:8px;padding:2px 8px;color:var(--chalk)}
+.safe{max-width:820px;margin:44px auto 0;background:var(--card);border:1px solid var(--line);border-radius:28px;padding:10px 30px}
+.safe div{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 0;border-bottom:1px solid var(--line);font-size:16.5px;color:var(--chalk2)}
+.safe div:last-child{border-bottom:0}
+.safe div b{display:flex;align-items:center;gap:10px;color:var(--g-ink);font-weight:800;text-align:right}
+.safe div b::before{content:'';flex:none;width:24px;height:24px;border-radius:50%;background:var(--p-green) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232F6B1F' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center/13px no-repeat}
+.lp-end{margin:110px 0 0;text-align:center}
+.lp-end h2{font-size:clamp(34px,4.6vw,58px);font-weight:900;letter-spacing:-.06em;line-height:1.15}
+.lp-end p{color:var(--chalk2);font-size:18px;margin-top:14px}
+.lp-end .b{margin-top:30px;min-height:64px;padding:0 34px;font-size:19px;font-weight:800}
+.lp-foot{padding:70px 0 44px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--chalk3);font-size:14px}
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .75s ease,transform .75s cubic-bezier(.2,.9,.3,1)}
+.reveal.on{opacity:1;transform:none}
+@media (max-width:980px){
+  .hero,.frow{grid-template-columns:1fr;gap:34px}
+  .frow.rev > .ft{order:0}
+  .lp-nav nav{display:none}
+  .steps{grid-template-columns:1fr}
+  .cmp{grid-template-columns:1fr}
+  .hero{padding-top:34px}
+  .hero p.sub{font-size:17.5px}
+  .live{padding:48px 16px 20px}
+}
+@media (prefers-reduced-motion:reduce){
+  .reveal{opacity:1;transform:none;transition:none}
+  .lp *{animation:none!important}
+  .mtv .nt{opacity:1}
+}
+
+/* ---------- 교실 화면 마크: 네모 타일 안의 교실 TV ---------- */
+.mk{display:block;width:100%;height:100%;overflow:visible}
+.mk .m-tile{fill:var(--btn);stroke:var(--btn-ink);stroke-width:3}
+.mk .m-scr{fill:#fff;fill-opacity:.62;stroke:var(--btn-ink);stroke-width:3.6}
+.mk .m-std,.mk .m-chk{stroke:var(--btn-ink);stroke-width:3.6}
+.mk .m-dot{fill:#FFD25E;stroke:var(--btn-ink);stroke-width:3}
+.mk .m-dots circle{fill:var(--btn-ink)}
+html[data-theme="chalk"] .mk .m-scr{fill-opacity:.4}
+.bi2{background:none!important;overflow:visible}
+.bi2 svg.mk{width:100%!important;height:100%!important}
+/* 움직이는 마크 (도입 화면) */
+.mk.anim .m-tile{transform-box:view-box;transform-origin:32px 32px;animation:mkTile .6s cubic-bezier(.3,1.5,.5,1) both}
+.mk.anim .m-dots circle{transform-box:fill-box;transform-origin:center;animation:mkDots .95s .4s both}
+.mk.anim .m-dots circle:nth-child(2){animation-delay:.5s}
+.mk.anim .m-dots circle:nth-child(3){animation-delay:.6s}
+.mk.anim .m-scr{stroke-dasharray:1;fill-opacity:0;animation:mkDraw .6s 1.05s cubic-bezier(.65,0,.3,1) both,mkFill .35s 1.55s ease forwards}
+.mk.anim .m-std{stroke-dasharray:1;animation:mkDraw .3s 1.5s cubic-bezier(.5,0,.3,1) both}
+.mk.anim .m-chk{stroke-dasharray:1;animation:mkDraw .42s 1.72s cubic-bezier(.55,0,.2,1) both}
+.mk.anim .m-dot{transform-box:fill-box;transform-origin:center;animation:mkPop .5s 2.1s cubic-bezier(.3,1.9,.5,1) both}
+.mk.anim{transform-origin:50% 50%;animation:mkNod .5s 2.12s ease}
+@keyframes mkTile{0%{transform:scale(.25);opacity:0}60%{opacity:1}}
+@keyframes mkDots{0%{opacity:0;transform:translateY(4px) scale(.5)}22%{opacity:1;transform:none}42%{transform:translateY(-3px)}62%{opacity:1;transform:none}100%{opacity:0;transform:scale(.3)}}
+@keyframes mkDraw{0%{stroke-dashoffset:1;opacity:0}1%{opacity:1}100%{stroke-dashoffset:0;opacity:1}}
+@keyframes mkFill{to{fill-opacity:.62}}
+@keyframes mkPop{from{transform:scale(0)}}
+@keyframes mkNod{40%{transform:scale(1.06) rotate(-4deg)}75%{transform:scale(.99) rotate(1deg)}}
+html[data-theme="chalk"] .mk.anim .m-scr{animation:mkDraw .6s 1.05s cubic-bezier(.65,0,.3,1) both,mkFill2 .35s 1.55s ease forwards}
+@keyframes mkFill2{to{fill-opacity:.4}}
+/* 도입 화면 */
+#intro{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background-color .7s ease,opacity .7s ease,visibility .7s}
+#intro .zoom{transition:transform .7s cubic-bezier(.55,0,.8,.2),opacity .55s ease .1s}
+#intro .stage{display:flex;flex-direction:column;align-items:center;gap:6px;animation:stUp .7s 2.15s cubic-bezier(.2,.9,.3,1) both}
+#intro .mkw{width:clamp(104px,15vw,132px);height:clamp(104px,15vw,132px);margin-bottom:16px}
+#intro .stage b{font-size:clamp(38px,6vw,58px);font-weight:900;letter-spacing:-.055em;color:var(--chalk);line-height:1.1;animation:inUp .6s 2.25s cubic-bezier(.2,.9,.3,1) both}
+#intro .stage .tg{font-size:clamp(15px,2.1vw,19px);font-weight:700;color:var(--chalk2);letter-spacing:-.02em;animation:inUp .6s 2.4s cubic-bezier(.2,.9,.3,1) both}
+#intro .skip{position:absolute;right:22px;bottom:22px;font-size:13px;font-weight:700;color:var(--chalk3);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 16px;transition:opacity .3s}
+#intro.out{background-color:transparent;visibility:hidden}
+#intro.out .zoom{transform:scale(1.55);opacity:0}
+#intro.out .skip{opacity:0}
+@keyframes stUp{from{transform:translateY(46px)}}
+@keyframes inUp{from{opacity:0;transform:translateY(16px)}}
+html.introing .lp,html.introing .lp *{animation-play-state:paused!important}
+@media (prefers-reduced-motion:reduce){#intro{display:none}}
+/* ---------- 학생 호출 상태 (관리 화면) ---------- */
+.flst{display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-radius:20px;padding:16px 20px;margin:0 0 16px;background:var(--card2)}
+.flst .who{flex:1 1 220px;font-size:15px;color:var(--chalk2)}.flst .who b{font-size:18px;color:var(--chalk);margin-right:4px}
+.flst .rs{display:flex;flex-direction:column;gap:2px}.flst .rs b{font-size:17px;font-weight:800}.flst .rs span{font-size:13px;color:var(--chalk3)}
+.flst.r-go{background:var(--p-green)}.flst.r-away{background:#FBE3DD}.flst.r-ok{background:var(--p-sky)}
+.flst.wait .rs b{animation:blink 1.6s infinite}
+html[data-theme="chalk"] .flst.r-away{background:#5A3934}
+/* ---------- 소개: 학생 호출 화면 흉내 ---------- */
+.callm{width:min(440px,100%);background:#0F1714;border-radius:24px;padding:10px;box-shadow:0 0 0 2px #14213D,0 18px 40px rgba(20,33,61,.16)}
+.callm .sc{position:relative;border-radius:16px;background:#141D19;color:#F2EFE4;padding:26px 18px 22px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;min-height:300px;overflow:hidden}
+.callm .tg{font-size:11px;font-weight:800;letter-spacing:.2em;background:#8CC6B6;color:#0F2A23;border-radius:999px;padding:4px 12px}
+.callm .wh{font-size:38px;font-weight:900;letter-spacing:-.05em;color:#F4D35E;line-height:1.05}
+.callm .ms{font-size:17px;font-weight:700}
+.callm .bt{display:flex;gap:8px;margin-top:6px}
+.callm .bt span{font-size:13.5px;font-weight:800;border-radius:12px;padding:11px 14px;white-space:nowrap}
+.callm .bt .g{background:#8CD6B4;color:#0F2A23;animation:press 6s infinite}
+.callm .bt .a{box-shadow:inset 0 0 0 2px rgba(242,239,228,.5)}
+.callm .sent{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#141D19;font-size:17px;font-weight:800;color:#8CD6B4;opacity:0;animation:sentIn 6s infinite}
+.callm + .phn{width:min(330px,92%);margin-top:-6px;background:#fff;border:2px solid #14213D;border-radius:18px;padding:11px 14px;display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:700;color:#14213D;box-shadow:0 12px 26px rgba(20,33,61,.14);opacity:0;animation:phnIn 6s infinite}
+.phn .bi2{width:28px;height:28px;flex:none}
+.phn small{display:block;color:#6B7891;font-weight:600;font-size:12px}
+@keyframes press{0%,38%{transform:none;box-shadow:none}42%{transform:scale(.93);box-shadow:0 0 0 6px rgba(140,214,180,.35)}48%,100%{transform:none}}
+@keyframes sentIn{0%,46%{opacity:0}52%,88%{opacity:1}96%,100%{opacity:0}}
+@keyframes phnIn{0%,54%{opacity:0;transform:translateY(12px)}60%,90%{opacity:1;transform:none}97%,100%{opacity:0}}
+/* ---------- 소개: 소소한 기능 카드 ---------- */
+.cute{width:min(440px,100%);display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cute > div{background:#fff;border:2px solid #14213D;border-radius:20px;padding:14px 14px 12px;color:#14213D;display:flex;flex-direction:column;gap:6px;min-height:128px;box-shadow:0 10px 24px rgba(20,33,61,.08)}
+.cute .em{font-size:30px;line-height:1}
+.cute b{font-size:15.5px;font-weight:900;letter-spacing:-.04em}
+.cute small{font-size:12.5px;color:#6B7891;font-weight:600;line-height:1.45}
+.cute .eq{display:flex;align-items:flex-end;gap:3px;height:18px;margin-top:auto}
+.cute .eq i{width:5px;border-radius:3px;background:#A6CDFA;animation:eq 1s ease-in-out infinite}
+.cute .eq i:nth-child(2){animation-delay:.2s}.cute .eq i:nth-child(3){animation-delay:.4s}.cute .eq i:nth-child(4){animation-delay:.1s}.cute .eq i:nth-child(5){animation-delay:.3s}
+.cute .bd .em{animation:bob 2.4s ease-in-out infinite}
+.cute .bl .em{transform-origin:50% 10%;animation:ring 3s ease-in-out infinite}
+.cute .cnt{margin-top:auto;font:800 22px var(--mono);letter-spacing:.02em}
+.cute .note{position:relative;margin-top:auto;height:18px;overflow:hidden}
+.cute .note span{position:absolute;font-size:15px;animation:note 2.4s linear infinite;opacity:0}
+.cute .note span:nth-child(2){left:22px;animation-delay:.8s}.cute .note span:nth-child(3){left:44px;animation-delay:1.6s}
+@keyframes eq{0%,100%{height:4px}50%{height:18px}}
+@keyframes bob{0%,100%{transform:none}50%{transform:translateY(-4px) rotate(-6deg)}}
+@keyframes ring{0%,60%,100%{transform:none}64%{transform:rotate(16deg)}68%{transform:rotate(-14deg)}72%{transform:rotate(10deg)}76%{transform:rotate(-6deg)}80%{transform:none}}
+@keyframes note{0%{opacity:0;transform:translateY(14px)}20%{opacity:1}100%{opacity:0;transform:translateY(-10px)}}
+@media (max-width:520px){.cute{grid-template-columns:1fr}.callm .bt{flex-direction:column}.callm .wh{font-size:32px}}
+#intro .stage .en{font:700 clamp(13px,1.7vw,16px) var(--mono);letter-spacing:.32em;text-transform:uppercase;color:var(--chalk3);margin:-2px 0 6px;animation:inUp .6s 2.32s cubic-bezier(.2,.9,.3,1) both}
+.lp-nav .lg .en{font:700 11px var(--mono);font-style:normal;letter-spacing:.14em;text-transform:uppercase;color:var(--chalk3);margin-left:8px;padding:3px 8px;border-radius:999px;background:var(--card2)}
+
+.tvlk{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-top:12px}
+.tvlk .tvt{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:7px;padding:8px;border-radius:16px;border:2px solid transparent;text-align:center}
+.tvlk .tvt:hover{background:rgba(127,127,127,.08)}
+.tvlk .tvt.on{border-color:currentColor}
+.tvlk .pv{display:grid;grid-template-columns:1.4fr 1fr;gap:5px;padding:7px;border-radius:10px;aspect-ratio:16/9;box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+.tvlk .pv i{border-radius:5px;padding:5px;display:flex;flex-direction:column;gap:4px}
+.tvlk .pv b{display:block;width:40%;height:5px;border-radius:3px}
+.tvlk .pv u{display:block;height:3px;border-radius:2px;opacity:.75;text-decoration:none}
+.tvlk .nm{font-size:13.5px;font-weight:700}
+.tvpk{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px}
+.tvpk .lb{font-size:13.5px;font-weight:700;opacity:.7;margin-right:4px}
+.tvpk .tvp{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:6px 14px 6px 6px;border-radius:999px;border:1.5px solid rgba(127,127,127,.3);font-size:13.5px;font-weight:700}
+.tvpk .tvp.on{border-color:currentColor;box-shadow:inset 0 0 0 1px currentColor}
+.tvpk .sw{width:26px;height:26px;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.1)}
+.uic{display:inline-block;width:1.25em;height:1.25em;vertical-align:-.28em;margin:0 .12em;padding:.08em;border-radius:.3em;background:rgba(127,127,127,.16)}
+
+/* ---------- 학교 양식 조사 ---------- */
+.fchip.warn{border-color:var(--pink)!important;color:var(--pink)}
+.fxdrop{all:unset;box-sizing:border-box;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;margin-top:12px;padding:30px 16px;border:2px dashed var(--line);border-radius:22px;cursor:pointer;text-align:center;transition:background .2s,border-color .2s}
+.fxdrop:hover,.fxdrop.over{border-color:var(--yellow);background:rgba(127,127,127,.06)}
+.fxdrop b{font-size:18px}.fxdrop span{font-size:13.5px;color:var(--chalk3)}
+.hint.warn{border-left:4px solid var(--pink);margin-top:12px;line-height:1.7}
+.fxfile{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+.fxfile>span:first-child{flex:1;min-width:200px}
+.fxpv{margin-top:10px;overflow:auto;border-radius:14px;border:1px solid var(--line);max-height:300px}
+.fxpv table{border-collapse:collapse;font-size:12.5px;min-width:100%;background:#fff;color:#1b2333}
+.fxpv td{border:1px solid #c9d2df;padding:5px 8px;text-align:center;white-space:nowrap;height:26px}
+.fxpv tr.h td{background:#e7eef9;font-weight:700}
+.fxpv tr.t td{border-color:transparent;color:#5b6577;text-align:left}
+.fxpv tr.more td{border:0;color:#8a93a3;font-size:12px;text-align:left}
+.fxpv tr.bd th{position:sticky;top:0;padding:5px 6px;font-size:11.5px;font-weight:800;white-space:nowrap;background:#f3f5f9;color:#6b7891;border-bottom:2px solid #c9d2df}
+.fxpv th.r-q,.fxpv th.r-mark{background:#FFE7A3;color:#5a4300}
+.fxpv th.r-no,.fxpv th.r-name,.fxpv th.r-grade,.fxpv th.r-klass,.fxpv th.r-hakbun{background:#DDF3E8;color:#0f5d43}
+.fxt{font-size:15px;margin:16px 0 8px;color:var(--chalk2)}
+.fxcols{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.fxc{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:16px;border:1px solid var(--line);background:var(--card2)}
+.fxc.r-q,.fxc.r-mark{border-color:var(--yellow);box-shadow:inset 3px 0 0 var(--yellow)}
+.fxc.r-skip{opacity:.7}
+.fxh b{font-size:15px}.fxh small{display:block;font-size:12px;color:var(--chalk3);margin-top:2px}
+.fxc .in{width:100%}
+.fxq{margin-top:10px}
+.fxedit{margin:14px 0 4px;padding:16px;border-radius:20px;border:1px dashed var(--yellow);background:rgba(127,127,127,.05)}
+
+/* 소개: 학교 양식 흉내 */
+.xlm{width:min(460px,100%);background:#fff;border:2px solid #14213D;border-radius:18px;overflow:hidden;color:#14213D;box-shadow:0 18px 40px rgba(20,33,61,.14)}
+.xlm .xh{display:flex;align-items:center;gap:9px;padding:10px 14px;background:#1D6F42;color:#fff;font-size:13.5px;font-weight:800}
+.xlm .xh .xi{width:22px;height:22px;border-radius:5px;background:#fff;color:#1D6F42;display:grid;place-items:center;font-size:12px;font-weight:900}
+.xlm .xh em{margin-left:auto;font-style:normal;font-weight:600;opacity:.85;font-size:12.5px}
+.xlm table{border-collapse:collapse;width:100%;font-size:13.5px}
+.xlm th,.xlm td{border:1px solid #cfd6e1;padding:8px 6px;text-align:center;height:20px}
+.xlm th{background:#E3EEF9;font-weight:800}
+.xlm td.a span{display:inline-block;opacity:0;font-weight:700;color:#1D4ED8;animation:xlIn 9s var(--d) infinite}
+.xlm .xf{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 14px;background:#F3F6FA;font-size:13px;font-weight:700;color:#1D6F42}
+.xlm .dlb{background:#A6CDFA;color:#14213D;border-radius:999px;padding:8px 14px;font-size:13px;animation:dlP 9s infinite}
+@keyframes xlIn{0%{opacity:0;transform:translateY(5px)}6%,80%{opacity:1;transform:none}90%,100%{opacity:0}}
+@keyframes dlP{0%,52%{transform:none;box-shadow:none}58%{transform:scale(1.08);box-shadow:0 0 0 7px rgba(166,205,250,.45)}64%,100%{transform:none;box-shadow:none}}
+@media (prefers-reduced-motion:reduce){.xlm td.a span{animation:none;opacity:1}.xlm .dlb{animation:none}}
 </style>
 </head>
 <body>
@@ -418,6 +644,577 @@ table.t td,table.t th{padding:7px 6px;text-align:left;font-size:14.5px;border-bo
 <div id="toast" role="status"></div>
 <input type="file" id="filePick" hidden multiple>
 <input type="file" id="xlsPick" hidden accept=".xlsx,.xls,.csv">
+<input type="file" id="fxPick" hidden accept=".xlsx,.hwpx,.hwp,.xls">
+<input type="file" id="bkPick" hidden accept=".json,application/json">
+<script>/* =====================================================================
+ * FORMX — 학교 양식(엑셀 .xlsx · 한글 .hwpx)을 읽고, 학생 답으로 채워 다시 만듭니다.
+ *  - 밖의 라이브러리 없이 브라우저만으로 동작 (압축 풀기 · 묶기는 브라우저 기본 기능)
+ *  - 바꾸지 않은 부분은 원래 파일의 바이트를 그대로 옮겨서 서식이 흐트러지지 않게 합니다.
+ * ===================================================================== */
+(function (G) {
+  'use strict';
+  const te = new TextEncoder(), td = new TextDecoder();
+
+  /* ---------------- ZIP ---------------- */
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  function crc32(u) { let c = 0xFFFFFFFF; for (let i = 0; i < u.length; i++) c = CRC[(c ^ u[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+  async function pipe(u, stream) { const s = new Blob([u]).stream().pipeThrough(stream); return new Uint8Array(await new Response(s).arrayBuffer()); }
+  const inflate = u => pipe(u, new DecompressionStream('deflate-raw'));
+  const deflate = u => pipe(u, new CompressionStream('deflate-raw'));
+
+  function unzip(buf) {
+    const u = buf instanceof Uint8Array ? buf : new Uint8Array(buf), dv = new DataView(u.buffer, u.byteOffset, u.byteLength);
+    let e = u.length - 22; while (e >= 0 && dv.getUint32(e, true) !== 0x06054b50) e--;
+    if (e < 0) throw new Error('압축 파일 모양이 아니에요.');
+    const n = dv.getUint16(e + 10, true); let p = dv.getUint32(e + 16, true);
+    const list = [];
+    for (let i = 0; i < n; i++) {
+      if (dv.getUint32(p, true) !== 0x02014b50) throw new Error('파일이 손상된 것 같아요.');
+      const flag = dv.getUint16(p + 8, true), method = dv.getUint16(p + 10, true), time = dv.getUint16(p + 12, true), date = dv.getUint16(p + 14, true),
+        crc = dv.getUint32(p + 16, true), csize = dv.getUint32(p + 20, true), size = dv.getUint32(p + 24, true),
+        nl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), lho = dv.getUint32(p + 42, true);
+      const name = td.decode(u.subarray(p + 46, p + 46 + nl));
+      const ds = lho + 30 + dv.getUint16(lho + 26, true) + dv.getUint16(lho + 28, true);
+      list.push({ name, flag, method, time, date, crc, csize, size, raw: u.subarray(ds, ds + csize) });
+      p += 46 + nl + xl + cl;
+    }
+    return list;
+  }
+  async function bytesOf(e) { if (!e.data) e.data = e.method === 0 ? e.raw.slice() : await inflate(e.raw); return e.data; }
+  async function zip(list) {
+    const parts = [], cen = []; let off = 0;
+    for (const e of list) {
+      if (e.changed) {
+        const d = e.data; e.crc = crc32(d); e.size = d.length;
+        e.raw = e.method === 0 ? d : await deflate(d); if (e.method !== 0) e.method = 8;
+        e.csize = e.raw.length;
+      }
+      const nb = te.encode(e.name), utf = /[^\x00-\x7f]/.test(e.name) ? 0x800 : 0, flag = (e.flag & ~8) | utf;
+      const h = new Uint8Array(30 + nb.length), v = new DataView(h.buffer);
+      v.setUint32(0, 0x04034b50, true); v.setUint16(4, 20, true); v.setUint16(6, flag, true); v.setUint16(8, e.method, true);
+      v.setUint16(10, e.time, true); v.setUint16(12, e.date, true); v.setUint32(14, e.crc, true); v.setUint32(18, e.csize, true); v.setUint32(22, e.size, true);
+      v.setUint16(26, nb.length, true); v.setUint16(28, 0, true); h.set(nb, 30);
+      const c = new Uint8Array(46 + nb.length), w = new DataView(c.buffer);
+      w.setUint32(0, 0x02014b50, true); w.setUint16(4, 20, true); w.setUint16(6, 20, true); w.setUint16(8, flag, true); w.setUint16(10, e.method, true);
+      w.setUint16(12, e.time, true); w.setUint16(14, e.date, true); w.setUint32(16, e.crc, true); w.setUint32(20, e.csize, true); w.setUint32(24, e.size, true);
+      w.setUint16(28, nb.length, true); w.setUint32(42, off, true); c.set(nb, 46);
+      parts.push(h, e.raw); cen.push(c); off += h.length + e.raw.length;
+    }
+    const cs = cen.reduce((a, b) => a + b.length, 0), end = new Uint8Array(22), x = new DataView(end.buffer);
+    x.setUint32(0, 0x06054b50, true); x.setUint16(8, list.length, true); x.setUint16(10, list.length, true); x.setUint32(12, cs, true); x.setUint32(16, off, true);
+    const out = new Uint8Array(off + cs + 22); let q = 0;
+    for (const a of parts.concat(cen, [end])) { out.set(a, q); q += a.length; }
+    return out;
+  }
+
+  /* ---------------- 작은 XML 나무 (위치를 기억해 그 자리만 고침) ---------------- */
+  const TAG = /<(\/?)([A-Za-z_][\w:.-]*)((?:\s+[^\s=>\/]+\s*=\s*(?:"[^"]*"|'[^']*'))*)\s*(\/?)>|<!--[\s\S]*?-->|<\?[\s\S]*?\?>|<!\[CDATA\[[\s\S]*?\]\]>|<!DOCTYPE[^>]*>/g;
+  function xtree(s) {
+    const root = { name: '#', kids: [], s: 0, is: 0, ie: s.length, e: s.length }, st = [root];
+    TAG.lastIndex = 0; let m;
+    while ((m = TAG.exec(s))) {
+      if (!m[2]) continue;
+      if (m[1]) { const n = st.pop(); n.ie = m.index; n.e = TAG.lastIndex; continue; }
+      const n = { name: m[2], a: m[3] || '', s: m.index, is: TAG.lastIndex, kids: [] };
+      st[st.length - 1].kids.push(n);
+      if (m[4]) { n.ie = n.e = TAG.lastIndex; n.self = true; } else st.push(n);
+    }
+    return root;
+  }
+  const local = n => n.name.replace(/^.*:/, '');
+  function attr(n, k) { const m = new RegExp('(?:^|\\s)' + k.replace(/[:.]/g, '\\$&') + '\\s*=\\s*(?:"([^"]*)"|\'([^\']*)\')').exec(n.a); return m ? unesc(m[1] != null ? m[1] : m[2]) : null; }
+  function* walk(n, name) { for (const k of n.kids) { if (!name || local(k) === name) yield k; yield* walk(k, name); } }
+  const kids = (n, name) => n.kids.filter(k => local(k) === name);
+  const kid = (n, name) => n.kids.find(k => local(k) === name);
+  const unesc = s => String(s).replace(/&(lt|gt|amp|quot|apos|#\d+|#x[0-9a-f]+);/gi, (_, e) => ({ lt: '<', gt: '>', amp: '&', quot: '"', apos: "'" })[e.toLowerCase()] || String.fromCodePoint(e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10)));
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  function inner(s, n) { return n.self ? '' : s.slice(n.is, n.ie); }
+  function textIn(s, n, tname) { let out = ''; for (const t of walk(n, tname)) out += unesc(inner(s, t).replace(/<[^>]+>/g, '')); return out; }
+  function splice(s, edits) {
+    edits.sort((a, b) => b.s - a.s);
+    for (const x of edits) s = s.slice(0, x.s) + x.str + s.slice(x.e);
+    return s;
+  }
+
+  /* ---------------- 칸 위치 ---------------- */
+  const colName = c => { let s = ''; c++; while (c) { const r = (c - 1) % 26; s = String.fromCharCode(65 + r) + s; c = (c - r - 1) / 26; } return s; };
+  const colNum = s => { let c = 0; for (const ch of s) c = c * 26 + ch.charCodeAt(0) - 64; return c - 1; };
+  function ref(a) { const m = /^\$?([A-Z]+)\$?(\d+)$/.exec(a.trim()); return m ? { r: Number(m[2]) - 1, c: colNum(m[1]) } : null; }
+  function range(a) { const [x, y] = a.split(':'); const p = ref(x), q = y ? ref(y) : p; return p && q ? { r0: Math.min(p.r, q.r), c0: Math.min(p.c, q.c), r1: Math.max(p.r, q.r), c1: Math.max(p.c, q.c) } : null; }
+
+  /* ---------------- 표 찾기 (엑셀 · 한글 공통) ----------------
+   * T = { rows, cols, text(r,c), origin(r,c)->{r,c,rs,cs}, has(r,c), opts(r,c)->[] } */
+  const N = s => String(s || '').replace(/\s+/g, '');
+  const RX = {
+    no: /^(번호|연번|순번|번|no\.?|NO)$/i, name: /^(성명|이름|학생명|학생이름|성명\(.*\)|이름\(.*\))$/, grade: /^학년$/, klass: /^반$/,
+    hakbun: /^학번$/, skip: /^(비고|확인|서명|날인|\(인\)|담임확인|보호자확인|보호자서명|학부모확인|확인란|서명란|인)$/,
+    foot: /^(합계|계|소계|총계|총원)$|위와같이|위의|담임교사|확인자|작성자|제출합니다|※/
+  };
+  function optsFromTitle(t) {
+    const m = /[(（\[]([^()（）\[\]]+)[)）\]]/.exec(t || ''); if (!m) return null;
+    const inside = m[1].replace(/\s+/g, ' ').trim();
+    if (/표시|표\)?$|기재|작성|중\s*택|선택/.test(inside) && !/[\/,·ㆍ|]/.test(inside)) return null;
+    const parts = inside.split(/\s*[\/,·ㆍ|]\s*/).map(x => x.trim()).filter(Boolean);
+    if (parts.length < 2 || parts.length > 8 || parts.some(x => x.length > 12)) return null;
+    return { q: (t.slice(0, m.index) + t.slice(m.index + m[0].length)).replace(/\s+/g, ' ').trim() || t, options: parts };
+  }
+  function detect(T) {
+    let hr = -1;
+    for (let r = 0; r < Math.min(T.rows, 40) && hr < 0; r++) {
+      let no = false, nm = false;
+      for (let c = 0; c < T.cols; c++) { const o = T.origin(r, c); if (o.r !== r && o.r < r - 1) continue; const t = N(T.text(o.r, o.c)); if (RX.no.test(t) || RX.hakbun.test(t)) no = true; if (RX.name.test(t)) nm = true; }
+      if (no && nm) hr = r;
+    }
+    if (hr < 0) return null;
+    // 머리 칸 범위: 번호 · 이름 칸에서 좌우로 빈칸이 나올 때까지 (옆에 따로 적어 둔 목록은 빼기)
+    const hasHead = c => { if (c < 0 || c >= T.cols) return false; const o = T.origin(hr, c); return !!N(T.text(o.r, o.c)); };
+    let seed = -1;
+    for (let c = 0; c < T.cols && seed < 0; c++) { const o = T.origin(hr, c); const t = N(T.text(o.r, o.c)); if (RX.name.test(t)) seed = c; }
+    let c0 = seed, c1 = seed;
+    while (hasHead(c0 - 1)) c0--;
+    while (hasHead(c1 + 1)) c1++;
+    // 두 줄 머리?
+    let two = false;
+    for (let c = c0; c <= c1; c++) {
+      const o = T.origin(hr, c);
+      if (o.rs > 1 && o.r === hr) two = true;
+      if (o.cs > 1 && o.r === hr && hr + 1 < T.rows) { const u = T.origin(hr + 1, c); if (u.r === hr + 1 && N(T.text(u.r, u.c))) two = true; }
+    }
+    if (two) for (let c = c0; c <= c1; c++) { const u = T.origin(hr + 1, c); if (u.r === hr + 1 && /^\d+$/.test(N(T.text(u.r, u.c)))) two = false; }
+    const ds = hr + (two ? 2 : 1);
+    // 칸(열) 정리
+    const cols = [];
+    for (let c = c0; c <= c1; c++) {
+      const top = T.origin(hr, c), sub = two ? T.origin(hr + 1, c) : top;
+      const tt = T.text(top.r, top.c).replace(/\s+/g, ' ').trim(), st = two && sub.r === hr + 1 ? T.text(sub.r, sub.c).replace(/\s+/g, ' ').trim() : '';
+      const hasSub = two && sub.r === hr + 1 && st && top.cs > 1;
+      if (!hasSub && top.c !== c) continue;                    /* 가로로 합친 머리 칸은 한 칸으로 */
+      if (hasSub && sub.c !== c) continue;
+      cols.push({ c, title: hasSub ? st : tt, group: hasSub ? tt : '', gc: hasSub ? top.c : -1 });
+    }
+    // 아래로 자료 줄
+    const rows = [];
+    for (let r = ds; r < T.rows; r++) {
+      let any = false, foot = false, wide = false;
+      for (let c = c0; c <= c1; c++) {
+        if (T.has(r, c)) any = true;
+        const o = T.origin(r, c); const t = N(T.text(o.r, o.c));
+        if (t && RX.foot.test(t)) foot = true;
+        if (o.r === r && o.c === c && o.cs >= Math.max(2, (c1 - c0 + 1) - 1)) wide = true;
+      }
+      if (foot || wide || !any) break;
+      rows.push(r);
+    }
+    // 역할 정하기
+    const out = [];
+    const used = {};
+    for (let i = 0; i < cols.length; i++) {
+      const x = cols[i];
+      if (x.group) {
+        const g = cols.filter(y => y.gc === x.gc);
+        if (used[x.gc]) continue; used[x.gc] = 1;
+        out.push({ key: 'g' + x.gc, role: 'mark', title: x.group.replace(/[(（][^)）]*[)）]/g, '').trim() || x.group, cols: g.map(y => y.c), options: g.map(y => y.title), mark: '○' });
+        continue;
+      }
+      const t = N(x.title);
+      let role = 'q';
+      if (RX.no.test(t)) role = 'no'; else if (RX.name.test(t)) role = 'name'; else if (RX.grade.test(t)) role = 'grade'; else if (RX.klass.test(t)) role = 'klass';
+      else if (RX.hakbun.test(t)) role = 'hakbun'; else if (RX.skip.test(t) || /^비고/.test(t)) role = 'skip';
+      const col = { key: 'c' + x.c, role, title: x.title, cols: [x.c], options: [] };
+      if (role === 'q') {
+        const dv = rows.length ? T.opts(rows[0], x.c) : null, ot = optsFromTitle(x.title);
+        if (dv && dv.length) { col.options = dv; col.title = ot ? ot.q : x.title; }
+        else if (ot) { col.options = ot.options; col.title = ot.q; }
+      }
+      out.push(col);
+    }
+    // 번호 · 이름이 이미 적혀 있나?
+    const nc = out.find(x => x.role === 'no'), mc = out.find(x => x.role === 'name');
+    const filled = (cc) => cc ? rows.filter(r => N(T.text(r, cc.cols[0]))).length : 0;
+    let match = 'seq';
+    if (mc && filled(mc) >= Math.max(3, rows.length * 0.5)) match = 'name';
+    else if (nc && filled(nc) >= Math.max(3, rows.length * 0.5) && rows.every(r => !N(T.text(r, nc.cols[0])) || /^\d+$/.test(N(T.text(r, nc.cols[0]))))) match = 'no';
+    return { hr, ds, c0, c1, two, rows, cols: out, match };
+  }
+
+  /* ---------------- 엑셀 ---------------- */
+  async function xlsxOpen(list) {
+    const get = n => list.find(e => e.name === n || e.name === n.replace(/^\//, ''));
+    const txt = async n => { const e = get(n); return e ? td.decode(await bytesOf(e)) : null; };
+    const wb = await txt('xl/workbook.xml'); if (!wb) throw new Error('엑셀 파일 안쪽을 찾지 못했어요.');
+    const relx = await txt('xl/_rels/workbook.xml.rels') || '';
+    const rel = {}; for (const r of walk(xtree(relx), 'Relationship')) { let t = attr(r, 'Target') || ''; t = t.startsWith('/') ? t.slice(1) : 'xl/' + t; rel[attr(r, 'Id')] = t.replace(/\/\.\//g, '/'); }
+    const sstx = await txt('xl/sharedStrings.xml'); const sst = [];
+    if (sstx) { const R = xtree(sstx); for (const si of walk(R, 'si')) { let s = ''; for (const t of walk(si, 't')) { /* 윗주(rPh) 빼기 */ s += unesc(inner(sstx, t)); } sst.push(s); } }
+    const W = xtree(wb), sheets = [];
+    for (const sh of walk(W, 'sheet')) {
+      const id = attr(sh, 'r:id') || attr(sh, 'id'); const path = rel[id]; if (!path) continue;
+      sheets.push({ name: attr(sh, 'name'), path, hidden: /hidden/.test(attr(sh, 'state') || '') });
+    }
+    const doc = { kind: 'xlsx', list, sheets: [], wbPath: 'xl/workbook.xml' };
+    for (const sh of sheets) {
+      const x = await txt(sh.path); if (x == null) continue;
+      doc.sheets.push(Object.assign(sh, xlsxSheet(x, sst)));
+    }
+    // 다른 시트를 가리키는 드롭다운 목록 풀기
+    for (const sh of doc.sheets) for (const v of sh.dvs) if (!v.list && v.f) v.list = rangeValues(doc, sh, v.f);
+    return doc;
+  }
+  function xlsxSheet(x, sst) {
+    const R = xtree(x), cells = {}, rowsEl = {};
+    const sd = [...walk(R, 'sheetData')][0];
+    let maxR = 0, maxC = 0;
+    if (sd) for (const row of kids(sd, 'row')) {
+      const r = Number(attr(row, 'r')) - 1; rowsEl[r] = row; let seq = 0;
+      for (const c of kids(row, 'c')) {
+        const p = attr(c, 'r') ? ref(attr(c, 'r')) : { r, c: seq }; seq = p.c + 1;
+        const t = attr(c, 't'); let v = '';
+        const vv = kid(c, 'v');
+        if (t === 's') v = sst[Number(inner(x, vv || { self: true }))] || '';
+        else if (t === 'inlineStr') { const is = kid(c, 'is'); v = is ? textIn(x, is, 't') : ''; }
+        else if (vv) v = unesc(inner(x, vv));
+        cells[p.r + ',' + p.c] = { v, el: c, s: attr(c, 's') };
+        maxR = Math.max(maxR, p.r + 1); maxC = Math.max(maxC, p.c + 1);
+      }
+    }
+    const merges = [];
+    for (const m of walk(R, 'mergeCell')) { const g = range(attr(m, 'ref') || ''); if (g) { merges.push(g); maxR = Math.max(maxR, g.r1 + 1); maxC = Math.max(maxC, g.c1 + 1); } }
+    const dvs = [];
+    for (const d of walk(R, 'dataValidation')) {
+      if ((attr(d, 'type') || '') !== 'list') continue;
+      let f = '', sq = attr(d, 'sqref') || '';
+      const f1 = kid(d, 'formula1'); if (f1) { const ff = kid(f1, 'f'); f = unesc(ff ? inner(x, ff) : inner(x, f1)); }
+      const sqe = kid(d, 'sqref'); if (sqe) sq = inner(x, sqe);
+      const v = { sq: sq.split(/\s+/).map(range).filter(Boolean), f: f.replace(/^=/, '') };
+      if (/^".*"$/.test(v.f)) { v.list = v.f.slice(1, -1).split(',').map(s => s.trim()).filter(Boolean); }
+      dvs.push(v);
+    }
+    return { x, R, cells, rowsEl, merges, dvs, maxR, maxC, sd };
+  }
+  function rangeValues(doc, sh, f) {
+    let m = /^(?:'?([^'!]+)'?!)?(.+)$/.exec(f); if (!m) return null;
+    const s2 = m[1] ? doc.sheets.find(z => z.name === m[1]) : sh; const g = range(m[2].replace(/\$/g, ''));
+    if (!s2 || !g) return null;
+    const out = [];
+    for (let r = g.r0; r <= g.r1; r++) for (let c = g.c0; c <= g.c1; c++) { const v = (s2.cells[r + ',' + c] || {}).v; if (v != null && String(v).trim()) out.push(String(v).trim()); }
+    return out.length ? out.slice(0, 40) : null;
+  }
+  function xlsxGrid(sh) {
+    const om = {};
+    for (const g of sh.merges) for (let r = g.r0; r <= g.r1; r++) for (let c = g.c0; c <= g.c1; c++) om[r + ',' + c] = { r: g.r0, c: g.c0, rs: g.r1 - g.r0 + 1, cs: g.c1 - g.c0 + 1 };
+    return {
+      rows: sh.maxR, cols: sh.maxC,
+      text: (r, c) => { const x = sh.cells[r + ',' + c]; return x ? String(x.v) : ''; },
+      origin: (r, c) => om[r + ',' + c] || { r, c, rs: 1, cs: 1 },
+      has: (r, c) => !!sh.cells[r + ',' + c] || !!om[r + ',' + c],
+      opts: (r, c) => { for (const v of sh.dvs) if (v.list && v.sq.some(g => r >= g.r0 && r <= g.r1 && c >= g.c0 && c <= g.c1)) return v.list; return null; }
+    };
+  }
+
+  /* ---------------- 한글 HWPX ---------------- */
+  async function hwpxOpen(list) {
+    const secs = list.filter(e => /^Contents\/section\d+\.xml$/.test(e.name)).sort((a, b) => Number(a.name.match(/\d+/)[0]) - Number(b.name.match(/\d+/)[0]));
+    if (!secs.length) throw new Error('한글(HWPX) 문서 안쪽을 찾지 못했어요.');
+    const doc = { kind: 'hwpx', list, sheets: [] };
+    for (const e of secs) {
+      const x = td.decode(await bytesOf(e)), R = xtree(x);
+      let k = 0;
+      for (const tb of walk(R, 'tbl')) doc.sheets.push(Object.assign({ name: (secs.length > 1 ? e.name.match(/\d+/)[0] * 1 + 1 + '구역 ' : '') + '표 ' + (++k), path: e.name }, hwpxTable(x, tb)));
+    }
+    return doc;
+  }
+  function hwpxTable(x, tb) {
+    const cells = {}, om = {}, trs = kids(tb, 'tr');
+    let rows = Number(attr(tb, 'rowCnt')) || trs.length, cols = Number(attr(tb, 'colCnt')) || 0;
+    trs.forEach((tr, i) => {
+      for (const tc of kids(tr, 'tc')) {
+        const a = kid(tc, 'cellAddr'), sp = kid(tc, 'cellSpan');
+        const r = a ? Number(attr(a, 'rowAddr')) : i, c = a ? Number(attr(a, 'colAddr')) : 0;
+        const rs = sp ? Number(attr(sp, 'rowSpan')) || 1 : 1, cs = sp ? Number(attr(sp, 'colSpan')) || 1 : 1;
+        const sub = kid(tc, 'subList');
+        let v = ''; if (sub) v = kids(sub, 'p').map(p => { let s = ''; for (const t of walk(p, 't')) { if (/\bt$/.test(t.name)) s += unesc(inner(x, t).replace(/<[^>]+>/g, '')); } return s; }).join('\n').trim();
+        cells[r + ',' + c] = { v, el: tc, tr, rs, cs };
+        for (let y = r; y < r + rs; y++) for (let z = c; z < c + cs; z++) om[y + ',' + z] = { r, c, rs, cs };
+        cols = Math.max(cols, c + cs); rows = Math.max(rows, r + rs);
+      }
+    });
+    return { x, tb, trs, cells, om, maxR: rows, maxC: cols, dvs: [] };
+  }
+  function hwpxGrid(t) {
+    return {
+      rows: t.maxR, cols: t.maxC,
+      text: (r, c) => { const o = t.om[r + ',' + c]; const x = o ? t.cells[o.r + ',' + o.c] : null; return x ? x.v : ''; },
+      origin: (r, c) => t.om[r + ',' + c] || { r, c, rs: 1, cs: 1 },
+      has: (r, c) => !!t.om[r + ',' + c],
+      opts: () => null
+    };
+  }
+
+  /* ---------------- 열기 ---------------- */
+  async function open(buf, fname) {
+    const u = new Uint8Array(buf);
+    if (u[0] === 0xD0 && u[1] === 0xCF && u[2] === 0x11 && u[3] === 0xE0) {
+      const e = new Error(/\.hwp$/i.test(fname || '') ? 'HWP' : /\.xls$/i.test(fname || '') ? 'XLS' : 'OLE'); e.code = e.message; throw e;
+    }
+    if (!(u[0] === 0x50 && u[1] === 0x4B)) { const e = new Error('엑셀(.xlsx)이나 한글(.hwpx) 파일만 쓸 수 있어요.'); e.code = 'TYPE'; throw e; }
+    const list = unzip(u);
+    const doc = list.some(e => e.name === 'xl/workbook.xml') ? await xlsxOpen(list) : list.some(e => /^Contents\/section\d+\.xml$/.test(e.name)) ? await hwpxOpen(list) : null;
+    if (!doc) { const e = new Error('엑셀(.xlsx)이나 한글(.hwpx) 파일만 쓸 수 있어요.'); e.code = 'TYPE'; throw e; }
+    doc.tables = [];
+    doc.sheets.forEach((sh, i) => {
+      if (sh.hidden) return;
+      const T = doc.kind === 'xlsx' ? xlsxGrid(sh) : hwpxGrid(sh);
+      const d = detect(T);
+      if (d) {
+        /* 제목: 표 위쪽 글 중 가장 긴 것 (엑셀) · 표 앞 문단 (한글) */
+        let title = '';
+        if (doc.kind === 'xlsx') { for (let r = 0; r < d.hr; r++) for (let c = 0; c < T.cols; c++) { const v = String(T.text(r, c) || '').trim(); if (v.length > title.length && !(/\(\s*\d*\s*\)\s*(학년|반)|담임/.test(v) && v.length < 40)) title = v; } }
+        else { const before = sh.x.slice(0, sh.tb.s); const ts = []; for (const m of before.matchAll(/<(\w+:)?t>([^<]*)<\/(\w+:)?t>/g)) ts.push(unesc(m[2])); title = ts.map(x => x.trim()).filter(Boolean).slice(-4).sort((a, b) => b.length - a.length)[0] || ''; }
+        doc.tables.push(Object.assign({ id: i, label: doc.kind === 'xlsx' ? '시트 ' + sh.name : sh.name, T, title: title.replace(/\s+/g, ' ').slice(0, 60) }, d));
+      }
+    });
+    return doc;
+  }
+  /* 미리보기용: 표 앞쪽 몇 줄을 글자 격자로 */
+  function preview(doc, t, nRows) {
+    const T = t.T, out = [];
+    const r0 = Math.max(0, t.hr - 2), r1 = Math.min(T.rows - 1, t.ds + (nRows || 4) - 1);
+    for (let r = r0; r <= r1; r++) {
+      const row = [];
+      for (let c = t.c0; c <= t.c1; c++) { const o = T.origin(r, c); row.push(o.r === r && o.c === c ? { t: T.text(r, c), rs: Math.min(o.rs, r1 - r + 1), cs: Math.min(o.cs, t.c1 - c + 1), c } : null); }
+      out.push({ r, cells: row, head: r >= t.hr && r < t.ds, data: r >= t.ds });
+    }
+    return out;
+  }
+
+  /* ---------------- 채우기 ----------------
+   * fill(buf, name, plan) → Uint8Array
+   * plan = { table: id, cols: [{role, cols:[c], mark, ...}], rows: [{ no, name, vals: { key: '글자' | 보기번호(표시 칸) } }], grade, klass } */
+  function cellsFor(plan, t, st) {
+    const W = [];  /* [c, value] */
+    const pad = n => String(n).padStart(2, '0');
+    for (const col of plan.cols) {
+      const c = col.cols[0];
+      if (col.role === 'no') { if (t.match !== 'no') W.push([c, st.no]); }
+      else if (col.role === 'name') { if (t.match !== 'name') W.push([c, st.name]); }
+      else if (col.role === 'grade') W.push([c, plan.grade]);
+      else if (col.role === 'klass') W.push([c, plan.klass]);
+      else if (col.role === 'hakbun') W.push([c, Number(String(plan.grade) + pad(plan.klass) + pad(st.no))]);
+      else if (col.role === 'mark') { const i = st.vals[col.key]; (Array.isArray(i) ? i : [i]).forEach(k => { if (k != null && k >= 0 && col.cols[k] != null) W.push([col.cols[k], col.mark || '○']); }); }
+      else if (col.role === 'q') { const v = st.vals[col.key]; if (v != null && v !== '') W.push([c, v]); }
+    }
+    return W;
+  }
+  /* '(   )학년 (   )반' 처럼 비어 있는 괄호에 학년 · 반 넣기 */
+  function blanks(v, plan) {
+    return String(v).replace(/\((\s*)\)(\s*)(학년|반)/g, (m, sp, sp2, w) => '( ' + (w === '학년' ? plan.grade : plan.klass) + ' )' + sp2 + w);
+  }
+  const hasBlank = v => /\(\s*\)\s*(학년|반)/.test(String(v || ''));
+  function placeRows(t, students) {
+    /* 학생 → 줄 번호. 남는 학생은 extra로 */
+    const T = t.T, map = [], extra = [];
+    const nc = t.cols.find(x => x.role === 'no'), mc = t.cols.find(x => x.role === 'name');
+    if (t.match === 'no') {
+      const by = {}; t.rows.forEach(r => { const v = N(T.text(r, nc.cols[0])); if (v) by[Number(v)] = r; });
+      const free = t.rows.filter(r => !N(T.text(r, nc.cols[0])));
+      students.forEach(s => { if (by[s.no] != null) map.push([s, by[s.no]]); else if (free.length) map.push([s, free.shift()]); else extra.push(s); });
+    } else if (t.match === 'name') {
+      const by = {}; t.rows.forEach(r => { const v = N(T.text(r, mc.cols[0])); if (v) by[v] = r; });
+      students.forEach(s => { const r = by[N(s.name)]; if (r != null) map.push([s, r]); else extra.push(s); });
+    } else students.forEach((s, i) => { if (i < t.rows.length) map.push([s, t.rows[i]]); else extra.push(s); });
+    return { map, extra };
+  }
+  async function fill(buf, fname, plan) {
+    const doc = await open(buf, fname);
+    const t = doc.tables.find(x => x.id === plan.table) || doc.tables[0];
+    if (!t) throw new Error('양식에서 번호 · 이름이 있는 표를 찾지 못했어요.');
+    const sh = doc.sheets[t.id];
+    const students = plan.rows.slice().sort((a, b) => a.no - b.no);
+    const P = placeRows(t, students);
+    const report = { filled: P.map.length, added: 0, short: 0 };
+    if (doc.kind === 'xlsx') {
+      let rowsUse = P.map.map(([s, r]) => [s, r]);
+      if (P.extra.length) {
+        /* 표 아래가 비어 있으면 마지막 줄 모양을 본떠 이어 적기 */
+        const last = t.rows[t.rows.length - 1], need = P.extra.length;
+        let free = true;
+        for (let k = 1; k <= need && free; k++) for (let c = t.c0; c <= t.c1; c++) if (xlsxGrid(sh).has(last + k, c)) { free = false; break; }
+        if (free && t.match === 'seq') { P.extra.forEach((s, k) => rowsUse.push([s, last + 1 + k, last])); report.added = need; }
+        else report.short = need;
+      }
+      const out = xlsxWrite(sh, t, plan, rowsUse);
+      const e = doc.list.find(z => z.name === sh.path); e.data = te.encode(out); e.changed = true;
+      /* 열 때 수식 다시 계산 */
+      const we = doc.list.find(z => z.name === 'xl/workbook.xml'); let wx = td.decode(await bytesOf(we));
+      if (/<calcPr\b/.test(wx)) wx = wx.replace(/<calcPr\b([^>]*?)(\/?)>/, (m, a, sl) => '<calcPr' + a.replace(/\sfullCalcOnLoad="[^"]*"/, '') + ' fullCalcOnLoad="1"' + sl + '>');
+      else wx = wx.replace(/<\/workbook>/, '<calcPr fullCalcOnLoad="1"/></workbook>');
+      we.data = te.encode(wx); we.changed = true;
+      /* 계산 사슬은 지워 두면 엑셀이 새로 만듦 */
+    } else {
+      const out = hwpxWrite(sh, t, plan, P, report);
+      const e = doc.list.find(z => z.name === sh.path); e.data = te.encode(out); e.changed = true;
+    }
+    return { bytes: await zip(doc.list), report };
+  }
+
+  function xlsxWrite(sh, t, plan, rowsUse) {
+    const x = sh.x, G = xlsxGrid(sh);
+    /* 줄마다 쓸 칸 모으기 */
+    const W = {};  /* r -> {c: {v, styleFrom}} */
+    if (plan.blanks !== false) for (let r = 0; r < t.hr; r++) for (let c = 0; c < G.cols; c++) {
+      const x0 = sh.cells[r + ',' + c]; if (x0 && hasBlank(x0.v)) (W[r] = W[r] || {})[c] = { v: blanks(x0.v, plan), like: null };
+    }
+    for (const [s, r, likeRow] of rowsUse) {
+      for (const [c0, v] of cellsFor(plan, t, s)) {
+        const o = G.origin(r, c0); const rr = o.r, cc = o.c;
+        (W[rr] = W[rr] || {})[cc] = { v, like: likeRow != null ? likeRow : null };
+      }
+    }
+    const cellXml = (r, c, v, s0) => {
+      const rr = colName(c) + (r + 1), s = s0 != null ? ' s="' + s0 + '"' : '';
+      if (typeof v === 'number' && isFinite(v)) return '<c r="' + rr + '"' + s + '><v>' + v + '</v></c>';
+      return '<c r="' + rr + '"' + s + ' t="inlineStr"><is><t xml:space="preserve">' + esc(v) + '</t></is></c>';
+    };
+    const edits = [];
+    const rowNums = Object.keys(W).map(Number).sort((a, b) => a - b);
+    const newRows = [];
+    for (const r of rowNums) {
+      const row = sh.rowsEl[r], want = W[r];
+      if (row) {
+        /* 이미 있는 줄: 칸을 바꾸거나 끼워 넣기 */
+        const cs = kids(row, 'c').map(c => ({ el: c, c: ref(attr(c, 'r')).c }));
+        const parts = []; let pos = row.self ? null : row.is;
+        const cols = Object.keys(want).map(Number).sort((a, b) => a - b);
+        let out = '', last = row.self ? 0 : row.is;
+        const body = row.self ? '' : x.slice(row.is, row.ie);
+        /* 다시 짜기: 원래 칸 + 새 칸을 열 순서대로 */
+        const all = cs.map(z => ({ c: z.c, xml: x.slice(z.el.s, z.el.e), s: attr(z.el, 's') }));
+        for (const c of cols) {
+          const i = all.findIndex(z => z.c === c);
+          const like = want[c].like != null ? (sh.cells[want[c].like + ',' + c] || {}).s : null;
+          const s0 = i >= 0 ? all[i].s : like;
+          const xml = cellXml(r, c, want[c].v, s0);
+          if (i >= 0) all[i].xml = xml; else all.push({ c, xml });
+        }
+        all.sort((a, b) => a.c - b.c);
+        const open = x.slice(row.s, row.is).replace(/\s+spans="[^"]*"/, '').replace(/\/>$/, '>');
+        edits.push({ s: row.s, e: row.e, str: open + all.map(z => z.xml).join('') + '</row>' });
+      } else newRows.push(r);
+    }
+    /* 없는 줄 새로 만들기: 순서에 맞게 끼워 넣기 */
+    if (newRows.length) {
+      const sd = sh.sd; const exist = Object.keys(sh.rowsEl).map(Number).sort((a, b) => a - b);
+      for (const r of newRows) {
+        const want = W[r];
+        const like = Object.values(want)[0].like;
+        const likeEl = like != null ? sh.rowsEl[like] : null;
+        const rattr = likeEl ? (likeEl.a.match(/\s(ht|customHeight)="[^"]*"/g) || []).join('') : '';
+        /* 표 줄 모양(테두리)을 본뜨기: 비슷한 줄의 모든 칸 스타일 복사 */
+        const cellsXml = [];
+        const cset = new Set(Object.keys(want).map(Number));
+        if (like != null) for (let c = t.c0; c <= t.c1; c++) cset.add(c);
+        [...cset].sort((a, b) => a - b).forEach(c => {
+          const s0 = like != null ? (sh.cells[like + ',' + c] || {}).s : null;
+          if (want[c]) cellsXml.push(cellXml(r, c, want[c].v, s0)); else if (s0 != null) cellsXml.push('<c r="' + colName(c) + (r + 1) + '" s="' + s0 + '"/>');
+        });
+        const xml = '<row r="' + (r + 1) + '"' + rattr + '>' + cellsXml.join('') + '</row>';
+        const nextR = exist.find(z => z > r);
+        if (nextR != null) edits.push({ s: sh.rowsEl[nextR].s, e: sh.rowsEl[nextR].s, str: xml });
+        else if (sd.self) edits.push({ s: sd.s, e: sd.e, str: '<sheetData>' + xml + '</sheetData>' });
+        else edits.push({ s: sd.ie, e: sd.ie, str: xml });
+      }
+    }
+    /* 같은 자리에 끼우는 새 줄이 여러 개면 순서를 지키도록 */
+    const merged = []; const byPos = {};
+    edits.forEach(ed => { if (ed.s === ed.e) { (byPos[ed.s] = byPos[ed.s] || []).push(ed.str); } else merged.push(ed); });
+    Object.keys(byPos).forEach(p => merged.push({ s: Number(p), e: Number(p), str: byPos[p].join('') }));
+    let out = splice(x, merged);
+    /* 표 범위(dimension) 넓히기 */
+    const maxR = Math.max(sh.maxR, ...rowNums.map(r => r + 1));
+    out = out.replace(/<dimension ref="([A-Z]+\d+)(?::([A-Z]+)(\d+))?"\s*\/>/, (m, a, c2, r2) => r2 && Number(r2) < maxR ? '<dimension ref="' + a + ':' + c2 + maxR + '"/>' : m);
+    return out;
+  }
+
+  function hwpxWrite(sh, t, plan, P, report) {
+    let x = sh.x;
+    const edits = [];
+    const cellText = (tc, val) => {
+      const sub = kid(tc, 'subList'); if (!sub) return null;
+      const ps = kids(sub, 'p'); if (!ps.length) return null;
+      const p = ps[0]; const run = kid(p, 'run');
+      const pOpen = x.slice(p.s, p.is);
+      const cp = run ? attr(run, 'charPrIDRef') : '0';
+      const pre = run ? x.slice(run.s, run.is).replace(/\/>$/, '>') : '<hp:run charPrIDRef="' + cp + '">';
+      const nsp = (p.name.match(/^(\w+):/) || [, 'hp'])[1];
+      const txt = String(val).split('\n').map(esc).join('<' + nsp + ':lineBreak/>');
+      const np = pOpen + pre + '<' + nsp + ':t>' + txt + '</' + nsp + ':t></' + nsp + ':run></' + p.name + '>';
+      return { s: p.s, e: ps[ps.length - 1].e, str: np };
+    };
+    const G = hwpxGrid(sh);
+    const put = (r, c, v) => { const o = G.origin(r, c); const cell = sh.cells[o.r + ',' + o.c]; if (!cell) return; const ed = cellText(cell.el, v); if (ed) edits.push(ed); };
+    for (const [s, r] of P.map) for (const [c, v] of cellsFor(plan, t, s)) put(r, c, v);
+    /* 줄이 모자라면 마지막 자료 줄을 본떠 늘리기 */
+    if (P.extra.length && t.match === 'seq') {
+      const lastR = t.rows[t.rows.length - 1];
+      const tr = sh.trs.find(tr => kids(tr, 'tc').some(tc => { const a = kid(tc, 'cellAddr'); return a && Number(attr(a, 'rowAddr')) === lastR; }));
+      const simple = tr && kids(tr, 'tc').every(tc => { const sp = kid(tc, 'cellSpan'); return !sp || Number(attr(sp, 'rowSpan') || 1) === 1; });
+      if (tr && simple) {
+        const k = P.extra.length;
+        const trXml = x.slice(tr.s, tr.e);
+        let rowsXml = '';
+        P.extra.forEach((s, i) => {
+          const rr = lastR + 1 + i;
+          const vals = {}; for (const [c, v] of cellsFor(plan, t, s)) vals[c] = v;
+          /* 칸마다: 주소 바꾸고 글자 넣기 */
+          const sub = xtree(trXml); const trn = sub.kids[0];
+          const ed = [];
+          for (const tc of kids(trn, 'tc')) {
+            const a = kid(tc, 'cellAddr'); const c = Number(attr(a, 'colAddr'));
+            ed.push({ s: a.s, e: a.e, str: trXml.slice(a.s, a.e).replace(/rowAddr="\d+"/, 'rowAddr="' + rr + '"') });
+            const sl = kid(tc, 'subList'); const ps = sl ? kids(sl, 'p') : [];
+            if (ps.length) {
+              const p = ps[0], run = kid(p, 'run'), nsp = (p.name.match(/^(\w+):/) || [, 'hp'])[1];
+              const pre = run ? trXml.slice(run.s, run.is).replace(/\/>$/, '>') : '<' + nsp + ':run charPrIDRef="0">';
+              const v = vals[c] != null ? esc(vals[c]) : '';
+              ed.push({ s: p.s, e: ps[ps.length - 1].e, str: trXml.slice(p.s, p.is) + pre + (v ? '<' + nsp + ':t>' + v + '</' + nsp + ':t>' : '') + '</' + nsp + ':run></' + p.name + '>' });
+            }
+          }
+          rowsXml += splice(trXml, ed);
+        });
+        edits.push({ s: tr.e, e: tr.e, str: rowsXml });
+        /* 뒤쪽 줄(합계 등) 주소 밀기 + 표 줄 수 */
+        for (const tr2 of sh.trs) for (const tc of kids(tr2, 'tc')) {
+          const a = kid(tc, 'cellAddr'); if (!a) continue; const r0 = Number(attr(a, 'rowAddr'));
+          if (r0 > lastR) edits.push({ s: a.s, e: a.e, str: x.slice(a.s, a.e).replace(/rowAddr="\d+"/, 'rowAddr="' + (r0 + k) + '"') });
+        }
+        /* 표 전체 높이도 늘린 줄만큼 */
+        const sz = kid(sh.tb, 'sz'), csz = kid(kids(tr, 'tc')[0], 'cellSz');
+        const rh = csz ? Number(attr(csz, 'height')) || 0 : 0;
+        if (sz && rh) edits.push({ s: sz.s, e: sz.e, str: x.slice(sz.s, sz.e).replace(/\bheight="(\d+)"/, (m, n) => 'height="' + (Number(n) + rh * k) + '"') });
+        const tbOpen = x.slice(sh.tb.s, sh.tb.is);
+        edits.push({ s: sh.tb.s, e: sh.tb.is, str: tbOpen.replace(/rowCnt="(\d+)"/, (m, n) => 'rowCnt="' + (Number(n) + k) + '"') });
+        report.added = k;
+      } else report.short = P.extra.length;
+    } else if (P.extra.length) report.short = P.extra.length;
+    if (plan.blanks !== false) {
+      const R = xtree(x);
+      for (const tn of walk(R, 't')) {
+        if (!/^(\w+:)?t$/.test(tn.name) || tn.self) continue;
+        if (tn.s > sh.tb.s && tn.s < sh.tb.e) continue;
+        const v = unesc(inner(x, tn)); if (hasBlank(v)) edits.push({ s: tn.is, e: tn.ie, str: esc(blanks(v, plan)) });
+      }
+    }
+    /* 한 칸 안에서 여러 고침이 겹치지 않게: 같은 시작은 하나만 */
+    const seen = {}; const uniq = edits.filter(e => { const k = e.s + ':' + e.e; if (seen[k]) return false; seen[k] = 1; return true; });
+    return splice(x, uniq);
+  }
+
+  /* 미리 보기 표(HTML)와 붙여넣기용(탭) 글자 — 옛 .hwp 등에 */
+  function tsv(rows, heads) { return [heads.join('\t')].concat(rows.map(r => r.map(v => String(v == null ? '' : v).replace(/[\t\n]/g, ' ')).join('\t'))).join('\n'); }
+
+  G.FORMX = { open, fill, preview, tsv, _: { unzip, zip, xtree, detect, crc32, optsFromTitle } };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
 <script type="module">
 import { fb, OPERATOR, SCHOOL, DEFAULT_PERIODS, DEFAULT_SPECIALS, DEFAULT_LUNCH, rid, kstToday } from './fb.js';
 
@@ -435,7 +1232,7 @@ function friendly(e){
   if (/network|unavailable|offline|Failed to fetch/i.test(m)) return '인터넷 연결을 확인해 주세요.';
   return (e && e.message ? e.message : m).replace(/^Firebase:\s*/, '');
 }
-const S = { SEV: [], sevUnsub: null, CNS: [], cnsUnsub: null, ANSL: [], SUGL: [], sugUnsub: null, bellOpen: false, bellPrev: 0, newVer: '', fb: null, user: null, me: null, B: null, key: '', tab: 'notice', unsub: null, ansUnsub: null, ANS: {}, teachers: null,
+const S = { FR: null, frId: '', frUnsub: null, SEV: [], sevUnsub: null, CNS: [], cnsUnsub: null, ANSL: [], SUGL: [], sugUnsub: null, bellOpen: false, bellPrev: 0, newVer: '', fb: null, user: null, me: null, B: null, key: '', tab: 'notice', unsub: null, ansUnsub: null, ANS: {}, teachers: null,
   nf: { level: 0 }, edit: '', pend: { notice: [], note: [], survey: [] }, pickFor: '', sugg: null, rost: null, openSv: '' };
 try { S.tab = localStorage.getItem('cr_tab2') || 'notice'; } catch (e) {}
 
@@ -448,7 +1245,7 @@ async function start(){
   }
   const { auth, A } = S.fb;
   try { await A.getRedirectResult(auth); } catch (e) { if (!/no-auth-event/.test(String(e.code))) fail(e); }
-  A.onAuthStateChanged(auth, u => { S.user = u && !u.isAnonymous ? u : null; route(); });
+  A.onAuthStateChanged(auth, u => { S.user = u && !u.isAnonymous ? u : null; themeUser(S.user); route(); });
 }
 async function login(){
   const { auth, A } = S.fb;
@@ -460,7 +1257,7 @@ async function login(){
     fail(e);
   }
 }
-function stopWatch(){ if (S.unsub){ S.unsub(); S.unsub = null; } if (S.ansUnsub){ S.ansUnsub(); S.ansUnsub = null; } if (S.cnsUnsub){ S.cnsUnsub(); S.cnsUnsub = null; } if (S.sugUnsub){ S.sugUnsub(); S.sugUnsub = null; } if (S.sevUnsub){ S.sevUnsub(); S.sevUnsub = null; } }
+function stopWatch(){ if (S.unsub){ S.unsub(); S.unsub = null; } if (S.ansUnsub){ S.ansUnsub(); S.ansUnsub = null; } if (S.cnsUnsub){ S.cnsUnsub(); S.cnsUnsub = null; } if (S.sugUnsub){ S.sugUnsub(); S.sugUnsub = null; } if (S.sevUnsub){ S.sevUnsub(); S.sevUnsub = null; } if (S.frUnsub){ S.frUnsub(); S.frUnsub = null; } S.frId = ''; S.FR = null; }
 async function logout(){ stopWatch(); S.me = null; S.B = null; await S.fb.A.signOut(S.fb.auth); }
 const isOperator = () => !!(S.user && S.user.email === OPERATOR);
 
@@ -495,16 +1292,192 @@ async function route(){
   watchBoard();
 }
 
+/* 선 아이콘 (lucide 모양을 본뜸, ISC) */
+const IC = {
+  logo: '<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 14.5z"/><path d="m8.5 10.5 2.2 2.2 4.8-4.8"/><path d="M9 21h6M12 17v4"/>',
+  notice: '<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
+  survey: '<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8M13 12h8M13 18h8"/>',
+  look: '<circle cx="13.5" cy="6.5" r=".8" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".8" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".8" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".8" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.65-.75 1.65-1.69 0-.44-.18-.84-.44-1.13-.29-.29-.44-.65-.44-1.13a1.64 1.64 0 0 1 1.67-1.67h2c3.05 0 5.56-2.5 5.56-5.55C21.96 6.01 17.46 2 12 2z"/>',
+  time: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  roster: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+  counsel: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/>',
+  suggest: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+  tv: '<rect x="2" y="7" width="20" height="15" rx="2"/><path d="m17 2-5 5-5-5"/>',
+  flash: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  op: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
+  cal: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>',
+  sound: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+  backup: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>',
+  check: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+  play: '<path d="M7 4v16l13-8z" fill="currentColor" stroke="none"/>',
+  bolt: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>'
+};
+/* 교실 화면 마크: 둥근 네모 안의 교실 TV + 체크 + 새 소식 점 */
+const mark = anim => `<svg class="mk${anim ? ' anim' : ''}" viewBox="0 0 64 64" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <rect class="m-tile" x="3" y="3" width="58" height="58" rx="18"/>
+  <rect class="m-scr" x="13.5" y="16" width="37" height="25" rx="5.5" pathLength="1"/>
+  <path class="m-std" d="M32 41v7.5M24.5 48.5h15" pathLength="1"/>
+  ${anim ? '<g class="m-dots"><circle cx="24" cy="28.5" r="2.5"/><circle cx="32" cy="28.5" r="2.5"/><circle cx="40" cy="28.5" r="2.5"/></g>' : ''}
+  <path class="m-chk" d="M23.5 28.6l5.6 5.2 11-10.8" pathLength="1"/>
+  <circle class="m-dot" cx="50" cy="16" r="6.2"/></svg>`;
+const svg = (k, w) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w || 2}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k] || ''}</svg>`;
+/* ---------- 첫 화면: 도입 애니메이션 + 소개 ---------- */
+const G_ICON = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-17.1z"/><path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.8-5.8l-7.4-5.7c-2.1 1.4-4.8 2.3-8.4 2.3-6.2 0-11.5-4.1-13.4-9.8l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>';
+/* 도입 애니메이션: 앱(페이지)을 새로 열 때마다 한 번. 로그인한 상태여도 나옵니다 */
+let INTRO = 0; const INTRO_Q = [];
+function introPlay(go){
+  if (go) INTRO_Q.push(go);
+  const flush = () => { while (INTRO_Q.length) try { INTRO_Q.shift()(); } catch (e) {} };
+  if (INTRO === 2){ flush(); return; }
+  if (INTRO === 1) return;
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches){ INTRO = 2; flush(); return; }
+  INTRO = 1;
+  const el = document.createElement('div'); el.id = 'intro'; el.setAttribute('role', 'presentation');
+  el.innerHTML = `<div class="zoom"><div class="stage"><span class="mkw">${mark(true)}</span><b>클래스 뷰</b><span class="en">Class View</span><span class="tg">공지 확인부터 현황조사까지, 교실 TV 한 번에</span></div></div>
+    <span class="skip">누르면 건너뛰기</span>`;
+  document.documentElement.classList.add('introing');
+  document.body.appendChild(el);
+  const T = []; let out = false;
+  const done = () => {
+    if (out) return; out = true; T.forEach(clearTimeout); INTRO = 2;
+    el.classList.add('out'); document.documentElement.classList.remove('introing'); flush();
+    setTimeout(() => el.remove(), 800);
+  };
+  T.push(setTimeout(done, 3300));
+  el.addEventListener('click', done);
+}
 function vLogin(){
-  $('app').innerHTML = `<div class="center">
-    <img class="logo" src="icon-192.png" alt="">
-    <h1 style="font-size:34px;margin:0 0 8px">교실 화면</h1>
-    <p class="muted" style="margin:0 0 24px;font-size:16px">${esc(SCHOOL.name)} 선생님용<br>우리 반 TV에 시계 · 시간표 · 급식 · 공지를 띄웁니다</p>
-    <button class="b y big" id="btnLogin" style="width:100%">구글 계정으로 시작하기</button>
-    <p class="small muted" style="margin-top:16px">처음이면 학년 · 반을 입력해 가입을 신청하고, 승인되면 바로 쓸 수 있어요.</p>
-    <p class="privacy" style="text-align:center;margin-top:18px">🔒 우리 반 자료는 담임 선생님만 관리하며, 운영자는 열람할 수 없습니다.</p>
-    <p class="credit" style="text-align:center;margin-top:6px">제작자 : 강릉제일고 유준배 선생님</p></div>`;
-  $('btnLogin').onclick = login;
+  const n15 = Array.from({length: 24}, (_, k) => `<span style="animation-delay:${(k * 0.17).toFixed(2)}s">${k + 1}</span>`).join('');
+  $('app').innerHTML = `<div class="lp">
+    <header class="lp-nav"><a class="lg" href="#top"><span class="bi2">${mark()}</span>클래스 뷰<i class="en">Class View</i></a>
+      <nav><a href="#f">기능</a><a href="#s">시작하기</a><a href="#q">안심하고 쓰기</a></nav>
+      <button class="b y" data-go="login">시작하기</button></header>
+    <div class="lp-in" id="top">
+      <section class="hero">
+        <div class="reveal">
+          <span class="eyebrow"><i></i>${esc(SCHOOL.name)} 담임 선생님을 위한 무료 도구</span>
+          <h1>공지 확인부터<br>현황조사까지,<br>교실 TV <span class="hl">한 번에</span><span class="stamp" style="right:.2em;top:1.45em">DONE ✓</span></h1>
+          <p class="sub">매일 칠판에 쓰던 공지, 단톡방에 올리던 가정통신문, 종이로 걷던 동의서와 희망 조사. <b>클래스 뷰</b>가 우리 반 스마트 TV에 띄우고 학생이 TV에서 바로 답해요. 학교에서 받은 <b>엑셀 · 한글 조사 양식</b>도 그대로 올리면, 학생 답이 양식에 채워져 바로 제출할 수 있어요.</p>
+          <div class="cta"><button class="b y gbtn" id="btnLogin" data-go="login">${G_ICON} 구글 계정으로 시작하기</button><a class="b ol" href="#f">${svg('play')} 어떻게 쓰나요 <span class="mn">3분</span></a></div>
+          <div class="chks"><span>설치 없음</span><span>완전 무료</span><span>PC · 휴대폰 · TV</span><span>3분이면 시작</span></div>
+          <div class="newc"><a href="#fx"><i>NEW</i>학교 양식(엑셀 · 한글) 그대로 조사 → 받아서 바로 제출 →</a><a href="#f2"><i>NEW</i>학생 호출, "네, 갈게요" 답장까지 →</a></div>
+        </div>
+        <div class="cmp reveal">
+          <div class="cc"><h3>평소 <em>할 일 8개</em></h3><ol>
+            <li>칠판에 공지 쓰기</li><li>단톡방에 가정통신문 올리기</li><li>동의서 종이 나눠 주기</li><li>걷어서 명단과 대조</li><li>안 낸 학생 다시 부르기</li><li class="fd">희망 조사 종이 걷기</li><li class="fd">엑셀로 다시 정리</li><li class="fd">결과 사진 찍어 공유</li></ol></div>
+          <div class="cc on"><h3>클래스 뷰 <em>한 번</em></h3>
+            <div class="mtv"><div class="sc">
+              <div class="r1"><span class="clk">08:35</span><span style="color:#A9B3A9">11/6 금 · 맑음</span></div>
+              <div class="bx"><h4>📌 공지</h4><div class="nt"><i>중요</i>3교시 체육관 집합</div></div>
+              <div class="bx"><h4>🗳 희망 도서</h4><div class="sv"><div><span>아몬드</span><span class="b2"><i style="--w:.8"></i></span><span>12</span></div><div><span>어린 왕자</span><span class="b2"><i style="--w:.5;animation-delay:.3s"></i></span><span>8</span></div></div></div>
+              <div class="bx"><h4>📄 방과후 희망 조사 (학교 양식)</h4><div class="ck">${n15}</div></div>
+            </div></div></div>
+          <p class="cap">학생은 TV에서 자기 번호를 누르고, 선생님은 양식대로 받아 제출만 해요</p>
+        </div>
+      </section>
+      <div class="pchips reveal"><span class="c1">${svg('notice')} 공지 · 알림장</span><span class="c2">${svg('survey')} 설문 · 투표 · 현황 조사</span><span class="c3">${svg('check')} 학교 양식 그대로 조사</span><span class="c4">${svg('counsel')} 상담 신청 · 건의함</span><span class="c5">${svg('time')} 시계 · 시간표 · 급식</span><span class="br"></span><span class="c6">${svg('bolt')} 공지 확인부터 현황조사까지 TV 한 번에</span></div>
+
+      <section class="lp-sec" id="f">
+        <div class="sech reveal"><span class="secno">01 · 기능</span><h2>매일 하던 담임 업무,<br><span class="hl">교실 TV가 먼저</span> 챙겨요</h2>
+          <p>선생님은 관리 화면에 올리기만 하세요. 학생은 교실 TV에서 보고, 누르고, 답해요. 아래는 실제 화면을 줄인 모습이에요. (이름 · 내용은 예시)</p></div>
+        <div class="frow">
+          <div class="ft reveal"><div class="nb"><b>1</b><span class="bg-y">공지 · 알림장</span></div>
+            <h3>한 줄 쓰면,<br>교실 TV에 바로 떠요</h3>
+            <p>공지를 적고 <b>[공지 올리기]</b>만 누르세요. 중요 · 긴급 공지는 TV 맨 위에 빨갛게 고정되고, 첨부한 PDF · 사진은 TV에서 크게 열려요.</p>
+            <ul><li>보이는 기간을 정하면 알아서 내려가요</li><li>가정통신문 · 제출 서류 · 준비물은 마감일과 함께</li></ul></div>
+          <div class="live bg-y reveal"><span class="lb">LIVE</span>
+            <div class="app"><div class="ah"><span class="bi2">${mark()}</span>클래스 뷰 <em>● 저장됨</em></div>
+              <div class="ac"><b>공지</b><div class="typ" id="lpType"></div>
+                <div class="lvls"><span>보통</span><span class="on">중요</span><span>긴급</span></div><div class="go">공지 올리기</div></div></div>
+            <span class="cap">쓰기 → 올리기 → TV</span></div></div>
+        <div class="frow rev" id="fx">
+          <div class="ft reveal"><div class="nb"><b>2</b><span class="bg-s">학교 양식 그대로 조사</span></div>
+            <h3>받은 양식 그대로 올리고,<br>답이 채워진 채 내려받기</h3>
+            <p>업무 메신저로 받은 <b>엑셀(.xlsx) · 한글(.hwpx) 현황조사 양식</b>을 그대로 올리세요. 번호 · 이름은 명단으로 채우고, 나머지 칸은 학생이 교실 TV에서 답해요. 조사가 끝나면 <b>[📥 양식대로 내려받기]</b> 한 번이면 원래 서식 그대로 채워진 파일이 나와요.</p>
+            <ul><li>종이 걷어 엑셀에 옮겨 적는 일 끝</li><li>고르기 칸 · ○표 칸 · 학번(10203)까지 알아서</li><li>안 한 학생만 골라 다시 부르기</li></ul></div>
+          <div class="live bg-s reveal"><span class="lb">LIVE</span>
+            <div class="xlm"><div class="xh"><span class="xi">X</span>방과후_희망조사.xlsx<em>1학년 2반</em></div>
+              <table><tr><th>번호</th><th>성명</th><th>희망 여부</th><th>희망 강좌</th></tr><tr><td>1</td><td>강하늘</td><td class="a"><span style="--d:0.50s">희망</span></td><td class="a"><span style="--d:0.75s">국어 심화</span></td></tr><tr><td>2</td><td>고은별</td><td class="a"><span style="--d:1.05s">미희망</span></td><td class="a"><span style="--d:1.30s"></span></td></tr><tr><td>3</td><td>김민수</td><td class="a"><span style="--d:1.60s">희망</span></td><td class="a"><span style="--d:1.85s">수학 기초</span></td></tr><tr><td>4</td><td>김서연</td><td class="a"><span style="--d:2.15s">희망</span></td><td class="a"><span style="--d:2.40s">영어 독해</span></td></tr><tr><td>5</td><td>나도윤</td><td class="a"><span style="--d:2.70s">미희망</span></td><td class="a"><span style="--d:2.95s"></span></td></tr></table>
+              <div class="xf"><span>✓ 원래 서식 그대로</span><b class="dlb">📥 양식대로 내려받기</b></div></div>
+            <span class="cap">양식 올리기 → TV에서 답 → 양식대로 받기</span></div></div>
+        <div class="frow" id="f2">
+          <div class="ft reveal"><div class="nb"><b>3</b><span class="bg-l">학생 호출</span></div>
+            <h3>부르면 TV가 크게,<br>답은 선생님 화면으로</h3>
+            <p>교무실에서 <b>"3번 김민수 · 교무실로 와 주세요"</b>를 띄우면 교실 TV 한가운데 크게 나타나요. 학생은 TV에서 <b>[네, 갈게요]</b> 또는 <b>[지금 그 친구가 없어요]</b>를 눌러 답하고, 선생님은 그 답을 바로 확인해요.</p>
+            <ul><li>교실까지 가거나 다른 학생에게 전해 달라고 할 필요 없음</li><li>갈게요 · 없어요 답이 휴대폰 관리 화면에 바로 도착</li><li>긴급은 빨갛게 깜빡이고 알림음까지</li></ul></div>
+          <div class="live bg-l reveal"><span class="lb">LIVE</span>
+            <div class="callm"><div class="sc"><span class="tg">호출</span><div class="wh">3번 김민수</div><div class="ms">교무실로 와 주세요</div>
+              <div class="bt"><span class="g">🙋 네, 갈게요</span><span class="a">🙅 지금 그 친구가 없어요</span></div>
+              <div class="sent">선생님께 "갈게요"라고 전했어요 👍</div></div></div>
+            <div class="phn"><span class="bi2">${mark()}</span><div>3번 김민수 · 🙋 네, 갈게요<small>방금 교실 TV에서 눌렀어요</small></div></div>
+            <span class="cap">TV에 띄우기 → 학생이 답하기 → 선생님 확인</span></div></div>
+        <div class="frow rev" id="f3">
+          <div class="ft reveal"><div class="nb"><b>4</b><span class="bg-p">설문 · 투표 · 현황 조사</span></div>
+            <h3>종이 걷지 않고,<br>결과는 실시간으로</h3>
+            <p>희망 도서 · 체험학습 장소 · 진로 희망처럼 고르는 조사는 <b>선택형</b>, 구글 설문은 <b>링크형</b>(QR)으로. 이미 낸 답은 그 학생의 PIN으로만 바꿀 수 있어요.</p>
+            <ul><li>익명 조사 · 결과 TV 공개는 선택</li><li>엑셀(CSV) 받기 · 결과 그림 카톡 공유</li><li>'기타 — 직접 쓰기'는 TV 화면 자판으로</li></ul></div>
+          <div class="live bg-p reveal"><span class="lb">LIVE</span>
+            <div class="app"><div class="ah"><span class="bi2">${mark()}</span>2학기 희망 도서 <em>참여 24명</em></div>
+              <div class="ac"><div class="opts">
+                <div class="opt2"><span>아몬드</span><span class="b3"><i style="--w:.83"></i></span><span>10</span></div>
+                <div class="opt2"><span>어린 왕자</span><span class="b3"><i style="--w:.58;animation-delay:.25s"></i></span><span>7</span></div>
+                <div class="opt2"><span>불편한 편의점</span><span class="b3"><i style="--w:.42;animation-delay:.5s"></i></span><span>5</span></div>
+                <div class="opt2"><span>기타</span><span class="b3"><i style="--w:.17;animation-delay:.75s"></i></span><span>2</span></div></div></div></div>
+            <span class="cap">TV에서 고르기 → 바로 집계</span></div></div>
+        <div class="frow" id="f4">
+          <div class="ft reveal"><div class="nb"><b>5</b><span class="bg-v">소소하지만 반가운 기능</span></div>
+            <h3>교실 TV가 챙기는<br>작은 즐거움</h3>
+            <p>공지와 조사만 하는 화면이 아니에요. 생일인 친구를 축하하고, 청소 시간엔 신나는 노래를 틀고, 수업 1분 전엔 종을 울려 자리에 앉게 해요. <b>모두 켜고 끌 수 있어요.</b></p>
+            <ul><li>생일 이름을 누르면 생일 축하 노래</li><li>점심 · 청소 시간에 정해 둔 노래 (수업 1분 전 자동으로 멈춤)</li><li>수업 시작 1분 전 종소리</li><li>모둠 활동 · 쪽지 시험용 타이머와 끝 종</li></ul></div>
+          <div class="live bg-v reveal"><span class="lb">LIVE</span>
+            <div class="cute">
+              <div class="bd"><span class="em">🎂</span><b>오늘 생일 · 김민지</b><small>이름을 누르면 생일 축하 노래</small><div class="note"><span>♪</span><span>♫</span><span>♪</span></div></div>
+              <div><span class="em">🧹</span><b>청소 시간 노동요</b><small>12:50 ~ 13:10 · 정해 둔 노래</small><div class="eq"><i></i><i></i><i></i><i></i><i></i></div></div>
+              <div class="bl"><span class="em">🔔</span><b>1분 뒤 3교시</b><small>국어 · 자리에 앉아요</small><div class="cnt">00:59</div></div>
+              <div><span class="em">⏱</span><b>모둠 활동 타이머</b><small>끝나면 종이 울려요</small><div class="cnt" id="lpTm">05:00</div></div>
+            </div>
+            <span class="cap">생일 · 노동요 · 종소리 · 타이머</span></div></div>
+      </section>
+
+      <section class="lp-sec" id="s"><div class="sech reveal"><span class="secno">02 · 시작하기</span><h2>3분이면 <span class="hl">교실 TV</span>가 켜져요</h2></div>
+        <div class="steps">
+          <div class="step reveal"><b>구글로 로그인</b><p>학년 · 반 · 이름을 넣고 가입을 신청해요. 운영자가 승인하면 바로 쓸 수 있어요.</p></div>
+          <div class="step reveal"><b>TV에서 주소 열기</b><p>교실 TV 브라우저에 <kbd>is.gd/jeiltv</kbd> 를 넣으면 숫자 6자리가 떠요.</p></div>
+          <div class="step reveal"><b>숫자 넣으면 끝</b><p>관리 화면 [TV 연결]에 그 숫자를 넣으면 우리 반 TV로 바뀌어요. 이제 공지 · 설문을 올려 보세요.</p></div></div></section>
+
+      <section class="lp-sec" id="q"><div class="sech reveal"><span class="secno">03 · 안심하고 쓰기</span><h2>우리 반 자료는<br><span class="hl">담임 선생님만</span></h2>
+          <p>🔒 우리 반 자료는 담임 선생님만 관리하며, 운영자는 열람할 수 없습니다.</p></div>
+        <div class="safe reveal">
+          <div>운영자가 우리 반 자료 보기<b>못 함</b></div>
+          <div>학생 PIN<b>알아볼 수 없게 바꿔 저장 · 선생님도 못 봄</b></div>
+          <div>우리 반 백업<b>선생님 구글 드라이브에만</b></div></div></section>
+
+      <section class="lp-end reveal"><h2>내일 아침 조회부터,<br><span class="hl">공지는 TV 한 번에</span></h2><p>설치 없이 지금 바로 시작할 수 있어요.</p>
+        <button class="b y gbtn" data-go="login">${G_ICON} 구글 계정으로 시작하기</button></section>
+      <footer class="lp-foot"><span>제작자 : 강릉제일고 유준배 선생님 · 현직 교사가 만든 무료 도구예요</span><span>클래스 뷰 (Class View) · ${esc(SCHOOL.name)}</span></footer>
+    </div></div>`;
+  document.querySelectorAll('[data-go="login"]').forEach(b => b.onclick = login);
+  const R = document.querySelectorAll('.lp .reveal');
+  const reveal = () => {
+    if ('IntersectionObserver' in window){
+      const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting){ e.target.classList.add('on'); io.unobserve(e.target); } }), { threshold: .12 });
+      R.forEach((r, k) => { r.style.transitionDelay = (k < 2 ? .15 + k * .12 : 0) + 's'; io.observe(r); });
+    } else R.forEach(r => r.classList.add('on'));
+  };
+  /* 공지 타자 치기 */
+  const T = ['내일 3교시 체육관 집합', '수행평가 마감은 금요일', '체험학습 동의서 내일까지'];
+  let ti = 0, ci = 0, del = false;
+  clearInterval(window.__lpT);
+  window.__lpT = setInterval(() => {
+    const el = $('lpType'); if (!el){ clearInterval(window.__lpT); return; }
+    const w = T[ti];
+    if (!del){ ci++; if (ci > w.length + 12){ del = true; } }
+    else { ci -= 2; if (ci <= 0){ ci = 0; del = false; ti = (ti + 1) % T.length; } }
+    el.textContent = w.slice(0, Math.min(ci, w.length));
+  }, 110);
+  clearInterval(window.__lpC); let tm = 300;
+  window.__lpC = setInterval(() => { const e = $('lpTm'); if (!e){ clearInterval(window.__lpC); return; } tm = tm > 0 ? tm - 1 : 300; e.textContent = String(Math.floor(tm / 60)).padStart(2, '0') + ':' + String(tm % 60).padStart(2, '0'); }, 1000);
+  introPlay(reveal);
 }
 function vJoin(){
   $('app').innerHTML = `<div class="center"><div class="card">
@@ -548,8 +1521,8 @@ function vStopped(){
   $('btnOut').onclick = logout;
 }
 function vOperatorOnly(){
-  $('app').innerHTML = `<header class="top"><h1>교실 화면 · 운영자<small>${esc(S.user.email)}</small></h1><button class="b sm" id="btnOut">로그아웃</button></header>
-    <div class="card"><h2>내 반 교실 화면</h2><p class="lead" style="margin-top:6px">운영자 선생님 반도 쓰려면 학년 · 반을 입력하세요. 바로 승인됩니다.</p>
+  $('app').innerHTML = `<header class="top"><h1>클래스 뷰 · 운영자<small>${esc(S.user.email)}</small></h1><button class="b sm" id="btnOut">로그아웃</button></header>
+    <div class="card"><h2>내 반 클래스 뷰</h2><p class="lead" style="margin-top:6px">운영자 선생님 반도 쓰려면 학년 · 반을 입력하세요. 바로 승인됩니다.</p>
       <button class="b y" id="btnSelf">학년 · 반 입력</button></div>
     <div id="opBox"></div>`;
   $('btnOut').onclick = logout;
@@ -584,7 +1557,7 @@ function watchBoard(){
   S.unsub = F.onSnapshot(F.doc(db, 'boards', S.key), snap => {
     if (!snap.exists()){ S.B = null; makeBoard().then(watchBoard).catch(fail); return; }
     S.B = snap.data();
-    ensurePinBox(); watchReg();
+    ensurePinBox(); watchReg(); watchReply();
     if (!S.updChecked){ S.updChecked = true; setTimeout(updOnOpen, 600); setTimeout(mobTip, 2500); }
     render(); syncView();
   }, fail);
@@ -592,7 +1565,7 @@ function watchBoard(){
   S.ansUnsub = F.onSnapshot(F.collection(db, 'boards', S.key, 'answers'), qs => {
     const A = {};
     const AL = [];
-    qs.docs.forEach(d => { const x = d.data(); if (!x || !x.sid || !(x.ch || []).length) return; (A[x.sid] = A[x.sid] || {})[x.no] = { ch: x.ch || [], etc: x.etc || '' }; AL.push({ sid: x.sid, no: x.no, t: msOf(x.at) }); });
+    qs.docs.forEach(d => { const x = d.data(); if (!x || !x.sid || !((x.ch || []).length || x.etc)) return; (A[x.sid] = A[x.sid] || {})[x.no] = { ch: x.ch || [], etc: x.etc || '' }; AL.push({ sid: x.sid, no: x.no, t: msOf(x.at) }); });
     S.ANS = A; S.ANSL = AL;
     if (S.B) render();
   }, () => {});
@@ -611,6 +1584,26 @@ function watchBoard(){
   S.sugUnsub = F.onSnapshot(F.collection(db, 'boards', S.key, 'suggest'), qs => {
     S.SUGL = qs.docs.map(d => ({ id: d.id, t: msOf(d.data().at), text: d.data().text || '' }));
     if (S.sugg !== null && S.tab === 'suggest') S.sugg = null;
+    if (S.B) render();
+  }, () => {});
+}
+/* ---------- 학생 호출 답장 (교실 TV에서 [네, 갈게요] · [지금 그 친구가 없어요]) ---------- */
+const FR_TXT = { go: '🙋 네, 갈게요', away: '🙅 지금 그 친구가 없어요', ok: '✅ 확인했어요' };
+function watchReply(){
+  const f = S.B && S.B.flash, id = (f && f.id) || '';
+  if (id === S.frId) return;
+  if (S.frUnsub){ S.frUnsub(); S.frUnsub = null; }
+  S.frId = id; S.FR = null;
+  if (!id) return;
+  const { db, F } = S.fb; let first = true;
+  S.frUnsub = F.onSnapshot(F.doc(db, 'boards', S.key, 'freply', id), d => {
+    const x = d.exists() ? d.data() : null, had = !!S.FR;
+    S.FR = x && x.r ? { r: x.r, t: msOf(x.at) || Date.now() } : null;
+    if (S.FR && !had && !first){
+      toast(`${(S.B.flash && S.B.flash.who) ? S.B.flash.who + ' · ' : ''}${FR_TXT[S.FR.r] || '답이 왔어요'}`);
+      try { navigator.vibrate && navigator.vibrate(120); } catch (e) {}
+    }
+    first = false;
     if (S.B) render();
   }, () => {});
 }
@@ -697,7 +1690,7 @@ function vPinCard(){
   const n = stu.filter(t => R[t.no]).length, on = B.pinChange !== false;
   return `<section class="card"><h2>🔑 학생 PIN <span class="sub">${n} / ${stu.length}명 만듦</span></h2>
     <p class="lead">학생이 교실 TV에서 <b>이미 낸 답을 바꾸거나 지울 때</b> 넣는 6자리 숫자예요. 처음 답할 때는 지금처럼 이름만 누르면 됩니다.
-      학생은 휴대폰에 우리 반 앱을 설치하고(TV 오른쪽 위 📱 앱 설치) <b>🔑 내 PIN</b>에서 직접 만들어요. PIN은 지문(암호)으로만 저장돼서 <b>선생님 · 운영자도 볼 수 없어요.</b></p>
+      학생은 휴대폰에 우리 반 앱을 설치하고(TV 오른쪽 위 📱 앱 설치) <b>🔑 내 PIN</b>에서 직접 만들어요. PIN은 알아볼 수 없게 바꿔서 저장돼서 <b>선생님 · 운영자도 볼 수 없어요.</b></p>
     ${vPinMode('roster')}
     ${!on ? '<p class="small muted" style="margin-top:10px">지금은 <b>PIN 없이 간단하게</b> 쓰고 있어요. 위에서 [PIN으로 안전하게]를 고르면 학생 PIN 현황이 여기에 나와요.</p>' : `${!B.viewKey ? `<div class="hint" style="color:var(--pink)">학생이 휴대폰에서 PIN을 만들려면 먼저 <b>TV 연결 탭 → 학생용 주소 만들기</b>를 해 주세요.</div>` : ''}
     ${stu.length ? `<div class="pins">${stu.map(t => { const r = R[t.no]; return `<div class="pn ${r ? 'on' : ''}"><span><b>${t.no}</b> ${esc(t.name)}</span>
@@ -955,6 +1948,33 @@ async function driveUpload(file, tok, folder){
   return { id: j.id, name: j.name || file.name, mime: j.mimeType || file.type || '' };
 }
 /* 고른 파일들을 올리고 [{id,name,mime}] 를 돌려줍니다 (첫 호출은 반드시 단추를 누른 바로 그 순간에) */
+/* PDF를 쪽마다 그림으로 바꿔 함께 올림 → 교실 TV가 구글 미리보기(크롬) 없이 화면 안에서 넘겨 봐요 */
+const PDFJS_CDN = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/';
+let PDFJS = null;
+async function pdfjs(){
+  if (PDFJS) return PDFJS;
+  await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = PDFJS_CDN + 'build/pdf.min.js'; sc.onload = ok; sc.onerror = () => no(new Error('PDF 도구를 불러오지 못했어요.')); document.head.appendChild(sc); });
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_CDN + 'build/pdf.worker.min.js';
+  return (PDFJS = window.pdfjsLib);
+}
+const isPdf = f => /pdf/i.test(f.type || '') || /\.pdf$/i.test(f.name || '');
+const isHwp = f => /\.(hwp|hwpx)$/i.test(f.name || '');
+async function pdfPages(file, tok, folder, label){
+  const lib = await pdfjs();
+  const pdf = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), cMapUrl: PDFJS_CDN + 'cmaps/', cMapPacked: true, standardFontDataUrl: PDFJS_CDN + 'standard_fonts/' }).promise;
+  const n = Math.min(pdf.numPages, 30), ids = [];
+  for (let p = 1; p <= n; p++){
+    busy(label + ' · TV용 그림 만드는 중 (' + p + '/' + n + '쪽)');
+    const page = await pdf.getPage(p), v0 = page.getViewport({ scale: 1 }), vp = page.getViewport({ scale: Math.min(3, 1600 / v0.width) });
+    const cv = document.createElement('canvas'); cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
+    const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height);
+    await page.render({ canvasContext: cx, viewport: vp }).promise;
+    const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.82));
+    const img = new File([blob], file.name.replace(/\.pdf$/i, '') + '_' + p + '쪽.jpg', { type: 'image/jpeg' });
+    ids.push((await driveUpload(img, tok, folder)).id);
+  }
+  return { pages: ids, np: pdf.numPages };
+}
 async function uploadPending(kind){
   const L = S.pend[kind] || [];
   if (!L.length) return [];
@@ -964,7 +1984,12 @@ async function uploadPending(kind){
   const out = [];
   for (let i = 0; i < L.length; i++){
     busy('첨부 파일을 올리는 중… (' + (i + 1) + '/' + L.length + ') ' + L[i].name);
-    out.push(await driveUpload(L[i], tok, folder));
+    const up = await driveUpload(L[i], tok, folder);
+    if (isPdf(L[i])){
+      try { Object.assign(up, await pdfPages(L[i], tok, folder, (i + 1) + '/' + L.length + ' ' + L[i].name)); }
+      catch (e){ console.warn('PDF 그림 만들기 실패', e); }   /* 실패해도 원래 파일은 올라감 (TV는 구글 미리보기로) */
+    }
+    out.push(up);
   }
   busy('');
   S.pend[kind] = [];
@@ -975,6 +2000,7 @@ function addPending(kind, files){
   const multi = kind === 'notice';
   for (const f of files){
     if (f.size > MAXF){ toast(f.name + ' : 20MB보다 큰 파일은 올릴 수 없어요.', true); continue; }
+    if (isHwp(f)) toast('한글 파일은 교실 TV에서 미리 볼 수 없어요. 한글에서 [파일] → [PDF로 저장하기]로 PDF를 만들어 올리면 TV 화면에서 바로 넘겨 볼 수 있어요.', true);
     if (multi) { if (S.pend[kind].length < 10) S.pend[kind].push(f); }
     else S.pend[kind] = [f];
   }
@@ -985,24 +2011,74 @@ function fileChips(L){ return (L || []).length ? `<div class="files">${L.map(f =
 function pendBox(kind, label){
   const L = S.pend[kind] || [];
   return `<div class="drop" data-pick="${kind}" data-drop="${kind}">📎 ${label} <span class="small">(눌러서 고르거나 여기로 끌어 놓기 · 20MB까지)</span></div>
-    ${L.length ? `<div class="files">${L.map((f, i) => `<span class="fchip"><span>${esc(f.name)}</span><button data-a="unpend" data-k="${kind}" data-i="${i}" aria-label="빼기">×</button></span>`).join('')}</div>` : ''}`;
+    ${L.length ? `<div class="files">${L.map((f, i) => `<span class="fchip${isHwp(f) ? ' warn' : ''}"><span>${isHwp(f) ? '⚠ ' : ''}${esc(f.name)}</span><button data-a="unpend" data-k="${kind}" data-i="${i}" aria-label="빼기">×</button></span>`).join('')}</div>` : ''}
+    ${L.some(isHwp) ? '<p class="small" style="color:var(--pink);margin:6px 0 0">⚠ 한글 파일은 교실 TV에서 미리 볼 수 없어요 (내려받기만 돼요). <b>한글 → [파일] → [PDF로 저장하기]</b>로 PDF를 만들어 올리면 TV 화면에서 쪽을 넘겨 볼 수 있어요.</p>' : ''}
+    ${L.some(isPdf) ? '<p class="small muted" style="margin:6px 0 0">PDF는 올릴 때 쪽마다 그림으로도 바꿔 두어서, 교실 TV 화면 안에서 바로 넘겨 볼 수 있어요. (30쪽까지)</p>' : ''}`;
 }
 
 /* ================= 그리기 ================= */
-const TABS = [['notice', '📌', '공지 · 알림장'], ['survey', '🗳', '설문·투표·조사'], ['look', '🎨', '화면 꾸미기'], ['time', '🕘', '시간표 설정'],
-  ['roster', '👥', '학급 명단'], ['counsel', '💬', '상담 신청'], ['suggest', '✉️', '건의함'], ['tv', '📺', 'TV 연결'], ['flash', '📣', '긴급 호출 · 쪽지']];
+const TABS = [['notice', 'notice', '공지 · 알림장'], ['survey', 'survey', '설문 · 투표 · 조사'], ['cal', 'cal', '학급 일정'], ['look', 'look', '화면 꾸미기'], ['time', 'time', '시간표 설정'], ['sound', 'sound', '교실 TV 소리'],
+  ['roster', 'roster', '학급 명단'], ['counsel', 'counsel', '상담 신청'], ['suggest', 'suggest', '건의함'], ['tv', 'tv', 'TV 연결'], ['flash', 'flash', '학생 호출 · 쪽지'], ['backup', 'backup', '백업 · 되살리기']];
+const TAB_GROUPS = [['자주 쓰는 기능', ['notice', 'survey', 'cal']], ['교실 TV 꾸미기', ['look', 'time', 'sound']], ['우리 반', ['roster', 'counsel', 'suggest']], ['연결 · 관리', ['tv', 'flash', 'backup', 'op']]];
+const TAB_DESC = {
+  notice: '교실 TV 공지, 알림장 · 가정통신문을 올리고 누가 냈는지 확인해요',
+  survey: '학생이 교실 TV에서 바로 답하는 설문 · 투표 · 현황 조사',
+  cal: '우리 반 일정과 학생이 교실 TV에서 올린 일정',
+  look: 'TV 미리보기 · 글꼴 · 배경색과 무늬 · 화면 배치',
+  time: '학년 · 반, 교시 시각, 요일별 시간표(컴시간 · 나이스)',
+  sound: '점심 · 청소 시간 음악, 수업 1분 전 종소리, 호출 알림음, 생일 노래',
+  backup: '우리 반 자료를 내 구글 드라이브나 파일로 저장하고 되살려요',
+  roster: '번호 · 이름 · 생일, 그리고 학생 PIN',
+  counsel: '학생이 교실 TV에서 신청한 상담 일정',
+  suggest: '학생들이 교실 TV에서 보낸 건의 (선생님만 읽어요)',
+  tv: '교실 TV 연결, 학생 휴대폰 주소, TV 주소 바꾸기',
+  flash: '학생을 부르고 [네, 갈게요] · [지금 없어요] 답까지 받아요',
+  op: '선생님 가입 승인 (운영자만)'
+};
+const THEMES = [['sky', '#A6CDFA', '스카이'], ['mint', '#9FDFC6', '민트'], ['lavender', '#C9BDF7', '라벤더'], ['peach', '#F8C3A6', '피치'], ['beige', '#F1D995', '베이지'], ['chalk', '#1D2A25', '칠판(어둡게)']];
+function themeNow(){ return document.documentElement.dataset.theme || 'sky'; }
+/* 화면 색은 로그인한 선생님마다 따로 기억해요. 관리 화면 기본은 칠판색, 로그아웃한 첫 화면(소개)은 밝은 색 */
+function themeApply(k){
+  if (!k || k === 'sky') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = k;
+  const m = document.querySelector('meta[name="theme-color"]'); if (m && document.body) m.content = getComputedStyle(document.body).backgroundColor;
+}
+function themeUser(u){
+  let k = 'sky';
+  try {
+    if (u){ k = localStorage.getItem('cr_theme_' + u.uid) || 'chalk'; localStorage.setItem('cr_theme_cur', k); }   /* 처음 색은 칠판(어둡게) */
+    else localStorage.removeItem('cr_theme_cur');
+    localStorage.removeItem('cr_theme');   /* 예전(모두 같이 쓰던) 저장값 정리 */
+  } catch (e) {}
+  themeApply(k);
+}
+function themeSet(k){
+  if (k === 'sky') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = k;
+  try { if (S.user){ localStorage.setItem('cr_theme_' + S.user.uid, k); localStorage.setItem('cr_theme_cur', k); } } catch (e) {}
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = getComputedStyle(document.body).backgroundColor;
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-theme-set]'); if (b){ themeSet(b.dataset.themeSet); render(); } });
 function render(){
   const B = S.B; if (!B) return;
   const keep = captureDrafts();
-  const T = TABS.slice(); if (isOperator()) T.push(['op', '🛡', '운영자']);
+  const T = TABS.slice(); if (isOperator()) T.push(['op', 'op', '운영자']);
   if (!T.some(t => t[0] === S.tab)) S.tab = 'notice';
   const nStu = (B.students || []).length;
   const openSv = (B.surveys || []).filter(s => s.open).length, upC = (S.CNS || []).filter(c => c.date >= kstToday()).length;
-  $('app').innerHTML = `<header class="top"><h1>${esc(B.grade)}학년 ${esc(B.klass)}반 교실 화면<small>${esc(S.me.name)} 선생님 · ${esc(S.user.email)}</small></h1>
-      <span class="pill">학생 <b>${nStu}</b>명</span>${openSv ? `<span class="pill">진행 중 조사 <b>${openSv}</b></span>` : ''}<button class="b sm mobbtn" data-a="mobile" title="휴대폰에서 쓰기 · 앱 설치">📱 모바일</button>${isPhone() ? '' : '<button class="b sm mobbtn" data-a="pcinst" title="이 컴퓨터 바탕화면에 앱으로 설치">💻 바탕화면</button>'}${bellHtml()}<button class="b sm" id="btnOut">로그아웃</button></header>
-    <nav class="tabs">${T.map(([v, ic, l]) => `<button data-tab="${v}" class="${S.tab === v ? 'on' : ''}"><span class="ic">${ic}</span>${l}${v === 'survey' && openSv ? `<span class="dot">${openSv}</span>` : ''}${v === 'counsel' && upC ? `<span class="dot">${upC}</span>` : ''}</button>`).join('')}</nav>
-    <div id="body">${({ flash: vFlash, notice: vNotice, look: vLook, time: vTime, roster: vRoster, survey: vSurvey, counsel: vCounsel, suggest: vSuggest, tv: vTvConnect, op: () => '<div id="opBox"></div>' })[S.tab]()}</div>
-    <div class="foot"><p class="privacy">🔒 우리 반 자료는 담임 선생님만 관리하며, 운영자는 열람할 수 없습니다.</p><p class="credit"><button class="updlink" data-a="updhist">📋 업데이트 내역</button>제작자 : 강릉제일고 유준배 선생님</p></div>`;
+  const cur = T.find(t => t[0] === S.tab) || T[0];
+  const tabBtn = ([v, ic, l]) => `<button data-tab="${v}" class="${S.tab === v ? 'on' : ''}"><span class="ic">${svg(ic)}</span>${l}${v === 'survey' && openSv ? `<span class="dot">${openSv}</span>` : ''}${v === 'counsel' && upC ? `<span class="dot">${upC}</span>` : ''}</button>`;
+  const grp = TAB_GROUPS.map(([g, ids], gi) => { const L = T.filter(t => ids.includes(t[0])); return L.length ? `${gi ? '<div class="ng" aria-hidden="true"></div>' : ''}${L.map(tabBtn).join('')}` : ''; }).join('');
+  $('app').innerHTML = `<div class="shell">
+    <aside class="side"><div class="brand"><span class="bi2">${mark()}</span><div><b>클래스 뷰</b><span>${esc(B.grade)}학년 ${esc(B.klass)}반 · ${esc(S.me.name)} 선생님</span></div></div>
+      <nav class="tabs" aria-label="메뉴">${grp}</nav>
+      <div class="sidefoot"><div class="stcard"><i></i><div>${B.tvSeen || B.viewKey ? '교실 TV 연결됨' : '우리 반 클래스 뷰'}<small>학생 ${nStu}명${openSv ? ' · 진행 중 조사 ' + openSv : ''}</small></div></div><div class="themes"><span class="tl">색</span>${THEMES.map(([k, c, n]) => `<button data-theme-set="${k}" title="${n}" aria-label="${n} 테마" class="${themeNow() === k ? 'on' : ''}" style="background:${c}"></button>`).join('')}</div>
+        <p class="privacy">🔒 우리 반 자료는 담임 선생님만 관리하며, 운영자는 열람할 수 없습니다.</p></div></aside>
+    <main class="main">
+      <div class="topbar"><span class="pill">학생 <b>${nStu}</b>명</span><button class="b sm mobbtn" data-a="mobile" title="휴대폰에서 쓰기 · 앱 설치">📱 모바일</button>${isPhone() ? '' : '<button class="b sm mobbtn" data-a="pcinst" title="이 컴퓨터 바탕화면에 앱으로 설치">💻 바탕화면</button>'}${bellHtml()}<button class="b sm" id="btnOut">로그아웃</button></div>
+      <header class="top"><h1>${cur[2]}</h1><p>${TAB_DESC[cur[0]] || ''}</p></header>
+      <div id="body">${({ flash: vFlash, notice: vNotice, look: vLook, time: vTime, cal: vCal, sound: vSound, backup: vBackupTab, roster: vRoster, survey: vSurvey, counsel: vCounsel, suggest: vSuggest, tv: vTvConnect, op: () => '<div id="opBox"></div>' })[S.tab]()}</div>
+      <div class="foot"><p class="privacy">${esc(S.user.email)}</p><p class="credit"><button class="updlink" data-a="updhist">📋 업데이트 내역</button>제작자 : 강릉제일고 유준배 선생님</p></div>
+    </main></div>`;
+  { const on = document.querySelector('nav.tabs button.on'); if (on && window.innerWidth <= 900) on.scrollIntoView({ inline: 'center', block: 'nearest' }); }
   $('btnOut').onclick = logout;
   { const bb = $('btnBell'); if (bb) bb.onclick = ev => { ev.stopPropagation(); bellToggle(); }; }
   restoreDrafts(keep);
@@ -1028,6 +2104,22 @@ function fontLoadList(after){
     const st = document.createElement('style'); st.id = 'pvFonts'; st.textContent = css; document.head.appendChild(st);
     after();
   }).catch(() => { FONTL = []; after(); });
+}
+/* ---------- TV 배경색 · 디자인 고르기 ---------- */
+const TVT = [['chalk', '칠판 초록', '#1D2A25', '#2A3A32', '#E4E0D3', '#E6CD7E'], ['night', '밤하늘', '#151C2E', '#25304F', '#E8ECF6', '#F2D27A'],
+  ['wood', '나무 교실', '#251E19', '#3A2F27', '#F0E6DA', '#EFC879'], ['grape', '포도 보라', '#1F1A2C', '#322947', '#ECE7F6', '#F0D27E'],
+  ['ocean', '깊은 바다', '#122428', '#1F3B40', '#E4F0EF', '#F2D27A'], ['paper', '밝은 종이', '#EEF2F8', '#FFFFFF', '#16213A', '#C98A00']];
+const TVP = [['', '없음'], ['glow', '은은한 빛'], ['dots', '점'], ['grid', '모눈'], ['stripe', '빗금']];
+function tvLookHtml(t, p, act){
+  t = t || 'chalk'; p = p || '';
+  const pat = (k, c) => ({ glow: `radial-gradient(70% 70% at 0 0,${c},transparent 70%),radial-gradient(60% 60% at 100% 100%,${c},transparent 70%)`,
+    dots: `radial-gradient(${c} 1.2px,transparent 1.6px) 0 0/9px 9px`, grid: `linear-gradient(${c} 1px,transparent 1px) 0 0/14px 14px,linear-gradient(90deg,${c} 1px,transparent 1px) 0 0/14px 14px`,
+    stripe: `repeating-linear-gradient(135deg,${c} 0 4px,transparent 4px 12px)` })[k] || 'none';
+  const cur = TVT.find(x => x[0] === t) || TVT[0], pc = cur[0] === 'paper' ? 'rgba(22,33,58,.10)' : 'rgba(255,255,255,.10)';
+  return `<div class="tvlk">${TVT.map(([k, n, bg, cd, ink, ac]) => `<button class="tvt${k === t ? ' on' : ''}" data-${act}="tvt" data-id="${k}" title="${n}">
+      <span class="pv" style="background:${bg}"><i style="background:${cd}"><b style="background:${ac}"></b><u style="background:${ink}"></u><u style="background:${ink};width:60%"></u></i><i style="background:${cd}"><u style="background:${ink}"></u><u style="background:${ink};width:45%"></u></i></span>
+      <span class="nm">${n}</span></button>`).join('')}</div>
+    <div class="tvpk"><span class="lb">배경 무늬</span>${TVP.map(([k, n]) => `<button class="tvp${k === p ? ' on' : ''}" data-${act}="tvp" data-id="${k}"><span class="sw" style="background:${pat(k, pc)};background-color:${cur[2]}"></span>${n}</button>`).join('')}</div>`;
 }
 function fontPickHtml(cur, act){
   cur = cur || 'bunpil';
@@ -1062,18 +2154,30 @@ function vTvConnect(){
         ${B.viewKey ? `<button class="b sm" data-a="viewqr">QR 보기</button><button class="b sm" data-a="copyview">주소 복사</button><button class="b sm" data-a="viewnew">새 주소로 바꾸기</button><button class="b sm r" data-a="viewoff">끄기</button>` : `<button class="b sm y" data-a="viewmake">학생용 주소 만들기</button>`}</div>
         ${B.viewKey ? `<input class="in" readonly value="${esc(viewUrl())}" style="width:100%;margin-top:8px" id="viewUrlIn">
         <p class="lead" style="margin:6px 0 0">시간표 · 급식 · 일정 · 공지 · 알림장 · 링크 조사를 휴대폰에서 볼 수 있어요. 투표 · 상담 신청 · 건의는 교실 TV에서만 됩니다.</p>
-        <label class="chk" style="margin-top:8px"><input type="checkbox" data-a="tog" data-f="phoneBtn" ${B.phoneBtn !== false ? 'checked' : ''}> 교실 TV 오른쪽 위에 <b>[📱 앱 설치]</b> 단추 보이기 (학생이 QR을 찍어 휴대폰에 설치)</label>` : ''}</div></section>`;
+        <label class="chk" style="margin-top:8px"><input type="checkbox" data-a="tog" data-f="phoneBtn" ${B.phoneBtn !== false ? 'checked' : ''}> 교실 TV 오른쪽 위에 <b>[📱 앱 설치]</b> 단추 보이기 (학생이 QR을 찍어 휴대폰에 설치)</label>` : ''}</div></section>
+  <section class="card"><h2>TV 주소 바꾸기</h2>
+    <p class="lead">TV 주소가 학생들에게 퍼졌을 때 새 주소로 바꿉니다. 예전 주소는 바로 막히고, 공지 · 명단 등 내용은 그대로 옮겨집니다. (조사 응답 · 건의는 새로 시작돼요)</p>
+    <button class="b r" data-a="rekey">새 TV 주소 만들기</button></section>`;
 }
 
-/* ---------- 긴급 호출 ---------- */
+/* ---------- 긴급 호출 · 학생 호출 ---------- */
 function vFlash(){
-  const B = S.B;
-  const F = B.flash && Number(B.flash.until) > Date.now() ? B.flash : null;
-  return `<section class="card"><h2>긴급 호출 · 쪽지</h2>
-    <p class="lead">TV 화면 한가운데 크게 띄웁니다. 학생이 [확인했어요]를 누르거나 정한 시간이 지나면 사라져요.</p>
-    ${F ? `<div class="hint" style="margin:0 0 12px">지금 TV에 띄우는 중: <b>${esc(F.who || '')}</b> ${esc(F.text || '')} <button class="b sm r" data-a="flashoff">지금 끄기</button></div>` : ''}
-    <div class="row"><input class="in" id="fWho" data-keep placeholder="부를 사람 (예: 반장, 3번 김민수)" style="width:230px"><input class="in grow" id="fText" data-keep placeholder="할 말 (예: 교무실로 와 주세요)"></div>
+  const B = S.B, f = B.flash || null;
+  const live = f && Number(f.until) > Date.now();
+  const hm = t => { const d = new Date(t); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+  const R = S.FR;
+  const st = !f ? '' : `<div class="flst ${R ? 'r-' + R.r : live ? 'wait' : 'end'}">
+      <div class="who"><b>${esc(f.who || '모두')}</b> ${esc(f.text || '')}</div>
+      <div class="rs">${R ? `<b>${FR_TXT[R.r] || ''}</b><span>${hm(R.t)}에 교실 TV에서 눌렀어요</span>`
+        : live ? (f.ask ? '<b>⏳ 답을 기다리는 중</b><span>학생이 누르면 여기와 알림으로 바로 알려 드려요</span>' : '<b>📺 지금 TV에 떠 있어요</b><span>' + hm(Number(f.until)) + '까지</span>')
+        : '<b>끝난 호출</b><span>답 없이 시간이 지났어요</span>'}</div>
+      ${live ? '<button class="b sm r" data-a="flashoff">지금 끄기</button>' : ''}</div>`;
+  return `<section class="card"><h2>학생 호출 · 쪽지</h2>
+    <p class="lead">TV 화면 한가운데 크게 띄웁니다. 학생을 부르면 TV에 <b>[🙋 네, 갈게요]</b> · <b>[🙅 지금 그 친구가 없어요]</b> 단추가 나오고, 누른 답이 이 화면에 바로 와요.</p>
+    ${st}
+    <div class="row"><input class="in" id="fWho" data-keep placeholder="부를 학생 (예: 3번 김민수, 반장)" style="width:230px"><input class="in grow" id="fText" data-keep placeholder="할 말 (예: 교무실로 와 주세요)"></div>
     <div class="row" style="margin-top:10px"><span class="small muted">보여 줄 시간</span><select class="in" id="fMin">${[3, 5, 10, 20, 30].map(m => `<option value="${m}" ${m === 5 ? 'selected' : ''}>${m}분</option>`).join('')}</select>
+      <label class="chk" title="부른 학생이 TV에서 [네, 갈게요] · [지금 그 친구가 없어요] 중에서 눌러요"><input type="checkbox" id="fAsk" ${S.fAsk !== false ? 'checked' : ''}> 답 받기 (갈게요 · 없어요)</label>
       <label class="chk"><input type="checkbox" id="fUrg"> 긴급 (빨갛게 깜빡임)</label><span class="grow"></span><button class="b y" data-a="flash">TV에 띄우기</button></div>
     <h3 style="font-size:16px;margin:18px 0 6px;color:var(--chalk2)">자주 쓰는 쪽지</h3>
     <div class="row">${['반장 · 교무실로 와 주세요', '주번 · 칠판 정리 부탁해요', '모두 · 자리에 앉아 주세요', '모두 · 휴대폰을 넣어 주세요', '모두 · 창문을 닫아 주세요'].map(x => `<button class="b sm" data-a="fquick" data-v="${esc(x)}">${esc(x.replace(' · ', ' : '))}</button>`).join('')}</div>
@@ -1173,7 +2277,8 @@ function sndValidate(o){
   if ((o.lunch || o.clean) && !o.url) return '음악을 켜려면 유튜브 주소를 넣어 주세요.';
   return '';
 }
-document.addEventListener('input', e => { const t = e.target; if (t.id === 'sndVol' || t.id === 'sndFx'){ const s = document.getElementById(t.id + 'V'); if (s) s.textContent = t.value; } });
+document.addEventListener('input', e => { const t = e.target; if (t.dataset && t.dataset.fx && t.tagName === 'INPUT'){ if (fxSet(t)){ const y = scrollY; render(); scrollTo(0, y); const n = document.querySelector(`[data-fx="${t.dataset.fx}"][data-i="${t.dataset.i}"]`); if (n){ n.focus(); n.setSelectionRange(n.value.length, n.value.length); } } return; }
+  if (t.id === 'sndVol' || t.id === 'sndFx'){ const s = document.getElementById(t.id + 'V'); if (s) s.textContent = t.value; } });
 const SND_SRC = () => S.B.sound, SND_TODAY = () => kstToday();
 const SND_K = { box: 'card', lead: 'lead', row: 'row', chk: 'chk', small: 'small muted', btn: 'b', pri: 'b y', act: 'a' };
 function vLook(){
@@ -1183,10 +2288,12 @@ function vLook(){
       <button class="b sm" data-a="pvreload">새로고침</button><a class="b sm" href="${esc(tvUrl())}" target="_blank" rel="noopener">새 탭에서 열기</a></div>
     <div id="pvSlot" class="pvslot"></div>
     <p class="lead" style="margin:8px 0 0">교실 TV와 같은 모습이에요. 눌러 봐도 실제로 저장되지 않아요. 여기서 고친 내용은 몇 초 안에 미리보기에도 바뀝니다.</p></section>
-  ${sndBoxHtml(SND_K)}
   <section class="card"><h2>🔤 TV 글꼴</h2>
     <p class="lead">교실 TV 화면 전체의 글꼴을 바꿉니다. 누르면 몇 초 안에 TV와 위 미리보기에 바뀌어요.</p>
     ${fontPickHtml(S.B.font, 'a')}</section>
+  <section class="card"><h2>🎨 TV 배경색 · 디자인</h2>
+    <p class="lead">교실 TV 화면의 바탕색과 배경 무늬를 바꿉니다. 누르면 몇 초 안에 TV와 위 미리보기에 바뀌어요. 교실이 밝으면 [밝은 종이]가 잘 보일 수 있어요.</p>
+    ${tvLookHtml(S.B.tvt, S.B.tvp, 'a')}</section>
   <section class="card"><h2>화면 배치 조정</h2>
     <p class="lead">TV 화면에서 칸(시계 · 지금 수업 · 시간표 · 일정 · 급식 · 공지)의 위치를 옮기고, 칸 크기 · 너비 · 전체 크기 · 여백을 바꿉니다.
     아래 단추를 누르면 TV 화면이 조절 모드로 열려요. 칸 왼쪽 위 [✥ 옮기기]를 끌어 자리를 바꾸고, 노란 손잡이로 크기를 바꾼 뒤 [저장]을 누르세요.</p>
@@ -1285,8 +2392,14 @@ function vTime(){
   <section class="card"><h2>특별 시간 <span class="sub">조회 · 청소 · 종례처럼 교시가 아닌 시간</span></h2>
     ${SP.map((x, i) => `<div class="row" style="margin-top:8px"><input class="in" data-xn="${i}" value="${esc(x.name)}" style="width:150px"><input class="in" type="time" data-xs="${i}" value="${esc(x.s)}">~<input class="in" type="time" data-xe="${i}" value="${esc(x.e)}"><button class="b sm r" data-a="xdel" data-i="${i}">빼기</button></div>`).join('')}
     <div class="row" style="margin-top:12px"><button class="b sm" data-a="xadd">특별 시간 추가</button></div>
-    <div class="row" style="margin-top:22px;justify-content:flex-end"><button class="b sm" data-a="pdef">강릉제일고 기본값으로</button><button class="b y" data-a="psave">교시 · 특별 시간 저장</button></div></section></div>
-  <section class="card"><h2>학급 일정</h2>
+    <div class="row" style="margin-top:22px;justify-content:flex-end"><button class="b sm" data-a="pdef">강릉제일고 기본값으로</button><button class="b y" data-a="psave">교시 · 특별 시간 저장</button></div></section></div>`;
+}
+
+/* ---------- 학급 일정 ---------- */
+function vCal(){
+  const B = S.B, today = kstToday();
+  const ev = (B.events || []).slice().sort((a, b) => String(a.start).localeCompare(String(b.start)));
+  return `<section class="card"><h2>학급 일정</h2>
     <p class="lead">학교 학사일정(나이스)은 자동으로 나와요. 여기에는 우리 반만의 일정(학급 회의, 반 단체 활동 등)을 더합니다.</p>
     <div class="row" style="margin-bottom:6px"><label class="chk"><input type="checkbox" data-a="tog" data-f="eventAddOn" ${B.eventAddOn !== false ? 'checked' : ''}> 학생이 교실 TV에서 일정 올리기 (일정 칸의 [＋ 일정 추가])</label></div>
     <div class="row" style="margin-bottom:10px"><label class="chk"><input type="checkbox" data-a="tog" data-f="eventNeis" ${B.eventNeis !== false ? 'checked' : ''}> 학교 학사일정(나이스)도 보이기</label>
@@ -1295,11 +2408,14 @@ function vTime(){
     ${ev.length ? `<ul class="list">${ev.map(e => `<li><div class="t">${esc(e.title)} <span class="small muted">${esc(e.start)}${e.end && e.end !== e.start ? ' ~ ' + esc(e.end) : ''}${(e.end || e.start) < today ? ' · 지남' : ''}</span></div><button class="b sm r" data-a="evdel" data-id="${esc(e.id)}">지우기</button></li>`).join('')}</ul>` : ''}
   ${(S.SEV || []).length ? `<h3 style="margin:16px 0 6px;font-size:15px">학생이 올린 일정 <span class="small muted">학생도 교실 TV에서 [학생 ✕]로 지울 수 있어요 · 학생이 지운 일정은 여기서 되살릴 수 있어요</span></h3><ul class="list">${S.SEV.map(e => `<li><div class="t"><span style="${e.gone ? 'text-decoration:line-through;opacity:.6' : ''}">${esc(e.title)}</span> <span class="small muted">${esc(e.date)}${e.date < today ? ' · 지남' : ''}</span>${e.gone ? ' <span class="tag">학생이 지움</span>' : ''}</div><div class="row">${e.gone ? `<button class="b sm" data-a="sevback" data-id="${esc(e.id)}">되살리기</button>` : ''}<button class="b sm r" data-a="sevdel" data-id="${esc(e.id)}">${e.gone ? '완전히 지우기' : '지우기'}</button></div></li>`).join('')}</ul>` : ''}
   </section>
-  ${vBackup()}
-  <section class="card"><h2>TV 주소 바꾸기</h2>
-    <p class="lead">TV 주소가 학생들에게 퍼졌을 때 새 주소로 바꿉니다. 예전 주소는 바로 막히고, 공지 · 명단 등 내용은 그대로 옮겨집니다. (조사 응답 · 건의는 새로 시작돼요)</p>
-    <button class="b r" data-a="rekey">새 TV 주소 만들기</button></section>`;
+`;
 }
+
+/* ---------- 교실 TV 소리 ---------- */
+function vSound(){ return sndBoxHtml(SND_K); }
+
+/* ---------- 백업 · 되살리기 ---------- */
+function vBackupTab(){ return vBackup(); }
 
 /* ---------- 학급 명단 ---------- */
 function vRoster(){
@@ -1419,6 +2535,274 @@ async function readRosterFile(f){
   } catch (e) { fail(e); }
 }
 
+/* ---------- 학교 양식(엑셀 · 한글)으로 조사: 올리기 → 칸 정하기 → TV에서 답 → 양식대로 내려받기 ---------- */
+const FX_ROLE = { no: '번호 (명단으로 채움)', name: '이름 (명단으로 채움)', grade: '학년 (자동)', klass: '반 (자동)', hakbun: '학번 (자동 · 예: 10203)',
+  q: '질문 — 학생이 답해요', mark: '○ 표시 — 학생이 골라요', skip: '비워 두기' };
+const FX_HWP = `<div class="hint warn"><b>옛 한글 파일(.hwp)은 바로 채울 수 없어요.</b> 한글에서 이 파일을 연 뒤
+  <b>[파일] → [다른 이름으로 저장하기]</b> → 파일 형식을 <b>HWPX 문서 (*.hwpx)</b>로 바꿔 저장하고, 그 파일을 올려 주세요. (한글 2014 이후 버전)</div>`;
+const FX_XLS = `<div class="hint warn"><b>옛 엑셀 파일(.xls)은 바로 채울 수 없어요.</b> 엑셀에서 이 파일을 연 뒤
+  <b>[파일] → [다른 이름으로 저장]</b> → 파일 형식을 <b>Excel 통합 문서 (*.xlsx)</b>로 바꿔 저장하고, 그 파일을 올려 주세요.</div>`;
+const fxOpts = v => { const L = String(v || '').split(/\s*[,\n/·]\s*/).map(x => x.trim()).filter(Boolean).map(x => x.slice(0, 40)); return L.filter((x, i) => L.indexOf(x) === i).slice(0, 30); };
+function b64Of(buf){ const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
+function bufOf(b64){ const s = atob(b64), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
+async function fxLoad(f){
+  if (!f) return;
+  if (!window.FORMX || typeof DecompressionStream === 'undefined') return toast('이 브라우저에서는 양식을 읽을 수 없어요. 크롬이나 엣지로 열어 주세요.', true);
+  if (f.size > 4e6){ S.fx = { name: f.name, err: 'big' }; render(); return; }
+  busy('양식을 읽는 중…');
+  try {
+    const buf = await f.arrayBuffer(), doc = await FORMX.open(buf, f.name);
+    S.fx = doc.tables.length ? { name: f.name, buf, doc, ti: 0 } : { name: f.name, err: 'notable' };
+    if (doc.tables.length) fxPick(0);
+  } catch (e){ S.fx = { name: f.name, err: e.code || 'read', msg: e.message }; }
+  busy(''); render();
+}
+function fxPick(i){
+  const X = S.fx, t = X.doc.tables[i]; X.ti = i;
+  X.cols = t.cols.map(c => Object.assign({}, c, { q: c.title, opt: (c.options || []).join(', '), mark: c.mark || '○', req: !/사유|비고|기타|의견|하고\s*싶은|특이/.test(c.title || '') }));
+  X.title = t.title || X.name.replace(/\.[^.]+$/, '');
+}
+function fxPreview(X){
+  const t = X.doc.tables[X.ti], rows = FORMX.preview(X.doc, t, 4);
+  const owner = c => X.cols.find(x => x.cols.indexOf(c) >= 0);
+  let qn = 0; const qno = {}; X.cols.forEach(c => { if (c.role === 'q' || c.role === 'mark') qno[c.key] = ++qn; });
+  const badge = c => { const o = owner(c); if (!o) return '<th></th>';
+    const lb = o.role === 'q' || o.role === 'mark' ? '질문 ' + qno[o.key] : ({ no: '번호', name: '이름', grade: '학년', klass: '반', hakbun: '학번', skip: '비움' })[o.role];
+    return `<th class="r-${o.role}">${lb}</th>`; };
+  const head = `<tr class="bd">${Array.from({ length: t.c1 - t.c0 + 1 }, (_, k) => badge(t.c0 + k)).join('')}</tr>`;
+  const body = rows.map(r => `<tr class="${r.head ? 'h' : r.data ? 'd' : 't'}">${r.cells.map(x => x ? `<td${x.rs > 1 ? ` rowspan="${x.rs}"` : ''}${x.cs > 1 ? ` colspan="${x.cs}"` : ''}>${esc(String(x.t).slice(0, 30))}</td>` : '').join('')}</tr>`).join('');
+  return `<div class="fxpv"><table>${head}${body}<tr class="more"><td colspan="${t.c1 - t.c0 + 1}">… 학생 줄 ${t.rows.length}줄</td></tr></table></div>`;
+}
+function vFormMaker(){
+  const X = S.fx, stu = S.B.students || [];
+  const how = `<p class="lead" style="margin-top:10px">학교에서 받은 현황조사 양식을 그대로 올리세요. <b>번호 · 이름 · 학년 · 반</b> 칸은 명단으로 채우고, 나머지 칸은 학생이 교실 TV에서 답해요.
+    다 모이면 <b>[📥 양식대로 내려받기]</b>로 원래 모양 그대로 받아 바로 제출하면 돼요. ${stu.length ? '' : '<b style="color:var(--pink)">먼저 [학급 명단]에 학생을 넣어 주세요.</b>'}</p>`;
+  const drop = `<button class="fxdrop" data-drop="fx" data-a="fxpick">
+    <b>📄 양식 파일 고르기</b><span>엑셀(.xlsx) · 한글(.hwpx) — 눌러서 고르거나 여기로 끌어 놓기</span></button>`;
+  if (!X || X.err || X.edit){
+    const err = !X || X.edit ? '' : X.err === 'HWP' ? FX_HWP : X.err === 'XLS' ? FX_XLS
+      : X.err === 'big' ? '<div class="hint warn">4MB보다 큰 파일이에요. 양식 안의 그림(학교 로고 등)을 빼고 저장해서 올려 주세요.</div>'
+      : X.err === 'notable' ? `<div class="hint warn"><b>${esc(X.name)}</b>에서 <b>번호</b>와 <b>이름(성명)</b> 칸이 함께 있는 표를 찾지 못했어요. 표 맨 위 줄에 '번호', '성명' 같은 칸 이름이 있는지 확인해 주세요.</div>`
+      : `<div class="hint warn">${esc(X.name)} 파일을 읽지 못했어요. ${esc(X.msg || '')}</div>`;
+    return how + err + drop;
+  }
+  return how + fxBuilder(X);
+}
+/* 칸 정하기 화면 (새로 만들 때 · 게시한 뒤 고칠 때 같이 씀) */
+function fxBuilder(X){
+  const stu = S.B.students || [];
+  const t = X.doc.tables[X.ti], qs = X.cols.filter(c => c.role === 'q' || c.role === 'mark');
+  const roleSel = (c, i) => `<select class="in" data-fx="role" data-i="${i}">${(c.cols.length > 1 ? ['mark', 'skip'] : ['no', 'name', 'grade', 'klass', 'hakbun', 'q', 'skip'])
+    .map(r => `<option value="${r}" ${c.role === r ? 'selected' : ''}>${FX_ROLE[r]}</option>`).join('')}</select>`;
+  const colRow = (c, i) => `<div class="fxc r-${c.role}">
+      <div class="fxh"><b>${esc(c.title || '(이름 없는 칸)')}</b>${c.cols.length > 1 ? `<small>${esc(c.options.join(' · '))} 칸 중 하나에 표시</small>` : ''}</div>
+      ${roleSel(c, i)}
+      ${c.role === 'q' || c.role === 'mark' ? `<input class="in" data-fx="q" data-i="${i}" value="${esc(c.q)}" maxlength="100" placeholder="TV에 보일 질문">` : ''}
+      ${c.role === 'q' ? `<input class="in" data-fx="opt" data-i="${i}" value="${esc(c.opt)}" placeholder="보기를 쉼표로 (예: 희망, 미희망) · 비우면 글로 답해요">
+        <span class="small muted">${fxOpts(c.opt).length >= 2 ? '학생이 보기에서 골라요' : '학생이 TV 자판으로 글을 써요'}</span>
+        ${fxOpts(c.opt).length >= 2 ? '' : `<label class="chk small"><input type="checkbox" data-fx="req" data-i="${i}" ${c.req !== false ? 'checked' : ''}> 꼭 답해야 해요 (끄면 [건너뛰기] 가능)</label>`}` : ''}
+      ${c.role === 'mark' ? `<label class="small muted">표시 글자 <input class="in" data-fx="mk" data-i="${i}" value="${esc(c.mark)}" maxlength="2" style="width:56px;text-align:center"></label>` : ''}
+    </div>`;
+  const short = stu.length > t.rows.length;
+  return `<div class="fxfile"><span>📄 <b>${esc(X.name)}</b> · ${X.doc.kind === 'hwpx' ? '한글' : '엑셀'}</span>
+      ${X.edit ? '<span class="small muted">파일을 바꾸려면 새로 만들어 주세요</span>' : X.doc.tables.length > 1 ? `<select class="in" data-fx="table">${X.doc.tables.map((x, i) => `<option value="${i}" ${i === X.ti ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}</select>` : `<span class="small muted">${esc(t.label)}</span>`}
+      ${X.edit ? '' : '<button class="b sm" data-a="fxreset">다른 파일</button>'}</div>
+    ${fxPreview(X)}
+    <p class="small muted" style="margin:6px 0 0">양식의 학생 줄 <b>${t.rows.length}</b>줄 · 우리 반 <b>${stu.length}</b>명${t.match === 'no' ? ' · 번호가 미리 적혀 있어 번호에 맞춰 적어요' : t.match === 'name' ? ' · 이름이 미리 적혀 있어 이름에 맞춰 적어요' : ''}
+      ${short ? `<br><b style="color:var(--pink)">줄이 ${stu.length - t.rows.length}줄 모자라요.</b> 표 아래가 비어 있으면 같은 모양으로 줄을 이어 붙여요.` : ''}</p>
+    <h3 class="fxt">칸마다 할 일</h3><div class="fxcols">${X.cols.map(colRow).join('')}</div>
+    <input class="in" data-fx="title" value="${esc(X.title || '')}" maxlength="60" style="width:100%;margin-top:12px" placeholder="TV에 보일 조사 이름">
+    <input class="in" data-fx="desc" value="${esc(X.desc || '')}" maxlength="200" style="width:100%;margin-top:8px" placeholder="설명 (선택) — 예: 금요일까지 답해 주세요">
+    <div class="row" style="margin-top:10px;justify-content:space-between"><span class="small muted">학생은 TV에서 이름을 누르고 질문 ${qs.length}개에 차례로 답해요.${X.edit ? '<br>이미 낸 답은 보기 글자가 같으면 그대로 남아요.' : ''}</span>
+      ${X.edit ? `<span class="row" style="gap:8px"><button class="b" data-a="fxeditx">닫기</button><button class="b y" data-a="fxesave" ${qs.length ? '' : 'disabled'}>고친 내용 저장</button></span>`
+        : `<button class="b y" data-a="fxmake" ${qs.length && stu.length ? '' : 'disabled'}>TV에 올리기</button>`}</div>`;
+}
+function fxSet(t){
+  const X = S.fx; if (!X || !X.cols) return false;
+  const k = t.dataset.fx, i = +t.dataset.i, c = X.cols[i];
+  if (k === 'role'){ c.role = t.value; return true; }
+  if (k === 'req'){ c.req = t.checked; return false; }
+  if (k === 'q') c.q = t.value; else if (k === 'opt'){ const was = fxOpts(c.opt).length >= 2; c.opt = t.value; return was !== (fxOpts(c.opt).length >= 2); }
+  else if (k === 'mk') c.mark = t.value; else if (k === 'title') X.title = t.value; else if (k === 'desc') X.desc = t.value;
+  else if (k === 'table'){ fxPick(+t.value); return true; }
+  return false;
+}
+async function fxMake(){
+  const { db, F } = S.fb, B = S.B, X = S.fx; if (!X || !X.doc) return;
+  const t = X.doc.tables[X.ti], qs = X.cols.filter(c => c.role === 'q' || c.role === 'mark');
+  if (!qs.length) return toast('학생이 답할 칸(질문)을 하나 이상 골라 주세요.', true);
+  if (!(B.students || []).length) return toast('먼저 [학급 명단]에 학생을 넣어 주세요.', true);
+  if (!X.cols.some(c => c.role === 'name') && t.match !== 'name' && !confirm('이름 칸을 정하지 않았어요. 그래도 만들까요?')) return;
+  if ((B.surveys || []).length + qs.length > 45) return toast('조사가 너무 많아요. 지난 조사를 조금 지워 주세요.', true);
+  if (qs.some(c => !String(c.q || c.title || '').trim())) return toast('질문 문구가 빈 칸이 있어요.', true);
+  const title = String(X.title || '').trim().slice(0, 60) || '학교 양식 조사', fid = 'f' + rid(8);
+  busy('양식을 올리는 중…');
+  try {
+    const b64 = b64Of(X.buf), CH = 700000, parts = Math.ceil(b64.length / CH);
+    for (let i = 0; i < parts; i++) await F.setDoc(F.doc(db, 'boards', S.key, 'formfiles', fid + '_' + i), { d: b64.slice(i * CH, (i + 1) * CH), at: F.serverTimestamp() });
+    const ids = qs.map(() => 's' + rid(8)), now = new Date().toISOString();
+    const sv = qs.map((c, k) => {
+      const opts = c.role === 'mark' ? c.options.slice() : fxOpts(c.opt), choice = c.role === 'mark' || opts.length >= 2;
+      return { id: ids[k], q: String(c.q || c.title).trim().slice(0, 100), kind: choice ? '선택' : '글', options: choice ? opts : [], multi: false, etc: false, anon: false, pub: false,
+        open: true, showMissing: true, desc: k === 0 ? String(X.desc || '').trim().slice(0, 200) : '', file: null, at: now,
+        grp: fid, gi: k, gn: qs.length, gname: title, sub: k > 0, nx: ids[k + 1] || '', req: choice || c.req !== false };
+    });
+    const form = { fid, name: X.name.slice(0, 80), title, kind: X.doc.kind, table: t.id, parts, size: X.buf.byteLength, at: now,
+      cols: X.cols.map(c => ({ key: c.key, role: c.role, cols: c.cols, mark: (c.mark || '○').slice(0, 2), sid: qs.indexOf(c) >= 0 ? ids[qs.indexOf(c)] : '' })) };
+    busy('');
+    if (await save({ surveys: (B.surveys || []).concat(sv), forms: (B.forms || []).concat([form]) }, 'TV에 올렸어요. 다 모이면 [📥 양식대로 내려받기]를 누르세요.')){ S.fx = null; S.svKind = '선택'; render(); }
+  } catch (e){ busy(''); fail(e); }
+}
+async function fxEditOpen(fid){
+  const B = S.B, f = (B.forms || []).find(x => x.fid === fid); if (!f) return toast('양식 정보를 찾지 못했어요.', true);
+  if (S.fx && S.fx.doc && !S.fx.edit && !confirm('새로 만들던 양식 조사가 있어요. 그만두고 이 조사를 고칠까요?')) return;
+  busy('양식을 여는 중…');
+  try {
+    const buf = await fxFile(f), doc = await FORMX.open(buf, f.name);
+    const ti = doc.tables.findIndex(x => x.id === f.table); if (ti < 0) throw new Error('양식에서 표를 다시 찾지 못했어요.');
+    const t = doc.tables[ti], L = fxGroup(fid);
+    const cols = t.cols.map(c => {
+      const sc = (f.cols || []).find(x => x.key === c.key) || {}, sv = sc.sid ? L.find(s => s.id === sc.sid) : null;
+      const role = sc.role || c.role;
+      return Object.assign({}, c, { role, sid: sv ? sv.id : '', mark: sc.mark || '○',
+        q: sv ? sv.q : c.title, opt: sv ? (sv.kind === '글' ? '' : (role === 'mark' ? '' : sv.options.join(', '))) : (c.options || []).join(', '),
+        req: sv ? sv.req !== false : !/사유|비고|기타|의견|하고\s*싶은|특이/.test(c.title || '') });
+    });
+    S.fx = { name: f.name, buf, doc, ti, cols, title: f.title, desc: (L[0] && L[0].desc) || '', edit: fid };
+    S.openSv = '';
+  } catch (e){ busy(''); return fail(e); }
+  busy(''); render();
+  setTimeout(() => { const el = document.querySelector('.fxedit'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 60);
+}
+async function fxFile(f){
+  const { db, F } = S.fb; let b64 = '';
+  for (let i = 0; i < f.parts; i++){
+    const d = await F.getDoc(F.doc(db, 'boards', S.key, 'formfiles', f.fid + '_' + i));
+    if (!d.exists()) throw new Error('올려 둔 양식 파일을 찾지 못했어요. (TV 주소를 바꿨거나 백업을 되살렸다면) 양식으로 조사를 다시 만들어 주세요.');
+    b64 += d.data().d;
+  }
+  return bufOf(b64);
+}
+async function fxEditSave(){
+  const { db, F } = S.fb, B = S.B, X = S.fx; if (!X || !X.edit) return;
+  const fid = X.edit, f = (B.forms || []).find(x => x.fid === fid); if (!f) return;
+  const L = fxGroup(fid), qs = X.cols.filter(c => c.role === 'q' || c.role === 'mark');
+  if (!qs.length) return toast('학생이 답할 칸(질문)을 하나 이상 남겨 주세요.', true);
+  if (qs.some(c => !String(c.q || c.title || '').trim())) return toast('질문 문구가 빈 칸이 있어요.', true);
+  const title = String(X.title || '').trim().slice(0, 60) || '학교 양식 조사', open = L.length ? !!L[0].open : true, now = new Date().toISOString();
+  const ops = []; let lost = 0;
+  const ids = qs.map(c => (c.sid && L.some(s => s.id === c.sid)) ? c.sid : 's' + rid(8));
+  const sv = qs.map((c, k) => {
+    const opts = c.role === 'mark' ? c.options.slice() : fxOpts(c.opt), choice = c.role === 'mark' || opts.length >= 2;
+    const old = L.find(s => s.id === ids[k]), kind = choice ? '선택' : '글', options = choice ? opts : [];
+    /* 이미 낸 답 옮기기 */
+    if (old){
+      const A = S.ANS[old.id] || {};
+      Object.keys(A).forEach(no => {
+        if (old.kind !== kind){ lost++; ops.push(['del', old.id, no]); return; }
+        if (kind === '글') return;
+        const ch = (A[no].ch || []).map(i => options.indexOf(old.options[i])).filter(j => j >= 0).slice(0, 1);
+        if (!ch.length){ lost++; ops.push(['del', old.id, no]); }
+        else if (JSON.stringify(ch) !== JSON.stringify(A[no].ch || [])) ops.push(['set', old.id, no, ch]);
+      });
+    }
+    return Object.assign({}, old || { anon: false, pub: false, showMissing: true, file: null, at: now, multi: false, etc: false },
+      { id: ids[k], q: String(c.q || c.title).trim().slice(0, 100), kind, options, multi: false, etc: false, open,
+        desc: k === 0 ? String(X.desc || '').trim().slice(0, 200) : '', grp: fid, gi: k, gn: qs.length, gname: title, sub: k > 0, nx: ids[k + 1] || '', req: choice || c.req !== false });
+  });
+  const gone = L.filter(s => ids.indexOf(s.id) < 0);
+  gone.forEach(s => { lost += Object.keys(S.ANS[s.id] || {}).length; });
+  if (lost && !confirm(`고친 내용 때문에 학생 답 ${lost}개가 사라져요. (질문을 빼거나, 보기를 바꾸거나, 글 ↔ 보기로 바꾼 칸)\n계속할까요?`)) return;
+  const form = Object.assign({}, f, { title, cols: X.cols.map(c => ({ key: c.key, role: c.role, cols: c.cols, mark: (c.mark || '○').slice(0, 2), sid: qs.indexOf(c) >= 0 ? ids[qs.indexOf(c)] : '' })) });
+  /* 순서: 이 묶음이 있던 자리에 새 묶음 */
+  const all = B.surveys || [], at = all.findIndex(s => s.grp === fid);
+  const rest = all.filter(s => s.grp !== fid), pos = at < 0 ? rest.length : all.slice(0, at).filter(s => s.grp !== fid).length;
+  const surveys = rest.slice(0, pos).concat(sv, rest.slice(pos));
+  if (!await save({ surveys, forms: (B.forms || []).map(x => x.fid === fid ? form : x) }, '양식 조사를 고쳤어요.')) return;
+  try {
+    await Promise.all(ops.map(o => o[0] === 'del' ? F.deleteDoc(F.doc(db, 'boards', S.key, 'answers', o[1] + '_' + o[2]))
+      : F.setDoc(F.doc(db, 'boards', S.key, 'answers', o[1] + '_' + o[2]), { sid: o[1], no: +o[2], ch: o[3], etc: '', at: F.serverTimestamp() })));
+    gone.forEach(s => delAnswers(s.id));
+  } catch (e){ fail(e); }
+  S.fx = null; render();
+}
+function fxGroup(fid){ return (S.B.surveys || []).filter(s => s.grp === fid).sort((a, b) => a.gi - b.gi); }
+function fxAnsText(s, a){
+  if (!a) return '';
+  if (s.kind === '글') return a.etc || '';
+  return (a.ch || []).map(i => s.options[i]).filter(Boolean).join(', ') + (a.etc ? ' (' + a.etc + ')' : '');
+}
+async function fxDownload(fid){
+  const { db, F } = S.fb, B = S.B, f = (B.forms || []).find(x => x.fid === fid); if (!f) return toast('양식 정보를 찾지 못했어요.', true);
+  const L = fxGroup(fid), stu = (B.students || []).slice().sort((a, b) => a.no - b.no);
+  const miss = stu.filter(t => L.some(s => s.req !== false && !(S.ANS[s.id] || {})[t.no]));
+  if (miss.length && !confirm(`아직 다 답하지 않은 학생이 ${miss.length}명 있어요.\n(${miss.slice(0, 10).map(t => t.no + '. ' + t.name).join(', ')}${miss.length > 10 ? ' …' : ''})\n\n안 한 칸은 비워 두고 내려받을까요?`)) return;
+  busy('양식을 채우는 중…');
+  try {
+    const buf = await fxFile(f);
+    const rows = stu.map(t => {
+      const vals = {};
+      f.cols.forEach(c => {
+        if (!c.sid) return; const s = L.find(x => x.id === c.sid), a = (S.ANS[c.sid] || {})[t.no]; if (!s || !a) return;
+        vals[c.key] = c.role === 'mark' ? (a.ch || [])[0] : fxAnsText(s, a);
+      });
+      return { no: t.no, name: t.name, vals };
+    });
+    const r = await FORMX.fill(buf, f.name, { table: f.table, cols: f.cols, rows, grade: Number(B.grade) || B.grade, klass: Number(B.klass) || B.klass });
+    const ext = f.kind === 'hwpx' ? 'hwpx' : 'xlsx', base = f.name.replace(/\.[^.]+$/, '');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([r.bytes], { type: ext === 'xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'application/hwp+zip' }));
+    a.download = `${base}_${B.grade}학년${B.klass}반.${ext}`; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 3000);
+    busy('');
+    if (r.report.short) toast(`⚠ 양식 줄이 모자라 ${r.report.short}명은 적지 못했어요. 양식에 줄을 늘려 다시 올려 주세요.`, true);
+    else toast(r.report.added ? `받았어요. 줄이 모자라 같은 모양으로 ${r.report.added}줄을 이어 붙였어요.` : '양식대로 채워서 받았어요. 열어서 확인하고 제출하세요.');
+  } catch (e){ busy(''); fail(e); }
+}
+function fxCsv(fid){
+  const B = S.B, f = (B.forms || []).find(x => x.fid === fid) || {}, L = fxGroup(fid), stu = (B.students || []).slice().sort((a, b) => a.no - b.no);
+  const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const lines = [['번호', '이름'].concat(L.map(s => s.q)).map(q).join(',')];
+  stu.forEach(t => lines.push([t.no, q(t.name)].concat(L.map(s => q(fxAnsText(s, (S.ANS[s.id] || {})[t.no])))).join(',')));
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv' }));
+  a.download = String(f.title || '학교 양식 조사').replace(/[\\/:*?"<>|]/g, ' ').slice(0, 40) + '.csv'; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+}
+async function fxDelete(fid){
+  const { db, F } = S.fb, B = S.B, f = (B.forms || []).find(x => x.fid === fid), L = fxGroup(fid);
+  if (!confirm('이 양식 조사와 학생들의 답을 모두 지울까요?')) return;
+  if (await save({ surveys: (B.surveys || []).filter(s => s.grp !== fid), forms: (B.forms || []).filter(x => x.fid !== fid) }, '지웠어요.')){
+    if (S.fx && S.fx.edit === fid) S.fx = null;
+    L.forEach(s => delAnswers(s.id));
+    for (let i = 0; i < ((f && f.parts) || 0); i++) F.deleteDoc(F.doc(db, 'boards', S.key, 'formfiles', fid + '_' + i)).catch(() => {});
+  }
+}
+function fxCard(s0){
+  const B = S.B, stu = B.students || [], fid = s0.grp, f = (B.forms || []).find(x => x.fid === fid) || {}, L = fxGroup(fid);
+  const doneAll = stu.filter(t => L.every(s => s.req === false || (S.ANS[s.id] || {})[t.no])), miss = stu.filter(t => doneAll.indexOf(t) < 0), open = S.openSv === s0.id;
+  const nm = no => { const x = stu.find(t => t.no === +no); return x ? x.name : ''; };
+  const res = L.map(s => {
+    const A = S.ANS[s.id] || {}, nos = Object.keys(A).map(Number).sort((a, b) => a - b);
+    if (s.kind === '글') return `<div class="fxq"><b>${s.gi + 1}. ${esc(s.q)}</b> <span class="small muted">${nos.length}명</span>
+      ${nos.length ? `<div class="hint">${nos.map(no => esc(no + '. ' + nm(no) + ' : ' + (A[no].etc || ''))).join('<br>')}</div>` : ''}</div>`;
+    const R = svSummary(s), tot = Math.max(1, R.done.length);
+    return `<div class="fxq"><b>${s.gi + 1}. ${esc(s.q)}</b> <span class="small muted">${R.done.length}명</span>${s.options.map((o, i) => `<div class="opt"><div class="row" style="justify-content:space-between"><span>${esc(o)}</span><span class="small muted">${R.counts[i]}명</span></div>
+      <div class="bar"><i style="width:${Math.round(R.counts[i] / tot * 100)}%"></i></div>${R.by[i].length ? `<div class="nm">${esc(R.by[i].join(', '))}</div>` : ''}</div>`).join('')}</div>`;
+  }).join('');
+  return `<li class="fxli"><div class="t"><span class="tag ${s0.open ? 'on' : ''}">${s0.open ? '진행 중' : '마감'}</span><span class="tag y">📄 학교 양식 · ${f.kind === 'hwpx' ? '한글' : '엑셀'}</span>
+      <div style="font-size:17px;margin-top:4px"><b>${esc(s0.gname || s0.q)}</b></div>
+      <div class="small muted">${esc(f.name || '')} · 질문 ${L.length}개 · 다 답한 학생 <b style="color:var(--yellow)">${doneAll.length}</b> / ${stu.length}명${s0.desc ? ' · ' + esc(s0.desc) : ''}</div>
+      ${open ? `<div style="margin-top:10px">${res}
+        ${miss.length ? `<div class="small" style="margin-top:10px;color:var(--pink)">아직 다 답하지 않은 학생 ${miss.length}명: ${esc(miss.map(t => t.no + '. ' + t.name).join(', '))}</div>` : (stu.length ? '<div class="small" style="margin-top:10px;color:var(--mint)">모두 답했어요</div>' : '')}</div>` : ''}</div>
+    ${S.fx && S.fx.edit === fid ? `<div class="fxedit"><h3 class="fxt" style="margin-top:4px">✏️ 칸마다 할 일 고치기</h3>${fxBuilder(S.fx)}</div>` : ''}
+    <div class="row"><button class="b sm y" data-a="fxdl" data-id="${esc(fid)}">📥 양식대로 내려받기</button>
+      <button class="b sm" data-a="fxedit" data-id="${esc(fid)}">${S.fx && S.fx.edit === fid ? '고치기 닫기' : '✏️ 칸 고치기'}</button>
+      <button class="b sm" data-a="svopen" data-id="${esc(s0.id)}">${open ? '결과 닫기' : '결과 보기'}</button>
+      <button class="b sm" data-a="fxtog" data-id="${esc(fid)}">${s0.open ? '마감하기' : '다시 열기'}</button>
+      <button class="b sm" data-a="fxcsv" data-id="${esc(fid)}">CSV 받기</button>
+      <button class="b sm r" data-a="fxdel" data-id="${esc(fid)}">지우기</button></div></li>`;
+}
+
 /* ---------- 설문 · 투표 ---------- */
 function svSummary(s){
   const A = S.ANS[s.id] || {}, stu = S.B.students || [];
@@ -1458,10 +2842,10 @@ function vSurvey(){
   };
   return `<section class="card">${vPinMode('survey')}</section>
   <section class="card"><h2>새 설문 · 투표 · 조사 만들기</h2>
-    <p class="lead">선택형 · 체크형은 학생들이 교실 TV에서 자기 번호를 누르고 바로 답하고, 링크형은 다른 사이트(구글 설문 등)로 연결해 줍니다. ${stu.length || kind === '링크' ? '' : '<b style="color:var(--pink)">먼저 [학급 명단]에 학생을 넣어 주세요.</b>'}</p>
-    <div class="row"><div class="seg">${['선택', '체크', '링크'].map(k => `<button data-a="svkind" data-v="${k}" class="${kind === k ? 'on' : ''}">${({ 선택: '선택형 (보기 고르기)', 체크: '체크형 (했어요 / 냈어요)', 링크: '링크형 (구글 설문 등 사이트)' })[k]}</button>`).join('')}</div></div>
+    ${kind === '양식' ? '' : `<p class="lead">선택형 · 체크형은 학생들이 교실 TV에서 자기 번호를 누르고 바로 답하고, 링크형은 다른 사이트(구글 설문 등)로 연결해 줍니다. ${stu.length || kind === '링크' ? '' : '<b style="color:var(--pink)">먼저 [학급 명단]에 학생을 넣어 주세요.</b>'}</p>`}
+    <div class="row"><div class="seg">${['양식', '선택', '체크', '링크'].map(k => `<button data-a="svkind" data-v="${k}" class="${kind === k ? 'on' : ''}">${({ 양식: '📄 학교 양식 (엑셀 · 한글)', 선택: '선택형 (보기 고르기)', 체크: '체크형 (했어요 / 냈어요)', 링크: '링크형 (구글 설문 등 사이트)' })[k]}</button>`).join('')}</div></div>
     <input type="hidden" id="svKind" value="${kind}">
-    ${kind === '링크' ? vLinkForm() : `    <input class="in" id="svQ" data-keep style="width:100%;margin-top:10px" placeholder="${kind === '체크' ? '예) 현장체험학습 동의서 냈어요' : '예) 2학기 희망 도서를 골라 주세요'}">
+    ${kind === '양식' ? vFormMaker() : kind === '링크' ? vLinkForm() : `    <input class="in" id="svQ" data-keep style="width:100%;margin-top:10px" placeholder="${kind === '체크' ? '예) 현장체험학습 동의서 냈어요' : '예) 2학기 희망 도서를 골라 주세요'}">
     <input class="in" id="svDesc" data-keep style="width:100%;margin-top:8px" placeholder="설명 (선택)">
     ${kind === '선택' ? `<textarea class="in" id="svOpts" data-keep rows="6" style="margin-top:8px" placeholder="보기를 한 줄에 하나씩&#10;예) 아몬드&#10;불편한 편의점&#10;(같은 분류는 '분류 · 이름'으로 쓰면 TV에서 묶어 보여 줘요)"></textarea>
     <div class="row" style="margin-top:8px"><label class="chk"><input type="checkbox" id="svMulti" data-keep> 여러 개 고를 수 있음</label>
@@ -1471,7 +2855,7 @@ function vSurvey(){
     <div style="margin-top:10px">${pendBox('survey', '첨부 파일 (1개, 선택)')}</div>
     <div class="row" style="margin-top:10px;justify-content:flex-end"><button class="b y" data-a="svadd">TV에 올리기</button></div>`}</section>
   <section class="card"><h2>조사 · 투표 목록</h2>
-    ${L.length ? `<ul class="list">${L.map(card).join('')}</ul>` : '<p class="small muted">아직 만든 조사가 없어요.</p>'}</section>
+    ${L.length ? `<ul class="list">${L.filter(s => !s.grp || !s.gi).map(s => s.grp ? fxCard(s) : card(s)).join('')}</ul>` : '<p class="small muted">아직 만든 조사가 없어요.</p>'}</section>
   <section class="card"><h2>🔗 링크 조사 목록 <span class="sub">6개까지</span></h2>
     ${(B.links || []).length ? `<ul class="list">${B.links.map(l => `<li><div class="t"><span class="tag ${l.on === false ? '' : 'on'}">${l.on === false ? '숨김' : 'TV에 보이는 중'}</span><b>${esc(l.title)}</b><div class="small muted" style="word-break:break-all"><a href="${esc(l.url)}" target="_blank" rel="noopener" style="color:inherit">${esc(l.url)}</a></div></div>
       <div class="row"><button class="b sm" data-a="ltog" data-id="${esc(l.id)}">${l.on === false ? '다시 보이기' : '숨기기'}</button><button class="b sm r" data-a="ldel" data-id="${esc(l.id)}">지우기</button></div></li>`).join('')}</ul>` : '<p class="small muted">아직 올린 링크가 없어요. 위에서 [링크형]을 골라 올려 보세요.</p>'}</section>`;
@@ -1484,8 +2868,12 @@ function vLinkForm(){
 }
 
 /* ---------- 알림 종 ---------- */
-const APP_VER = '2026-11-02a';
+const APP_VER = '2026-11-06a';
 const UPDATES = [
+  { v: '2026-11-06a', title: '11월 6일 업데이트', items: [
+    '📄 학교 양식 그대로 조사: 학교에서 받은 엑셀 · 한글 양식을 올리면 학생이 교실 TV에서 답하고, 조사가 끝나면 [양식대로 내려받기]로 받아 바로 제출해요',
+    '📎 교실 TV에서 첨부파일이 열리지 않던 문제를 고쳤어요',
+    '✨ 전반적인 화면 구성(레이아웃)을 새로 다듬었어요'] },
   { v: '2026-11-02a', title: '11월 2일 업데이트', items: [
     '📋 시간표 설정 탭에서 이번 주 TV 시간표(과목 · 선생님)를 바로 볼 수 있고, [이번 주 시간표로 빈칸 채우기]로 칸을 채울 수 있어요',
     '🕘 TV 시간표가 컴시간을 따라요: 일과계에서 수업 교환 · 보강을 입력하면 30분 안에 교실 TV에 반영되고, 바뀐 교시에 노란 [변경] 표시가 붙어요 (시간표 설정 탭에서 컴시간 / 나이스 / 직접 입력을 고를 수 있어요)'] },
@@ -1541,6 +2929,9 @@ function bellItems(){
     out.push({ ic: '💬', tab: 'counsel', t, isNew, tt: c.date === today ? `오늘 상담 · ${c.slot === 'after' ? '방과후' : '점심시간'}` : '새 상담 신청',
       sm: `${dl(c.date)} ${c.slot === 'after' ? '방과후' : '점심'} ${esc(((CS[c.slot] || {}).time || CDEF[c.slot]).split('~')[0])} · ${esc(c.no + '. ' + (c.name || ''))}` });
   });
+  /* 학생 호출 답장 */
+  if (S.FR && B.flash && Date.now() - S.FR.t < 3 * 3600e3)
+    out.push({ ic: S.FR.r === 'away' ? '🙅' : '🙋', tab: 'flash', t: S.FR.t, isNew: S.FR.t > seen, tt: `호출 답장 · ${FR_TXT[S.FR.r] || ''}`, sm: esc(((B.flash.who || '') + ' ' + (B.flash.text || '')).trim()) });
   /* 조사 응답 */
   const stuN = (B.students || []).length;
   (B.surveys || []).filter(s => s.open).forEach(s => {
@@ -1558,7 +2949,7 @@ function bellItems(){
   /* 백업 */
   const lb = B.lastBackup ? Date.parse(B.lastBackup) : 0, hasData = (B.students || []).length || (B.notices || []).length || (B.surveys || []).length;
   if (hasData && Date.now() - lb > 7 * 864e5)
-    out.push({ ic: '💾', tab: 'time', t: Date.parse(today + 'T00:00:00+09:00'), isNew: lsg(seenKey() + '_day') !== today, tt: lb ? '백업한 지 일주일이 지났어요' : '아직 우리 반 백업이 없어요', sm: '시간표 설정 탭 → 우리 반 백업 (버튼 한 번)' });
+    out.push({ ic: '💾', tab: 'backup', t: Date.parse(today + 'T00:00:00+09:00'), isNew: lsg(seenKey() + '_day') !== today, tt: lb ? '백업한 지 일주일이 지났어요' : '아직 우리 반 백업이 없어요', sm: '백업 · 되살리기 탭 (버튼 한 번)' });
   /* 건의 */
   const sg = (S.SUGL || []).filter(x => x.t > seen);
   if (sg.length) out.push({ ic: '✉️', tab: 'suggest', t: Math.max(...sg.map(x => x.t)), isNew: true, tt: `새 건의 ${sg.length}건`, sm: esc(sg[0].text.slice(0, 40)) });
@@ -1712,10 +3103,10 @@ function mobModal(kind){
   const view = kind === 'view', url = view ? viewUrl() : new URL('./', location.href).href;
   const phone = isPhone(), ios = isIOS(), kakao = inApp(), alone = isStandalone();
   const how = `<div class="how">
-      ${kakao ? '<p>⚠ <b>카카오톡 · 네이버 앱 안에서 열린 화면</b>은 설치가 안 돼요. 오른쪽 위(또는 아래) <b>⋮</b> → <b>다른 브라우저로 열기</b>를 누른 뒤 설치해 주세요.</p>' : ''}
-      <p><b>안드로이드</b> (크롬 · 삼성 인터넷): 주소를 연 뒤 오른쪽 위 <b>⋮</b> → <b>앱 설치</b> 또는 <b>홈 화면에 추가</b></p>
-      <p><b>아이폰</b> (사파리): 주소를 연 뒤 아래쪽 <b>공유(□↑)</b> → <b>홈 화면에 추가</b> → <b>추가</b></p>
-      ${view ? '' : '<p>설치하면 홈 화면에 <b>교실 화면</b> 아이콘이 생기고, 주소창 없이 앱처럼 열려요. 처음 한 번만 로그인하면 됩니다.</p>'}</div>`;
+      ${kakao ? '<p>⚠ <b>카카오톡 · 네이버 앱 안에서 열린 화면</b>은 설치가 안 돼요. 오른쪽 위(또는 아래) <b><svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"/></svg></b> → <b>다른 브라우저로 열기</b>를 누른 뒤 설치해 주세요.</p>' : ''}
+      <p><b>안드로이드</b> (크롬 · 삼성 인터넷): 주소를 연 뒤 오른쪽 위 <b><svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"/></svg></b> → <b>앱 설치</b> 또는 <b><svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8.5v7M8.5 12h7"/></svg> 홈 화면에 추가</b></p>
+      <p><b>아이폰</b> (사파리): 주소를 연 뒤 아래쪽 <b>공유 <svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 9H6.5A1.5 1.5 0 0 0 5 10.5v9A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 17.5 9H16"/><path d="M12 14V3M8 7l4-4 4 4"/></svg></b> → <b><svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8.5v7M8.5 12h7"/></svg> 홈 화면에 추가</b> → <b>추가</b></p>
+      ${view ? '' : '<p>설치하면 홈 화면에 <b>클래스 뷰</b> 아이콘이 생기고, 주소창 없이 앱처럼 열려요. 처음 한 번만 로그인하면 됩니다.</p>'}</div>`;
   const box = document.createElement('div'); box.id = 'mobModal';
   box.innerHTML = `<div class="mc" role="dialog" aria-modal="true" aria-labelledby="mobT">
     <div class="mh"><span class="ic">📱</span><div><b id="mobT">${view ? '학생 휴대폰용 주소' : '휴대폰에서 쓰기'}</b><span>${phone && !view ? '이 휴대폰 홈 화면에 앱처럼 설치할 수 있어요.' : '휴대폰 카메라로 QR 코드를 비추세요.'}</span></div>
@@ -1751,10 +3142,10 @@ function pcModal(){
       ${alone ? '<div class="ok">✓ 지금 설치된 앱으로 열려 있어요</div>' : `<div class="bt"><button class="ins" data-m="install" ${DEFP ? '' : 'hidden'}>💻 이 컴퓨터에 설치</button></div>
       <div class="how">
         ${DEFP ? '<p>위 단추를 누르고 <b>[설치]</b>를 고르면 끝이에요.</p>' : ''}
-        <p><b>크롬</b>: 주소창 오른쪽 끝의 <b>설치 아이콘(모니터에 ↓)</b> → <b>설치</b><br>또는 오른쪽 위 <b>⋮</b> → <b>전송, 저장, 공유</b> → <b>페이지를 앱으로 설치</b></p>
-        <p><b>엣지</b>: 오른쪽 위 <b>⋯</b> → <b>앱</b> → <b>이 사이트를 앱으로 설치</b></p>
+        <p><b>크롬</b>: 주소창 오른쪽 끝의 <b>설치 아이콘 <svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/><path d="M12 7v5M9.5 9.8 12 12.3l2.5-2.5"/></svg></b> → <b>설치</b><br>또는 오른쪽 위 <b><svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"/></svg></b> → <b>전송, 저장, 공유</b> → <b>페이지를 앱으로 설치</b></p>
+        <p><b>엣지</b>: 오른쪽 위 <b><svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg></b> → <b>앱</b> → <b>이 사이트를 앱으로 설치</b></p>
         ${!chrome && !edge ? '<p>⚠ 지금 브라우저에서 설치 메뉴가 안 보이면 <b>크롬</b>이나 <b>엣지</b>로 이 화면을 열어 주세요.</p>' : ''}
-        <p>설치하면 <b>바탕화면 · 시작 메뉴</b>에 <b>교실 화면</b> 아이콘이 생겨요. 아이콘을 오른쪽 클릭 → <b>작업 표시줄에 고정</b>하면 더 빨라요.${edge ? ' (엣지는 설치 뒤 바탕화면 바로 가기 만들기를 물어봐요)' : ''}</p>
+        <p>설치하면 <b>바탕화면 · 시작 메뉴</b>에 <b>클래스 뷰</b> 아이콘이 생겨요. 아이콘을 오른쪽 클릭 → <b>작업 표시줄에 고정</b>하면 더 빨라요.${edge ? ' (엣지는 설치 뒤 바탕화면 바로 가기 만들기를 물어봐요)' : ''}</p>
       </div>`}
     </div></div>`;
   box.addEventListener('click', async ev => {
@@ -1770,7 +3161,7 @@ function mobTip(){
   if (!isPhone() || isStandalone() || $('mobTip')) return;
   if (lsg('cr_mobtip')) return;
   const d = document.createElement('div'); d.id = 'mobTip';
-  d.innerHTML = '<span style="flex:1">📱 <b>홈 화면에 추가</b>하면 앱처럼 바로 열려요</span><button class="y" data-t="how">방법 보기</button><button data-t="x">닫기</button>';
+  d.innerHTML = '<span style="flex:1">📱 <b><svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8.5v7M8.5 12h7"/></svg> 홈 화면에 추가</b>하면 앱처럼 바로 열려요</span><button class="y" data-t="how">방법 보기</button><button data-t="x">닫기</button>';
   d.addEventListener('click', ev => { const t = ev.target.closest('[data-t]'); if (!t) return; lss('cr_mobtip', '1'); d.remove(); if (t.dataset.t === 'how') mobModal('admin'); });
   document.body.appendChild(d);
 }
@@ -1796,7 +3187,7 @@ async function updModal(mode){
   const L = mode === 'history' ? UPDATES : updList(), prev = mode === 'open' ? await hasPrev() : false;
   const box = document.createElement('div'); box.id = 'updModal';
   box.innerHTML = `<div class="updc" role="dialog" aria-modal="true" aria-labelledby="updT">
-    <h2 id="updT">${mode === 'history' ? '📋 업데이트 내역' : mode === 'live' ? '🆕 새 버전이 올라왔어요' : '🆕 교실 화면이 새 버전으로 바뀌었어요'}</h2>
+    <h2 id="updT">${mode === 'history' ? '📋 업데이트 내역' : mode === 'live' ? '🆕 새 버전이 올라왔어요' : '🆕 클래스 뷰가 새 버전으로 바뀌었어요'}</h2>
     ${mode === 'live' ? '<p class="lead">지금 업데이트하면 화면을 새로고침합니다. 적고 있던 내용이 있으면 먼저 저장해 주세요.</p>' : ''}
     <div class="updl">${(mode === 'live' ? UPDATES.filter(u => u.v > APP_VER) : L).map(u => `<div class="bupd"><b>${esc(u.title)}</b><ul>${u.items.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('')
       || '<p class="small muted">자세한 내용은 새로고침하면 볼 수 있어요.</p>'}</div>
@@ -1834,7 +3225,7 @@ if (BETA){ const bb = document.getElementById('betaBar'); if (bb) bb.hidden = fa
 if (/\/classroom-prev\//.test(location.pathname)){ const pb = document.getElementById('prevBar'); if (pb) pb.hidden = false; document.title = '[예전 버전] ' + document.title; }
 /* ---------- 우리 반 백업 · 되살리기 ----------
  * 백업은 선생님 컴퓨터(파일) 또는 선생님 구글 드라이브(비공개 폴더 '교실화면_백업')에만 저장합니다. 운영자는 받지 않습니다. */
-const BK_SUBS = ['answers', 'counsel', 'suggest', 'sevents'];
+const BK_SUBS = ['answers', 'counsel', 'suggest', 'sevents', 'formfiles'];
 const bkOut = v => { if (v && typeof v.toMillis === 'function') return { __ts: v.toMillis() }; if (Array.isArray(v)) return v.map(bkOut);
   if (v && typeof v === 'object'){ const o = {}; for (const k in v) o[k] = bkOut(v[k]); return o; } return v; };
 const bkIn = v => { if (v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length === 1 && typeof v.__ts === 'number') return new Date(v.__ts);
@@ -1874,16 +3265,20 @@ async function bkDriveSave(j, tok){
 }
 async function bkRestore(j){
   const { db, F } = S.fb;
-  if (!j || j.app !== '교실화면 백업' || !j.board || !j.sub) throw new Error('교실 화면 백업 파일이 아니에요.');
+  if (!j || j.app !== '교실화면 백업' || !j.board || !j.sub) throw new Error('클래스 뷰 백업 파일이 아니에요.');
   busy('되살리기 전에 지금 자료를 파일로 받아 두는 중…');
   bkDownload(await bkBuild(), `classroom-backup_before-restore_${S.B.grade}-${S.B.klass}_${kstToday()}.json`);
-  busy('게시판을 되살리는 중…');
-  const board = bkIn(j.board);
+  busy(j.kind === 'migrate' ? '학급 다이어리 기록을 옮기는 중…' : '게시판을 되살리는 중…');
+  /* 학급 다이어리에서 옮겨 온 파일이면: 지금 클래스 뷰 설정(TV 주소 · PIN · 이름 등)에 옮겨 온 내용을 덮어씀 */
+  const mig = j.kind === 'migrate';
+  let board = bkIn(j.board);
   delete board.updatedAt;
+  if (mig){ const cur = Object.assign({}, S.B); delete cur.updatedAt; board = Object.assign(cur, board); board.forms = []; board.flash = null; }
   board.owner = S.user.uid; board.viewKey = S.B.viewKey || '';
+  if (!board.pinKey && S.B.pinKey) board.pinKey = S.B.pinKey;
   await F.setDoc(F.doc(db, 'boards', S.key), Object.assign(board, { updatedAt: F.serverTimestamp(), lastBackup: S.B.lastBackup || '' }));
-  for (const c of BK_SUBS){
-    busy('되살리는 중… (' + c + ')');
+  for (const c of (mig ? BK_SUBS.filter(x => j.sub[x]) : BK_SUBS)){
+    busy((mig ? '옮기는 중… (' : '되살리는 중… (') + c + ')');
     const cur = await F.getDocs(F.collection(db, 'boards', S.key, c));
     await Promise.all(cur.docs.map(d => F.deleteDoc(d.ref)));
     const L = j.sub[c] || [];
@@ -1894,10 +3289,10 @@ async function bkRestore(j){
 function vBackup(){
   const B = S.B, last = B.lastBackup ? new Date(B.lastBackup) : null, days = last ? Math.floor((Date.now() - last) / 864e5) : null;
   return `<section class="card"><h2>💾 우리 반 백업 · 되살리기</h2>
-    <p class="lead">공지 · 알림장 · 조사 응답 · 상담 · 건의 · 학생 일정 · 명단을 한 파일로 저장합니다. 백업은 <b>선생님 컴퓨터나 선생님 구글 드라이브에만</b> 저장되고 운영자는 받지 않아요.
+    <p class="lead">공지 · 알림장 · 조사 응답 · 상담 · 건의 · 학생 일정 · 명단을 한 파일로 저장합니다. <b>학급 다이어리(교실 화면)에서 받은 '클래스 뷰로 옮기기' 파일</b>도 [백업 파일로 되살리기]로 넣으면 옮겨져요. 백업은 <b>선생님 컴퓨터나 선생님 구글 드라이브에만</b> 저장되고 운영자는 받지 않아요.
       ${last ? `마지막 백업: <b>${last.toLocaleDateString('ko-KR')}</b> (${days === 0 ? '오늘' : days + '일 전'})` : '<b style="color:var(--pink)">아직 백업한 적이 없어요.</b>'} 일주일에 한 번 해 두면 안심이에요.</p>
     <div class="row"><button class="b y" data-a="bkdrive">내 구글 드라이브에 저장</button><button class="b" data-a="bkfile">파일로 내려받기</button>
-      <span class="grow"></span><button class="b r" data-a="bkpick">백업 파일로 되살리기</button><input type="file" id="bkPick" accept=".json,application/json" hidden></div>
+      <span class="grow"></span><button class="b r" data-a="bkpick">백업 파일로 되살리기</button></div>
     <p class="small muted" style="margin:8px 0 0">되살리면 지금 자료가 백업 때 상태로 바뀝니다. 되살리기 직전 자료는 자동으로 파일로 한 번 더 받아 두니 안심하세요. 드라이브 백업은 '교실화면_백업' 폴더에 있어요.</p></section>`;
 }
 
@@ -2045,13 +3440,21 @@ document.addEventListener('change', ev => {
   const t = ev.target;
   if (t.id === 'filePick'){ if (t.files.length) addPending(S.pickFor, [...t.files]); t.value = ''; return; }
   if (t.id === 'xlsPick'){ if (t.files[0]) readRosterFile(t.files[0]); t.value = ''; return; }
+  if (t.id === 'fxPick'){ const f = t.files[0]; t.value = ''; fxLoad(f); return; }
+  if (t.dataset && t.dataset.fx){ if (fxSet(t)) render(); return; }
   if (t.id === 'bkPick'){
     const f = t.files[0]; t.value = ''; if (!f) return;
     f.text().then(async txt => {
       let j; try { j = JSON.parse(txt); } catch (e) { return toast('백업 파일을 읽지 못했어요.', true); }
-      if (!j || j.app !== '교실화면 백업') return toast('교실 화면 백업 파일이 아니에요.', true);
+      if (!j || j.app !== '교실화면 백업') return toast('클래스 뷰 백업 파일이 아니에요.', true);
       const n = c => ((j.sub || {})[c] || []).length;
       const other = String(j.grade) !== String(S.B.grade) || String(j.klass) !== String(S.B.klass);
+      if (j.kind === 'migrate'){
+        const c = j.count || {};
+        if (!confirm(`학급 다이어리(교실 화면)에서 ${new Date(j.at).toLocaleString('ko-KR')}에 받은 ${j.grade}학년 ${j.klass}반 기록이에요.\n\n학생 ${c.students} · 공지 ${c.notices} · 알림장 ${c.notes} · 조사 ${c.surveys} (응답 ${c.answers}) · 학급 일정 ${c.events} · 학생 일정 ${c.sevents} · 건의 ${c.suggest}\n\n이 내용을 클래스 뷰로 옮길까요?\n• 지금 클래스 뷰의 명단 · 공지 · 알림장 · 조사 · 응답 · 일정 · 건의는 이 파일 내용으로 바뀌어요.\n• TV 주소 · 학생 PIN 방식 · 로그인은 그대로예요.\n• 바꾸기 전에 지금 클래스 뷰 자료를 파일로 한 번 받아 둬요.`)) return;
+        try { await bkRestore(j); toast('학급 다이어리 기록을 클래스 뷰로 옮겼어요.'); } catch (e) { busy(''); fail(e); }
+        return;
+      }
       if (!confirm(`${new Date(j.at).toLocaleString('ko-KR')}에 만든 ${j.grade}학년 ${j.klass}반 백업으로 되살릴까요?${other ? '\n\n⚠ 지금 반(' + S.B.grade + '-' + S.B.klass + ')과 다른 반의 백업이에요.' : ''}\n\n공지 ${(j.board.notices || []).length} · 조사 ${(j.board.surveys || []).length} · 응답 ${n('answers')} · 상담 ${n('counsel')} · 건의 ${n('suggest')} · 학생 일정 ${n('sevents')}\n\n지금 자료는 이 백업 상태로 바뀝니다.`)) return;
       try { await bkRestore(j); toast('되살렸어요.'); } catch (e) { busy(''); fail(e); }
     });
@@ -2065,6 +3468,7 @@ document.addEventListener('dragleave', ev => { const d = ev.target.closest && ev
 document.addEventListener('drop', ev => {
   const d = ev.target.closest && ev.target.closest('[data-drop]'); if (!d) return;
   ev.preventDefault(); d.classList.remove('over');
+  if (d.dataset.drop === 'fx'){ fxLoad(ev.dataTransfer.files[0]); return; }
   if (ev.dataTransfer.files.length) addPending(d.dataset.drop, [...ev.dataTransfer.files]);
 });
 document.addEventListener('click', async ev => {
@@ -2105,6 +3509,8 @@ document.addEventListener('click', async ev => {
       return;
     }
     case 'bkpick': $('bkPick').click(); return;
+    case 'tvt': if ((S.B.tvt || 'chalk') === id) return; return save({ tvt: id === 'chalk' ? '' : id }, 'TV 바탕색을 바꿨어요. TV에 곧 반영돼요.');
+    case 'tvp': if ((S.B.tvp || '') === id) return; return save({ tvp: id }, id ? 'TV 배경 무늬를 바꿨어요.' : 'TV 배경 무늬를 껐어요.');
     case 'font': if (S.B.font === id || (!S.B.font && id === 'bunpil')) return; return save({ font: id }, '글꼴을 바꿨어요. TV에 곧 반영돼요.');
     case 'pvreload': if (PVH){ try { PVH.firstChild.contentWindow.location.reload(); } catch (e) { pvKey = ''; placePv(); } } return;
     case 'bellgo': S.bellOpen = false; S.tab = t.dataset.v; try { localStorage.setItem('cr_tab2', S.tab); } catch (e) {} S.edit = ''; render(); window.scrollTo(0, 0); return;
@@ -2176,7 +3582,12 @@ document.addEventListener('click', async ev => {
       const who = $('fWho').value.trim().slice(0, 40), text = $('fText').value.trim().slice(0, 120);
       if (!who && !text) return toast('부를 사람이나 할 말을 적어 주세요.', true);
       const min = +$('fMin').value || 5;
-      if (await save({ flash: { id: rid(8), who, text, level: $('fUrg').checked ? '긴급' : '알림', until: Date.now() + min * 60000 } }, 'TV에 띄웠어요.')){ $('fWho').value = ''; $('fText').value = ''; }
+      S.fAsk = $('fAsk').checked;
+      const ask = S.fAsk && !!who && !/^(모두|전체)$/.test(who), old = S.B.flash && S.B.flash.id;
+      if (await save({ flash: { id: rid(8), who, text, level: $('fUrg').checked ? '긴급' : '알림', ask, until: Date.now() + min * 60000 } }, ask ? 'TV에 띄웠어요. 학생이 답하면 바로 알려 드려요.' : 'TV에 띄웠어요.')){
+        $('fWho').value = ''; $('fText').value = '';
+        if (old){ const { db, F } = S.fb; F.deleteDoc(F.doc(db, 'boards', S.key, 'freply', old)).catch(() => {}); }
+      }
       return;
     }
     case 'flashoff': return save({ flash: null }, '껐어요.');
@@ -2286,8 +3697,10 @@ document.addEventListener('click', async ev => {
       if (!confirm('새 TV 주소를 만들까요? 예전 주소로 열어 둔 TV는 연결 숫자 화면으로 바뀌니, 숫자를 넣어 다시 연결해 주세요.')) return;
       try {
         const old = S.key, data = Object.assign({}, B); delete data.updatedAt;
+        const ff = await F.getDocs(F.collection(db, 'boards', old, 'formfiles')).catch(() => null);
         stopWatch();
-        await makeBoard(data);
+        const nk = await makeBoard(data);
+        if (ff) for (const d of ff.docs) await F.setDoc(F.doc(db, 'boards', nk, 'formfiles', d.id), d.data()).catch(() => {});
         await F.deleteDoc(F.doc(db, 'boards', old));
         toast('새 TV 주소를 만들었어요.'); watchBoard();
       } catch (e) { fail(e); }
@@ -2330,7 +3743,7 @@ document.addEventListener('click', async ev => {
         if (options.length > 150) return toast('보기는 150개까지예요.', true);
         if (etc) options.push('기타');
       }
-      if ((B.surveys || []).length >= 30) return toast('조사가 너무 많아요. 지난 조사를 조금 지워 주세요.', true);
+      if ((B.surveys || []).length >= 45) return toast('조사가 너무 많아요. 지난 조사를 조금 지워 주세요.', true);
       let files = [];
       try { files = await uploadPending('survey'); } catch (e) { return fail(e); }
       const s = { id: 's' + rid(8), q, kind, options, multi, etc, anon: $('svAnon').checked, pub: $('svPub').checked, open: true, showMissing: true,
@@ -2390,6 +3803,16 @@ document.addEventListener('click', async ev => {
     case 'pinreset': return pinReset(+t.dataset.no);
     case 'pinset': return pinSetFor(+t.dataset.no);
     case 'pcinst': pcModal(); return;
+    case 'fxreset': S.fx = null; render(); return;
+    case 'fxpick': $('fxPick').click(); return;
+    case 'fxmake': return fxMake();
+    case 'fxedit': if (S.fx && S.fx.edit === id){ S.fx = null; render(); return; } return fxEditOpen(id);
+    case 'fxeditx': S.fx = null; render(); return;
+    case 'fxesave': return fxEditSave();
+    case 'fxdl': return fxDownload(id);
+    case 'fxcsv': return fxCsv(id);
+    case 'fxdel': return fxDelete(id);
+    case 'fxtog': { const L = fxGroup(id); if (!L.length) return; const op = !L[0].open; return save({ surveys: (B.surveys || []).map(s => s.grp === id ? Object.assign({}, s, { open: op }) : s) }, op ? '다시 열었어요.' : '마감했어요.'); }
     case 'svcsv': { const s = (B.surveys || []).find(x => x.id === id); if (s) csvOf(s); return; }
     case 'svdel': {
       if (!confirm('이 조사와 응답을 모두 지울까요?')) return;
@@ -2410,6 +3833,8 @@ document.addEventListener('click', async ev => {
   }
 });
 start();
+/* 앱을 열자마자 도입 애니메이션 (그 사이에 로그인 확인 · 자료 불러오기) */
+introPlay();
 </script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 {
-  "name": "강릉제일고 교실 화면",
-  "short_name": "교실 화면",
+  "name": "클래스 뷰 (Class View)",
+  "short_name": "클래스 뷰",
   "lang": "ko",
   "start_url": "./",
   "scope": "./",
@@ -8,8 +8,22 @@
   "background_color": "#1D2A25",
   "theme_color": "#1D2A25",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
