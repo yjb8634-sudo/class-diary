@@ -48,6 +48,35 @@ jobs:
           notes = []
           def note(msg):
               notes.append(msg); print('::notice title=컴시간::' + msg.replace('%', '%25').replace('\n', '%0A'))
+          # 컴시간 서버가 프로그램 접속을 끊는 경우가 있어: 브라우저처럼 접속하고, 끊기면 잠시 뒤 다시 (최대 4번)
+          import requests
+          UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36'
+          _orig = requests.Session.request
+          def _req(self, method, url, **kw):
+              h = dict(kw.pop('headers', None) or {})
+              for k, v in (('User-Agent', UA), ('Accept', 'text/html,application/xhtml+xml,*/*;q=0.8'), ('Accept-Language', 'ko-KR,ko;q=0.9,en;q=0.5'), ('Referer', 'http://comci.net:4082/st')):
+                  h.setdefault(k, v)
+              kw['headers'] = h
+              if not kw.get('timeout'): kw['timeout'] = 25
+              for i in range(4):
+                  try:
+                      return _orig(self, method, url, **kw)
+                  except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+                      if i == 3: raise
+                      time.sleep(3 + i * 5)
+          requests.Session.request = _req
+          # 진단: 컴시간 첫 화면에 들어가 지는지
+          try:
+              r = requests.get('http://comci.net:4082/st')
+              note(f'컴시간 접속 확인: {r.status_code} · {len(r.content)}바이트')
+          except Exception as e:
+              note('컴시간 접속 확인 실패: ' + ''.join(traceback.format_exception_only(type(e), e)).strip()[:200])
+          import comci as _cm, inspect as _ins
+          try:
+              _src = _ins.getsource(_cm)
+              note('comci 도구가 쓰는 방식: ' + ', '.join(sorted({w for w in ('requests', 'httpx', 'urllib', 'aiohttp') if w in _src})) or '알 수 없음')
+          except Exception:
+              pass
           from comci import search_schools, get_timetable
 
           code = int(os.environ.get('COMCI_CODE') or 0)
