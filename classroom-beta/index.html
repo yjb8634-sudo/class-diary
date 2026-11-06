@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-title" content="클래스 뷰">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<script>try{var __t=localStorage.getItem('cr_theme_cur');if(__t&&__t!=='sky')document.documentElement.dataset.theme=__t;}catch(e){}</script>
+<script>window.__defp=null;window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__defp=e;});try{var __t=localStorage.getItem('cr_theme_cur');if(__t&&__t!=='sky')document.documentElement.dataset.theme=__t;}catch(e){}</script>
 <meta name="theme-color" content="#F2F6FD">
 <style>@font-face{font-family:'Bunpil';font-style:normal;font-weight:100 900;font-display:swap;
   src:url('https://yjb8634-sudo.github.io/class-diary/fonts/Bunpil-R.woff2') format('woff2'),url('https://yjb8634-sudo.github.io/class-diary/fonts/Bunpil-R.woff') format('woff')}</style>
@@ -145,6 +145,10 @@ nav.tabs button .dot{position:absolute;top:6px;right:8px;min-width:18px;height:1
 #mobModal .bt a,#mobModal .bt button{all:unset;cursor:pointer;flex:1;min-width:120px;text-align:center;padding:10px 8px;border-radius:10px;font-size:14.5px;font-weight:700;border:1.5px solid #B9CFC4;background:#fff;color:#24453A;box-sizing:border-box}
 #mobModal .bt .pri{background:#2F6B55;border-color:#2F6B55;color:#fff}
 #mobModal .bt .ins{background:#E6B84A;border-color:#E6B84A;color:#2A2108}
+#mobModal .bt [hidden]{display:none}
+#mobModal .insmsg{margin:10px 0 0;padding:10px 12px;border-radius:10px;background:#FFF6DB;border:1.5px solid #E6B84A;color:#4A3A10;font-size:13.5px;line-height:1.55}
+#mobModal .how.flash{animation:howFlash 1.2s ease 2}
+@keyframes howFlash{50%{box-shadow:0 0 0 4px #E6B84A}}
 #mobModal .how{margin-top:14px;font-size:13.5px;line-height:1.7;color:#33493F;background:#fff;border:1px solid #D2E0D8;border-radius:12px;padding:10px 14px}
 #mobModal .how b{color:#1D2A25}#mobModal .how p{margin:6px 0}
 #mobModal .ok{margin-top:12px;text-align:center;font-weight:700;color:#2F6B55}
@@ -2869,7 +2873,7 @@ function vLinkForm(){
 }
 
 /* ---------- 알림 종 ---------- */
-const APP_VER = '2026-11-06a';
+const APP_VER = '2026-11-06b';
 const UPDATES = [
   { v: '2026-11-06a', title: '11월 6일 업데이트', items: [
     '📄 학교 양식 그대로 조사: 학교에서 받은 엑셀 · 한글 양식을 올리면 학생이 교실 TV에서 답하고, 조사가 끝나면 [양식대로 내려받기]로 받아 바로 제출해요',
@@ -3090,9 +3094,25 @@ function qrSvg(text, dark, light){
   return '<svg viewBox="0 0 ' + (N + 2 * q) + ' ' + (N + 2 * q) + '" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="' + (light || '#fff') + '"/><path d="' + d + '" fill="' + (dark || '#000') + '"/></svg>';
 }
 
-let DEFP = null;
-window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); DEFP = e; const b = document.querySelector('#mobModal [data-m="install"]'); if (b) b.hidden = false; });
-window.addEventListener('appinstalled', () => { DEFP = null; toast('홈 화면에 설치했어요. 이제 앱처럼 열 수 있어요.'); const m = $('mobModal'); if (m) m.remove(); });
+let DEFP = window.__defp || null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); DEFP = e; window.__defp = e; document.querySelectorAll('#mobModal [data-m="install"]').forEach(b => b.hidden = false); const m = document.querySelector('#mobModal .insmsg'); if (m) m.remove(); });
+/* 설치 단추: 브라우저가 바로 설치를 허락하면 설치 창, 아니면 왜 안 되는지와 방법을 바로 보여 줌 */
+async function runInstall(box, pc){
+  if (!DEFP && window.__defp) DEFP = window.__defp;
+  if (DEFP){
+    const p = DEFP; DEFP = null; window.__defp = null;
+    try { p.prompt(); const r = await p.userChoice; if (r && r.outcome === 'accepted') box.remove(); } catch (e) {}
+    return;
+  }
+  const old = box.querySelector('.insmsg'); if (old) old.remove();
+  const msg = document.createElement('div'); msg.className = 'insmsg';
+  msg.innerHTML = pc
+    ? '이 브라우저가 지금은 단추로 바로 설치하는 걸 허락하지 않았어요. 아래 <b>주소창 오른쪽 끝 설치 아이콘</b>으로 설치해 주세요.<br>· 그 자리에 <b>[앱에서 열기]</b> 아이콘이 보이면 <b>이미 설치된 것</b>이에요. 시작 메뉴에서 <b>클래스 뷰</b>를 찾아 여세요.<br>· 예전에 설치 창을 닫은 적이 있으면 크롬이 한동안 단추를 막아요. 그럴 땐 아래 방법을 쓰면 돼요.'
+    : '이 브라우저가 지금은 단추로 바로 설치하는 걸 허락하지 않았어요. 아래 방법으로 설치해 주세요. 이미 설치돼 있다면 홈 화면의 <b>클래스 뷰</b> 아이콘으로 여세요.';
+  const bt = box.querySelector('.bt'); if (bt) bt.after(msg);
+  const how = box.querySelector('.how'); if (how){ how.classList.remove('flash'); void how.offsetWidth; how.classList.add('flash'); }
+}
+window.addEventListener('appinstalled', () => { DEFP = null; window.__defp = null; toast('홈 화면에 설치했어요. 이제 앱처럼 열 수 있어요.'); const m = $('mobModal'); if (m) m.remove(); });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 const UA = navigator.userAgent || '';
 const isPhone = () => /Android|iPhone|iPad|iPod/i.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -3128,7 +3148,7 @@ function mobModal(kind){
     const m = b.dataset.m;
     if (m === 'close'){ box.remove(); return; }
     if (m === 'copy'){ try { await navigator.clipboard.writeText(url); } catch (e) { const t = document.createElement('textarea'); t.value = url; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); } toast('주소를 복사했어요.'); return; }
-    if (m === 'install' && DEFP){ DEFP.prompt(); try { const r = await DEFP.userChoice; if (r && r.outcome === 'accepted') box.remove(); } catch (e) {} DEFP = null; }
+    if (m === 'install'){ runInstall(box, false); }
   });
   document.body.appendChild(box);
 }
@@ -3140,9 +3160,9 @@ function pcModal(){
   box.innerHTML = `<div class="mc" role="dialog" aria-modal="true" aria-labelledby="pcT">
     <div class="mh"><span class="ic">💻</span><div><b id="pcT">바탕화면에 설치하기</b><span>주소창 없이 프로그램처럼 바로 열려요.</span></div><button class="mx" data-m="close" aria-label="닫기">✕</button></div>
     <div class="mb">
-      ${alone ? '<div class="ok">✓ 지금 설치된 앱으로 열려 있어요</div>' : `<div class="bt"><button class="ins" data-m="install" ${DEFP ? '' : 'hidden'}>💻 이 컴퓨터에 설치</button></div>
+      ${alone ? '<div class="ok">✓ 지금 설치된 앱으로 열려 있어요</div>' : `<div class="bt"><button class="ins" data-m="install">💻 이 컴퓨터에 설치</button></div>
       <div class="how">
-        ${DEFP ? '<p>위 단추를 누르고 <b>[설치]</b>를 고르면 끝이에요.</p>' : ''}
+        <p>위 단추를 누르고 <b>[설치]</b>를 고르면 끝이에요. 설치 창이 안 뜨면 아래 방법으로 해 주세요.</p>
         <p><b>크롬</b>: 주소창 오른쪽 끝의 <b>설치 아이콘 <svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/><path d="M12 7v5M9.5 9.8 12 12.3l2.5-2.5"/></svg></b> → <b>설치</b><br>또는 오른쪽 위 <b><svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"/></svg></b> → <b>전송, 저장, 공유</b> → <b>페이지를 앱으로 설치</b></p>
         <p><b>엣지</b>: 오른쪽 위 <b><svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg></b> → <b>앱</b> → <b>이 사이트를 앱으로 설치</b></p>
         ${!chrome && !edge ? '<p>⚠ 지금 브라우저에서 설치 메뉴가 안 보이면 <b>크롬</b>이나 <b>엣지</b>로 이 화면을 열어 주세요.</p>' : ''}
@@ -3153,7 +3173,7 @@ function pcModal(){
     if (ev.target === box){ box.remove(); return; }
     const b = ev.target.closest('[data-m]'); if (!b) return;
     if (b.dataset.m === 'close'){ box.remove(); return; }
-    if (b.dataset.m === 'install' && DEFP){ DEFP.prompt(); try { const r = await DEFP.userChoice; if (r && r.outcome === 'accepted') box.remove(); } catch (e) {} DEFP = null; }
+    if (b.dataset.m === 'install'){ runInstall(box, true); }
   });
   document.body.appendChild(box);
 }
