@@ -527,6 +527,7 @@ body.editing [data-blk].moving{outline:3px solid var(--yellow);opacity:.88;box-s
   .grid [data-blk=now]{order:5}
   .grid [data-blk=clock]{order:6;padding-top:.4rem;border-top:1px solid var(--line)}
 }
+.uic{display:inline-block;width:1.25em;height:1.25em;vertical-align:-.28em;margin:0 .12em;padding:.08em;border-radius:.3em;background:rgba(127,127,127,.16)}
 </style>
 <?!= include_('테마') ?>
 <style>
@@ -577,7 +578,7 @@ var FILE_VER = '2026-11-05a';
 /* ---- 화면이 멈추면 이유를 보여 주는 감시꾼 ----
  * 본 코드가 보낸 파일 그대로인지(글자 수 · 지문)도 함께 확인해서, 붙여넣기 문제인지 바로 알 수 있게 합니다. */
 var BOARD_FILE_VER = '2026-11-05a';   /* 파일 버전 (점검용) */
-var EXPECT = {"len": 119276, "h": 962837438}; /*EXPECT*/
+var EXPECT = {"len": 120300, "h": 3049538090}; /*EXPECT*/
 window.__boardCheck = function(){
   var m = 'BOARD_MARK_', ss = document.getElementsByTagName('script'), found = 0, t = '';
   for (var i = 0; i < ss.length; i++){ var x = ss[i].text || ''; if (x.indexOf(m + 'START = 1') >= 0){ found++; t = x; } }
@@ -1356,10 +1357,10 @@ function drawOv(){
       <div class="lkq">${qrSvg(u, '#14201B', '#FFFFFF')}</div>
       <div class="lkt"><p class="lead">① 휴대폰 <b>카메라</b>로 QR 코드를 비추면 우리 반 화면이 열려요.</p>
         <div class="appsteps">② 열린 화면을 앱처럼 설치해요<br>
-          · 안드로이드: 오른쪽 위 <b>⋮</b> → <b>홈 화면에 추가</b> (또는 <b>앱 설치</b>)<br>
-          · 아이폰: 아래쪽 <b>공유 □↑</b> → <b>홈 화면에 추가</b></div>
+          · 안드로이드: 오른쪽 위 <b><svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"/></svg></b> → <b>홈 화면에 추가</b> (또는 <b>앱 설치</b>)<br>
+          · 아이폰: 아래쪽 <b>공유 <svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 9H6.5A1.5 1.5 0 0 0 5 10.5v9A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 17.5 9H16"/><path d="M12 14V3M8 7l4-4 4 4"/></svg></b> → <b>홈 화면에 추가</b></div>
         ${D.pinChange && D.phoneApp ? '<div class="appsteps">③ 설치한 앱에서 <b>🔑 내 PIN</b>을 만들어요 · 교실 TV에서 낸 답을 바꿀 때 써요</div>' : ''}
-        <p class="lkn">카카오톡 · 네이버 앱으로 열렸다면 <b>⋮</b> → <b>다른 브라우저로 열기</b>를 누른 뒤 설치해요.</p>
+        <p class="lkn">카카오톡 · 네이버 앱으로 열렸다면 <b><svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"/></svg></b> → <b>다른 브라우저로 열기</b>를 누른 뒤 설치해요.</p>
         <p class="lku">${esc(u)}</p></div></div></div>`;
     return;
   }
