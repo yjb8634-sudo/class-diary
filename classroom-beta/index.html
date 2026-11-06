@@ -619,6 +619,21 @@ html[data-theme="chalk"] .flst.r-away{background:#5A3934}
 .fxc .in{width:100%}
 .fxq{margin-top:10px}
 .fxedit{margin:14px 0 4px;padding:16px;border-radius:20px;border:1px dashed var(--yellow);background:rgba(127,127,127,.05)}
+
+/* 소개: 학교 양식 흉내 */
+.xlm{width:min(460px,100%);background:#fff;border:2px solid #14213D;border-radius:18px;overflow:hidden;color:#14213D;box-shadow:0 18px 40px rgba(20,33,61,.14)}
+.xlm .xh{display:flex;align-items:center;gap:9px;padding:10px 14px;background:#1D6F42;color:#fff;font-size:13.5px;font-weight:800}
+.xlm .xh .xi{width:22px;height:22px;border-radius:5px;background:#fff;color:#1D6F42;display:grid;place-items:center;font-size:12px;font-weight:900}
+.xlm .xh em{margin-left:auto;font-style:normal;font-weight:600;opacity:.85;font-size:12.5px}
+.xlm table{border-collapse:collapse;width:100%;font-size:13.5px}
+.xlm th,.xlm td{border:1px solid #cfd6e1;padding:8px 6px;text-align:center;height:20px}
+.xlm th{background:#E3EEF9;font-weight:800}
+.xlm td.a span{display:inline-block;opacity:0;font-weight:700;color:#1D4ED8;animation:xlIn 9s var(--d) infinite}
+.xlm .xf{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 14px;background:#F3F6FA;font-size:13px;font-weight:700;color:#1D6F42}
+.xlm .dlb{background:#A6CDFA;color:#14213D;border-radius:999px;padding:8px 14px;font-size:13px;animation:dlP 9s infinite}
+@keyframes xlIn{0%{opacity:0;transform:translateY(5px)}6%,80%{opacity:1;transform:none}90%,100%{opacity:0}}
+@keyframes dlP{0%,52%{transform:none;box-shadow:none}58%{transform:scale(1.08);box-shadow:0 0 0 7px rgba(166,205,250,.45)}64%,100%{transform:none;box-shadow:none}}
+@media (prefers-reduced-motion:reduce){.xlm td.a span{animation:none;opacity:1}.xlm .dlb{animation:none}}
 </style>
 </head>
 <body>
@@ -1342,10 +1357,10 @@ function vLogin(){
         <div class="reveal">
           <span class="eyebrow"><i></i>${esc(SCHOOL.name)} 담임 선생님을 위한 무료 도구</span>
           <h1>공지 확인부터<br>현황조사까지,<br>교실 TV <span class="hl">한 번에</span><span class="stamp" style="right:.2em;top:1.45em">DONE ✓</span></h1>
-          <p class="sub">매일 칠판에 쓰던 공지, 단톡방에 올리던 가정통신문, 종이로 걷던 동의서와 희망 조사. <b>클래스 뷰</b>가 우리 반 스마트 TV에 띄우고 학생이 TV에서 바로 답해요. 선생님은 누가 냈는지만 확인하세요.</p>
+          <p class="sub">매일 칠판에 쓰던 공지, 단톡방에 올리던 가정통신문, 종이로 걷던 동의서와 희망 조사. <b>클래스 뷰</b>가 우리 반 스마트 TV에 띄우고 학생이 TV에서 바로 답해요. 학교에서 받은 <b>엑셀 · 한글 조사 양식</b>도 그대로 올리면, 학생 답이 양식에 채워져 바로 제출할 수 있어요.</p>
           <div class="cta"><button class="b y gbtn" id="btnLogin" data-go="login">${G_ICON} 구글 계정으로 시작하기</button><a class="b ol" href="#f">${svg('play')} 어떻게 쓰나요 <span class="mn">3분</span></a></div>
           <div class="chks"><span>설치 없음</span><span>완전 무료</span><span>PC · 휴대폰 · TV</span><span>3분이면 시작</span></div>
-          <div class="newc"><a href="#f2"><i>NEW</i>학생 호출, "네, 갈게요" 답장까지 →</a><a href="#f3"><i>NEW</i>컴시간 시간표 · 수업 교환도 TV에 바로 →</a></div>
+          <div class="newc"><a href="#fx"><i>NEW</i>학교 양식(엑셀 · 한글) 그대로 조사 → 받아서 바로 제출 →</a><a href="#f2"><i>NEW</i>학생 호출, "네, 갈게요" 답장까지 →</a></div>
         </div>
         <div class="cmp reveal">
           <div class="cc"><h3>평소 <em>할 일 8개</em></h3><ol>
@@ -1355,12 +1370,12 @@ function vLogin(){
               <div class="r1"><span class="clk">08:35</span><span style="color:#A9B3A9">11/6 금 · 맑음</span></div>
               <div class="bx"><h4>📌 공지</h4><div class="nt"><i>중요</i>3교시 체육관 집합</div></div>
               <div class="bx"><h4>🗳 희망 도서</h4><div class="sv"><div><span>아몬드</span><span class="b2"><i style="--w:.8"></i></span><span>12</span></div><div><span>어린 왕자</span><span class="b2"><i style="--w:.5;animation-delay:.3s"></i></span><span>8</span></div></div></div>
-              <div class="bx"><h4>✅ 동의서 제출</h4><div class="ck">${n15}</div></div>
+              <div class="bx"><h4>📄 방과후 희망 조사 (학교 양식)</h4><div class="ck">${n15}</div></div>
             </div></div></div>
-          <p class="cap">학생은 TV에서 자기 번호를 누르고, 선생님은 확인만 해요</p>
+          <p class="cap">학생은 TV에서 자기 번호를 누르고, 선생님은 양식대로 받아 제출만 해요</p>
         </div>
       </section>
-      <div class="pchips reveal"><span class="c1">${svg('notice')} 공지 · 알림장</span><span class="c2">${svg('survey')} 설문 · 투표 · 현황 조사</span><span class="c3">${svg('check')} 가정통신문 제출 확인</span><span class="c4">${svg('counsel')} 상담 신청 · 건의함</span><span class="c5">${svg('time')} 시계 · 시간표 · 급식</span><span class="br"></span><span class="c6">${svg('bolt')} 공지 확인부터 현황조사까지 TV 한 번에</span></div>
+      <div class="pchips reveal"><span class="c1">${svg('notice')} 공지 · 알림장</span><span class="c2">${svg('survey')} 설문 · 투표 · 현황 조사</span><span class="c3">${svg('check')} 학교 양식 그대로 조사</span><span class="c4">${svg('counsel')} 상담 신청 · 건의함</span><span class="c5">${svg('time')} 시계 · 시간표 · 급식</span><span class="br"></span><span class="c6">${svg('bolt')} 공지 확인부터 현황조사까지 TV 한 번에</span></div>
 
       <section class="lp-sec" id="f">
         <div class="sech reveal"><span class="secno">01 · 기능</span><h2>매일 하던 담임 업무,<br><span class="hl">교실 TV가 먼저</span> 챙겨요</h2>
@@ -1375,8 +1390,18 @@ function vLogin(){
               <div class="ac"><b>공지</b><div class="typ" id="lpType"></div>
                 <div class="lvls"><span>보통</span><span class="on">중요</span><span>긴급</span></div><div class="go">공지 올리기</div></div></div>
             <span class="cap">쓰기 → 올리기 → TV</span></div></div>
-        <div class="frow rev" id="f2">
-          <div class="ft reveal"><div class="nb"><b>2</b><span class="bg-l">학생 호출</span></div>
+        <div class="frow rev" id="fx">
+          <div class="ft reveal"><div class="nb"><b>2</b><span class="bg-s">학교 양식 그대로 조사</span></div>
+            <h3>받은 양식 그대로 올리고,<br>답이 채워진 채 내려받기</h3>
+            <p>업무 메신저로 받은 <b>엑셀(.xlsx) · 한글(.hwpx) 현황조사 양식</b>을 그대로 올리세요. 번호 · 이름은 명단으로 채우고, 나머지 칸은 학생이 교실 TV에서 답해요. 조사가 끝나면 <b>[📥 양식대로 내려받기]</b> 한 번이면 원래 서식 그대로 채워진 파일이 나와요.</p>
+            <ul><li>종이 걷어 엑셀에 옮겨 적는 일 끝</li><li>고르기 칸 · ○표 칸 · 학번(10203)까지 알아서</li><li>안 한 학생만 골라 다시 부르기</li></ul></div>
+          <div class="live bg-s reveal"><span class="lb">LIVE</span>
+            <div class="xlm"><div class="xh"><span class="xi">X</span>방과후_희망조사.xlsx<em>1학년 2반</em></div>
+              <table><tr><th>번호</th><th>성명</th><th>희망 여부</th><th>희망 강좌</th></tr><tr><td>1</td><td>강하늘</td><td class="a"><span style="--d:0.50s">희망</span></td><td class="a"><span style="--d:0.75s">국어 심화</span></td></tr><tr><td>2</td><td>고은별</td><td class="a"><span style="--d:1.05s">미희망</span></td><td class="a"><span style="--d:1.30s"></span></td></tr><tr><td>3</td><td>김민수</td><td class="a"><span style="--d:1.60s">희망</span></td><td class="a"><span style="--d:1.85s">수학 기초</span></td></tr><tr><td>4</td><td>김서연</td><td class="a"><span style="--d:2.15s">희망</span></td><td class="a"><span style="--d:2.40s">영어 독해</span></td></tr><tr><td>5</td><td>나도윤</td><td class="a"><span style="--d:2.70s">미희망</span></td><td class="a"><span style="--d:2.95s"></span></td></tr></table>
+              <div class="xf"><span>✓ 원래 서식 그대로</span><b class="dlb">📥 양식대로 내려받기</b></div></div>
+            <span class="cap">양식 올리기 → TV에서 답 → 양식대로 받기</span></div></div>
+        <div class="frow" id="f2">
+          <div class="ft reveal"><div class="nb"><b>3</b><span class="bg-l">학생 호출</span></div>
             <h3>부르면 TV가 크게,<br>답은 선생님 화면으로</h3>
             <p>교무실에서 <b>"3번 김민수 · 교무실로 와 주세요"</b>를 띄우면 교실 TV 한가운데 크게 나타나요. 학생은 TV에서 <b>[네, 갈게요]</b> 또는 <b>[지금 그 친구가 없어요]</b>를 눌러 답하고, 선생님은 그 답을 바로 확인해요.</p>
             <ul><li>교실까지 가거나 다른 학생에게 전해 달라고 할 필요 없음</li><li>갈게요 · 없어요 답이 휴대폰 관리 화면에 바로 도착</li><li>긴급은 빨갛게 깜빡이고 알림음까지</li></ul></div>
@@ -1386,8 +1411,8 @@ function vLogin(){
               <div class="sent">선생님께 "갈게요"라고 전했어요 👍</div></div></div>
             <div class="phn"><span class="bi2">${mark()}</span><div>3번 김민수 · 🙋 네, 갈게요<small>방금 교실 TV에서 눌렀어요</small></div></div>
             <span class="cap">TV에 띄우기 → 학생이 답하기 → 선생님 확인</span></div></div>
-        <div class="frow" id="f3">
-          <div class="ft reveal"><div class="nb"><b>3</b><span class="bg-p">설문 · 투표 · 현황 조사</span></div>
+        <div class="frow rev" id="f3">
+          <div class="ft reveal"><div class="nb"><b>4</b><span class="bg-p">설문 · 투표 · 현황 조사</span></div>
             <h3>종이 걷지 않고,<br>결과는 실시간으로</h3>
             <p>희망 도서 · 체험학습 장소 · 진로 희망처럼 고르는 조사는 <b>선택형</b>, 구글 설문은 <b>링크형</b>(QR)으로. 이미 낸 답은 그 학생의 PIN으로만 바꿀 수 있어요.</p>
             <ul><li>익명 조사 · 결과 TV 공개는 선택</li><li>엑셀(CSV) 받기 · 결과 그림 카톡 공유</li><li>'기타 — 직접 쓰기'는 TV 화면 자판으로</li></ul></div>
@@ -1399,8 +1424,8 @@ function vLogin(){
                 <div class="opt2"><span>불편한 편의점</span><span class="b3"><i style="--w:.42;animation-delay:.5s"></i></span><span>5</span></div>
                 <div class="opt2"><span>기타</span><span class="b3"><i style="--w:.17;animation-delay:.75s"></i></span><span>2</span></div></div></div></div>
             <span class="cap">TV에서 고르기 → 바로 집계</span></div></div>
-        <div class="frow rev" id="f4">
-          <div class="ft reveal"><div class="nb"><b>4</b><span class="bg-v">소소하지만 반가운 기능</span></div>
+        <div class="frow" id="f4">
+          <div class="ft reveal"><div class="nb"><b>5</b><span class="bg-v">소소하지만 반가운 기능</span></div>
             <h3>교실 TV가 챙기는<br>작은 즐거움</h3>
             <p>공지와 조사만 하는 화면이 아니에요. 생일인 친구를 축하하고, 청소 시간엔 신나는 노래를 틀고, 수업 1분 전엔 종을 울려 자리에 앉게 해요. <b>모두 켜고 끌 수 있어요.</b></p>
             <ul><li>생일 이름을 누르면 생일 축하 노래</li><li>점심 · 청소 시간에 정해 둔 노래 (수업 1분 전 자동으로 멈춤)</li><li>수업 시작 1분 전 종소리</li><li>모둠 활동 · 쪽지 시험용 타이머와 끝 종</li></ul></div>
