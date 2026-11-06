@@ -219,6 +219,18 @@ test('학생 일정: TV는 지움 표시만 하고(한 번만), 다른 칸은 �
   await assertSucceeds(deleteDoc(doc(as.t1(), `boards/${KEY}/sevents/ev1`)));
 });
 
+test('학교 양식 파일: 담임만 읽고 쓰기 (TV · 다른 선생님 못 봄)', async () => {
+  const ref = db => doc(db, `boards/${KEY}/formfiles/fabc_0`);
+  await assertSucceeds(setDoc(ref(as.t1()), { d: 'UEsDBA==', at: serverTimestamp() }));
+  await assertSucceeds(getDoc(ref(as.t1())));
+  await assertFails(getDoc(ref(as.tv())));
+  await assertFails(getDoc(ref(as.t2())));
+  await assertFails(setDoc(ref(as.tv()), { d: 'x', at: serverTimestamp() }));
+  await assertFails(setDoc(ref(as.t2()), { d: 'x', at: serverTimestamp() }));
+  await assertFails(setDoc(ref(as.t1()), { d: 'x', at: serverTimestamp(), extra: 1 }));
+  await assertSucceeds(deleteDoc(ref(as.t1())));
+});
+
 test('학생 호출 답장: TV는 지금 떠 있는 호출에만 한 번 답하고, 읽기 · 지우기는 담임만', async () => {
   await env.withSecurityRulesDisabled(async ctx => {
     await updateDoc(doc(ctx.firestore(), `boards/${KEY}`), { flash: { id: 'fl12345a', who: '3번', text: '교무실', level: '알림', until: Date.now() + 300000 } });

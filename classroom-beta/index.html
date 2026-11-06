@@ -592,6 +592,31 @@ html[data-theme="chalk"] .flst.r-away{background:#5A3934}
 .tvpk .tvp.on{border-color:currentColor;box-shadow:inset 0 0 0 1px currentColor}
 .tvpk .sw{width:26px;height:26px;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.1)}
 .uic{display:inline-block;width:1.25em;height:1.25em;vertical-align:-.28em;margin:0 .12em;padding:.08em;border-radius:.3em;background:rgba(127,127,127,.16)}
+
+/* ---------- 학교 양식 조사 ---------- */
+.fxdrop{all:unset;box-sizing:border-box;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;margin-top:12px;padding:30px 16px;border:2px dashed var(--line);border-radius:22px;cursor:pointer;text-align:center;transition:background .2s,border-color .2s}
+.fxdrop:hover,.fxdrop.over{border-color:var(--yellow);background:rgba(127,127,127,.06)}
+.fxdrop b{font-size:18px}.fxdrop span{font-size:13.5px;color:var(--chalk3)}
+.hint.warn{border-left:4px solid var(--pink);margin-top:12px;line-height:1.7}
+.fxfile{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+.fxfile>span:first-child{flex:1;min-width:200px}
+.fxpv{margin-top:10px;overflow:auto;border-radius:14px;border:1px solid var(--line);max-height:300px}
+.fxpv table{border-collapse:collapse;font-size:12.5px;min-width:100%;background:#fff;color:#1b2333}
+.fxpv td{border:1px solid #c9d2df;padding:5px 8px;text-align:center;white-space:nowrap;height:26px}
+.fxpv tr.h td{background:#e7eef9;font-weight:700}
+.fxpv tr.t td{border-color:transparent;color:#5b6577;text-align:left}
+.fxpv tr.more td{border:0;color:#8a93a3;font-size:12px;text-align:left}
+.fxpv tr.bd th{position:sticky;top:0;padding:5px 6px;font-size:11.5px;font-weight:800;white-space:nowrap;background:#f3f5f9;color:#6b7891;border-bottom:2px solid #c9d2df}
+.fxpv th.r-q,.fxpv th.r-mark{background:#FFE7A3;color:#5a4300}
+.fxpv th.r-no,.fxpv th.r-name,.fxpv th.r-grade,.fxpv th.r-klass,.fxpv th.r-hakbun{background:#DDF3E8;color:#0f5d43}
+.fxt{font-size:15px;margin:16px 0 8px;color:var(--chalk2)}
+.fxcols{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.fxc{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:16px;border:1px solid var(--line);background:var(--card2)}
+.fxc.r-q,.fxc.r-mark{border-color:var(--yellow);box-shadow:inset 3px 0 0 var(--yellow)}
+.fxc.r-skip{opacity:.7}
+.fxh b{font-size:15px}.fxh small{display:block;font-size:12px;color:var(--chalk3);margin-top:2px}
+.fxc .in{width:100%}
+.fxq{margin-top:10px}
 </style>
 </head>
 <body>
@@ -602,6 +627,576 @@ html[data-theme="chalk"] .flst.r-away{background:#5A3934}
 <div id="toast" role="status"></div>
 <input type="file" id="filePick" hidden multiple>
 <input type="file" id="xlsPick" hidden accept=".xlsx,.xls,.csv">
+<input type="file" id="fxPick" hidden accept=".xlsx,.hwpx,.hwp,.xls">
+<script>/* =====================================================================
+ * FORMX — 학교 양식(엑셀 .xlsx · 한글 .hwpx)을 읽고, 학생 답으로 채워 다시 만듭니다.
+ *  - 밖의 라이브러리 없이 브라우저만으로 동작 (압축 풀기 · 묶기는 브라우저 기본 기능)
+ *  - 바꾸지 않은 부분은 원래 파일의 바이트를 그대로 옮겨서 서식이 흐트러지지 않게 합니다.
+ * ===================================================================== */
+(function (G) {
+  'use strict';
+  const te = new TextEncoder(), td = new TextDecoder();
+
+  /* ---------------- ZIP ---------------- */
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  function crc32(u) { let c = 0xFFFFFFFF; for (let i = 0; i < u.length; i++) c = CRC[(c ^ u[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+  async function pipe(u, stream) { const s = new Blob([u]).stream().pipeThrough(stream); return new Uint8Array(await new Response(s).arrayBuffer()); }
+  const inflate = u => pipe(u, new DecompressionStream('deflate-raw'));
+  const deflate = u => pipe(u, new CompressionStream('deflate-raw'));
+
+  function unzip(buf) {
+    const u = buf instanceof Uint8Array ? buf : new Uint8Array(buf), dv = new DataView(u.buffer, u.byteOffset, u.byteLength);
+    let e = u.length - 22; while (e >= 0 && dv.getUint32(e, true) !== 0x06054b50) e--;
+    if (e < 0) throw new Error('압축 파일 모양이 아니에요.');
+    const n = dv.getUint16(e + 10, true); let p = dv.getUint32(e + 16, true);
+    const list = [];
+    for (let i = 0; i < n; i++) {
+      if (dv.getUint32(p, true) !== 0x02014b50) throw new Error('파일이 손상된 것 같아요.');
+      const flag = dv.getUint16(p + 8, true), method = dv.getUint16(p + 10, true), time = dv.getUint16(p + 12, true), date = dv.getUint16(p + 14, true),
+        crc = dv.getUint32(p + 16, true), csize = dv.getUint32(p + 20, true), size = dv.getUint32(p + 24, true),
+        nl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), lho = dv.getUint32(p + 42, true);
+      const name = td.decode(u.subarray(p + 46, p + 46 + nl));
+      const ds = lho + 30 + dv.getUint16(lho + 26, true) + dv.getUint16(lho + 28, true);
+      list.push({ name, flag, method, time, date, crc, csize, size, raw: u.subarray(ds, ds + csize) });
+      p += 46 + nl + xl + cl;
+    }
+    return list;
+  }
+  async function bytesOf(e) { if (!e.data) e.data = e.method === 0 ? e.raw.slice() : await inflate(e.raw); return e.data; }
+  async function zip(list) {
+    const parts = [], cen = []; let off = 0;
+    for (const e of list) {
+      if (e.changed) {
+        const d = e.data; e.crc = crc32(d); e.size = d.length;
+        e.raw = e.method === 0 ? d : await deflate(d); if (e.method !== 0) e.method = 8;
+        e.csize = e.raw.length;
+      }
+      const nb = te.encode(e.name), utf = /[^\x00-\x7f]/.test(e.name) ? 0x800 : 0, flag = (e.flag & ~8) | utf;
+      const h = new Uint8Array(30 + nb.length), v = new DataView(h.buffer);
+      v.setUint32(0, 0x04034b50, true); v.setUint16(4, 20, true); v.setUint16(6, flag, true); v.setUint16(8, e.method, true);
+      v.setUint16(10, e.time, true); v.setUint16(12, e.date, true); v.setUint32(14, e.crc, true); v.setUint32(18, e.csize, true); v.setUint32(22, e.size, true);
+      v.setUint16(26, nb.length, true); v.setUint16(28, 0, true); h.set(nb, 30);
+      const c = new Uint8Array(46 + nb.length), w = new DataView(c.buffer);
+      w.setUint32(0, 0x02014b50, true); w.setUint16(4, 20, true); w.setUint16(6, 20, true); w.setUint16(8, flag, true); w.setUint16(10, e.method, true);
+      w.setUint16(12, e.time, true); w.setUint16(14, e.date, true); w.setUint32(16, e.crc, true); w.setUint32(20, e.csize, true); w.setUint32(24, e.size, true);
+      w.setUint16(28, nb.length, true); w.setUint32(42, off, true); c.set(nb, 46);
+      parts.push(h, e.raw); cen.push(c); off += h.length + e.raw.length;
+    }
+    const cs = cen.reduce((a, b) => a + b.length, 0), end = new Uint8Array(22), x = new DataView(end.buffer);
+    x.setUint32(0, 0x06054b50, true); x.setUint16(8, list.length, true); x.setUint16(10, list.length, true); x.setUint32(12, cs, true); x.setUint32(16, off, true);
+    const out = new Uint8Array(off + cs + 22); let q = 0;
+    for (const a of parts.concat(cen, [end])) { out.set(a, q); q += a.length; }
+    return out;
+  }
+
+  /* ---------------- 작은 XML 나무 (위치를 기억해 그 자리만 고침) ---------------- */
+  const TAG = /<(\/?)([A-Za-z_][\w:.-]*)((?:\s+[^\s=>\/]+\s*=\s*(?:"[^"]*"|'[^']*'))*)\s*(\/?)>|<!--[\s\S]*?-->|<\?[\s\S]*?\?>|<!\[CDATA\[[\s\S]*?\]\]>|<!DOCTYPE[^>]*>/g;
+  function xtree(s) {
+    const root = { name: '#', kids: [], s: 0, is: 0, ie: s.length, e: s.length }, st = [root];
+    TAG.lastIndex = 0; let m;
+    while ((m = TAG.exec(s))) {
+      if (!m[2]) continue;
+      if (m[1]) { const n = st.pop(); n.ie = m.index; n.e = TAG.lastIndex; continue; }
+      const n = { name: m[2], a: m[3] || '', s: m.index, is: TAG.lastIndex, kids: [] };
+      st[st.length - 1].kids.push(n);
+      if (m[4]) { n.ie = n.e = TAG.lastIndex; n.self = true; } else st.push(n);
+    }
+    return root;
+  }
+  const local = n => n.name.replace(/^.*:/, '');
+  function attr(n, k) { const m = new RegExp('(?:^|\\s)' + k.replace(/[:.]/g, '\\$&') + '\\s*=\\s*(?:"([^"]*)"|\'([^\']*)\')').exec(n.a); return m ? unesc(m[1] != null ? m[1] : m[2]) : null; }
+  function* walk(n, name) { for (const k of n.kids) { if (!name || local(k) === name) yield k; yield* walk(k, name); } }
+  const kids = (n, name) => n.kids.filter(k => local(k) === name);
+  const kid = (n, name) => n.kids.find(k => local(k) === name);
+  const unesc = s => String(s).replace(/&(lt|gt|amp|quot|apos|#\d+|#x[0-9a-f]+);/gi, (_, e) => ({ lt: '<', gt: '>', amp: '&', quot: '"', apos: "'" })[e.toLowerCase()] || String.fromCodePoint(e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10)));
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  function inner(s, n) { return n.self ? '' : s.slice(n.is, n.ie); }
+  function textIn(s, n, tname) { let out = ''; for (const t of walk(n, tname)) out += unesc(inner(s, t).replace(/<[^>]+>/g, '')); return out; }
+  function splice(s, edits) {
+    edits.sort((a, b) => b.s - a.s);
+    for (const x of edits) s = s.slice(0, x.s) + x.str + s.slice(x.e);
+    return s;
+  }
+
+  /* ---------------- 칸 위치 ---------------- */
+  const colName = c => { let s = ''; c++; while (c) { const r = (c - 1) % 26; s = String.fromCharCode(65 + r) + s; c = (c - r - 1) / 26; } return s; };
+  const colNum = s => { let c = 0; for (const ch of s) c = c * 26 + ch.charCodeAt(0) - 64; return c - 1; };
+  function ref(a) { const m = /^\$?([A-Z]+)\$?(\d+)$/.exec(a.trim()); return m ? { r: Number(m[2]) - 1, c: colNum(m[1]) } : null; }
+  function range(a) { const [x, y] = a.split(':'); const p = ref(x), q = y ? ref(y) : p; return p && q ? { r0: Math.min(p.r, q.r), c0: Math.min(p.c, q.c), r1: Math.max(p.r, q.r), c1: Math.max(p.c, q.c) } : null; }
+
+  /* ---------------- 표 찾기 (엑셀 · 한글 공통) ----------------
+   * T = { rows, cols, text(r,c), origin(r,c)->{r,c,rs,cs}, has(r,c), opts(r,c)->[] } */
+  const N = s => String(s || '').replace(/\s+/g, '');
+  const RX = {
+    no: /^(번호|연번|순번|번|no\.?|NO)$/i, name: /^(성명|이름|학생명|학생이름|성명\(.*\)|이름\(.*\))$/, grade: /^학년$/, klass: /^반$/,
+    hakbun: /^학번$/, skip: /^(비고|확인|서명|날인|\(인\)|담임확인|보호자확인|보호자서명|학부모확인|확인란|서명란|인)$/,
+    foot: /^(합계|계|소계|총계|총원)$|위와같이|위의|담임교사|확인자|작성자|제출합니다|※/
+  };
+  function optsFromTitle(t) {
+    const m = /[(（\[]([^()（）\[\]]+)[)）\]]/.exec(t || ''); if (!m) return null;
+    const inside = m[1].replace(/\s+/g, ' ').trim();
+    if (/표시|표\)?$|기재|작성|중\s*택|선택/.test(inside) && !/[\/,·ㆍ|]/.test(inside)) return null;
+    const parts = inside.split(/\s*[\/,·ㆍ|]\s*/).map(x => x.trim()).filter(Boolean);
+    if (parts.length < 2 || parts.length > 8 || parts.some(x => x.length > 12)) return null;
+    return { q: (t.slice(0, m.index) + t.slice(m.index + m[0].length)).replace(/\s+/g, ' ').trim() || t, options: parts };
+  }
+  function detect(T) {
+    let hr = -1;
+    for (let r = 0; r < Math.min(T.rows, 40) && hr < 0; r++) {
+      let no = false, nm = false;
+      for (let c = 0; c < T.cols; c++) { const o = T.origin(r, c); if (o.r !== r && o.r < r - 1) continue; const t = N(T.text(o.r, o.c)); if (RX.no.test(t) || RX.hakbun.test(t)) no = true; if (RX.name.test(t)) nm = true; }
+      if (no && nm) hr = r;
+    }
+    if (hr < 0) return null;
+    // 머리 칸 범위: 번호 · 이름 칸에서 좌우로 빈칸이 나올 때까지 (옆에 따로 적어 둔 목록은 빼기)
+    const hasHead = c => { if (c < 0 || c >= T.cols) return false; const o = T.origin(hr, c); return !!N(T.text(o.r, o.c)); };
+    let seed = -1;
+    for (let c = 0; c < T.cols && seed < 0; c++) { const o = T.origin(hr, c); const t = N(T.text(o.r, o.c)); if (RX.name.test(t)) seed = c; }
+    let c0 = seed, c1 = seed;
+    while (hasHead(c0 - 1)) c0--;
+    while (hasHead(c1 + 1)) c1++;
+    // 두 줄 머리?
+    let two = false;
+    for (let c = c0; c <= c1; c++) {
+      const o = T.origin(hr, c);
+      if (o.rs > 1 && o.r === hr) two = true;
+      if (o.cs > 1 && o.r === hr && hr + 1 < T.rows) { const u = T.origin(hr + 1, c); if (u.r === hr + 1 && N(T.text(u.r, u.c))) two = true; }
+    }
+    if (two) for (let c = c0; c <= c1; c++) { const u = T.origin(hr + 1, c); if (u.r === hr + 1 && /^\d+$/.test(N(T.text(u.r, u.c)))) two = false; }
+    const ds = hr + (two ? 2 : 1);
+    // 칸(열) 정리
+    const cols = [];
+    for (let c = c0; c <= c1; c++) {
+      const top = T.origin(hr, c), sub = two ? T.origin(hr + 1, c) : top;
+      const tt = T.text(top.r, top.c).replace(/\s+/g, ' ').trim(), st = two && sub.r === hr + 1 ? T.text(sub.r, sub.c).replace(/\s+/g, ' ').trim() : '';
+      const hasSub = two && sub.r === hr + 1 && st && top.cs > 1;
+      if (!hasSub && top.c !== c) continue;                    /* 가로로 합친 머리 칸은 한 칸으로 */
+      if (hasSub && sub.c !== c) continue;
+      cols.push({ c, title: hasSub ? st : tt, group: hasSub ? tt : '', gc: hasSub ? top.c : -1 });
+    }
+    // 아래로 자료 줄
+    const rows = [];
+    for (let r = ds; r < T.rows; r++) {
+      let any = false, foot = false, wide = false;
+      for (let c = c0; c <= c1; c++) {
+        if (T.has(r, c)) any = true;
+        const o = T.origin(r, c); const t = N(T.text(o.r, o.c));
+        if (t && RX.foot.test(t)) foot = true;
+        if (o.r === r && o.c === c && o.cs >= Math.max(2, (c1 - c0 + 1) - 1)) wide = true;
+      }
+      if (foot || wide || !any) break;
+      rows.push(r);
+    }
+    // 역할 정하기
+    const out = [];
+    const used = {};
+    for (let i = 0; i < cols.length; i++) {
+      const x = cols[i];
+      if (x.group) {
+        const g = cols.filter(y => y.gc === x.gc);
+        if (used[x.gc]) continue; used[x.gc] = 1;
+        out.push({ key: 'g' + x.gc, role: 'mark', title: x.group.replace(/[(（][^)）]*[)）]/g, '').trim() || x.group, cols: g.map(y => y.c), options: g.map(y => y.title), mark: '○' });
+        continue;
+      }
+      const t = N(x.title);
+      let role = 'q';
+      if (RX.no.test(t)) role = 'no'; else if (RX.name.test(t)) role = 'name'; else if (RX.grade.test(t)) role = 'grade'; else if (RX.klass.test(t)) role = 'klass';
+      else if (RX.hakbun.test(t)) role = 'hakbun'; else if (RX.skip.test(t) || /^비고/.test(t)) role = 'skip';
+      const col = { key: 'c' + x.c, role, title: x.title, cols: [x.c], options: [] };
+      if (role === 'q') {
+        const dv = rows.length ? T.opts(rows[0], x.c) : null, ot = optsFromTitle(x.title);
+        if (dv && dv.length) { col.options = dv; col.title = ot ? ot.q : x.title; }
+        else if (ot) { col.options = ot.options; col.title = ot.q; }
+      }
+      out.push(col);
+    }
+    // 번호 · 이름이 이미 적혀 있나?
+    const nc = out.find(x => x.role === 'no'), mc = out.find(x => x.role === 'name');
+    const filled = (cc) => cc ? rows.filter(r => N(T.text(r, cc.cols[0]))).length : 0;
+    let match = 'seq';
+    if (mc && filled(mc) >= Math.max(3, rows.length * 0.5)) match = 'name';
+    else if (nc && filled(nc) >= Math.max(3, rows.length * 0.5) && rows.every(r => !N(T.text(r, nc.cols[0])) || /^\d+$/.test(N(T.text(r, nc.cols[0]))))) match = 'no';
+    return { hr, ds, c0, c1, two, rows, cols: out, match };
+  }
+
+  /* ---------------- 엑셀 ---------------- */
+  async function xlsxOpen(list) {
+    const get = n => list.find(e => e.name === n || e.name === n.replace(/^\//, ''));
+    const txt = async n => { const e = get(n); return e ? td.decode(await bytesOf(e)) : null; };
+    const wb = await txt('xl/workbook.xml'); if (!wb) throw new Error('엑셀 파일 안쪽을 찾지 못했어요.');
+    const relx = await txt('xl/_rels/workbook.xml.rels') || '';
+    const rel = {}; for (const r of walk(xtree(relx), 'Relationship')) { let t = attr(r, 'Target') || ''; t = t.startsWith('/') ? t.slice(1) : 'xl/' + t; rel[attr(r, 'Id')] = t.replace(/\/\.\//g, '/'); }
+    const sstx = await txt('xl/sharedStrings.xml'); const sst = [];
+    if (sstx) { const R = xtree(sstx); for (const si of walk(R, 'si')) { let s = ''; for (const t of walk(si, 't')) { /* 윗주(rPh) 빼기 */ s += unesc(inner(sstx, t)); } sst.push(s); } }
+    const W = xtree(wb), sheets = [];
+    for (const sh of walk(W, 'sheet')) {
+      const id = attr(sh, 'r:id') || attr(sh, 'id'); const path = rel[id]; if (!path) continue;
+      sheets.push({ name: attr(sh, 'name'), path, hidden: /hidden/.test(attr(sh, 'state') || '') });
+    }
+    const doc = { kind: 'xlsx', list, sheets: [], wbPath: 'xl/workbook.xml' };
+    for (const sh of sheets) {
+      const x = await txt(sh.path); if (x == null) continue;
+      doc.sheets.push(Object.assign(sh, xlsxSheet(x, sst)));
+    }
+    // 다른 시트를 가리키는 드롭다운 목록 풀기
+    for (const sh of doc.sheets) for (const v of sh.dvs) if (!v.list && v.f) v.list = rangeValues(doc, sh, v.f);
+    return doc;
+  }
+  function xlsxSheet(x, sst) {
+    const R = xtree(x), cells = {}, rowsEl = {};
+    const sd = [...walk(R, 'sheetData')][0];
+    let maxR = 0, maxC = 0;
+    if (sd) for (const row of kids(sd, 'row')) {
+      const r = Number(attr(row, 'r')) - 1; rowsEl[r] = row; let seq = 0;
+      for (const c of kids(row, 'c')) {
+        const p = attr(c, 'r') ? ref(attr(c, 'r')) : { r, c: seq }; seq = p.c + 1;
+        const t = attr(c, 't'); let v = '';
+        const vv = kid(c, 'v');
+        if (t === 's') v = sst[Number(inner(x, vv || { self: true }))] || '';
+        else if (t === 'inlineStr') { const is = kid(c, 'is'); v = is ? textIn(x, is, 't') : ''; }
+        else if (vv) v = unesc(inner(x, vv));
+        cells[p.r + ',' + p.c] = { v, el: c, s: attr(c, 's') };
+        maxR = Math.max(maxR, p.r + 1); maxC = Math.max(maxC, p.c + 1);
+      }
+    }
+    const merges = [];
+    for (const m of walk(R, 'mergeCell')) { const g = range(attr(m, 'ref') || ''); if (g) { merges.push(g); maxR = Math.max(maxR, g.r1 + 1); maxC = Math.max(maxC, g.c1 + 1); } }
+    const dvs = [];
+    for (const d of walk(R, 'dataValidation')) {
+      if ((attr(d, 'type') || '') !== 'list') continue;
+      let f = '', sq = attr(d, 'sqref') || '';
+      const f1 = kid(d, 'formula1'); if (f1) { const ff = kid(f1, 'f'); f = unesc(ff ? inner(x, ff) : inner(x, f1)); }
+      const sqe = kid(d, 'sqref'); if (sqe) sq = inner(x, sqe);
+      const v = { sq: sq.split(/\s+/).map(range).filter(Boolean), f: f.replace(/^=/, '') };
+      if (/^".*"$/.test(v.f)) { v.list = v.f.slice(1, -1).split(',').map(s => s.trim()).filter(Boolean); }
+      dvs.push(v);
+    }
+    return { x, R, cells, rowsEl, merges, dvs, maxR, maxC, sd };
+  }
+  function rangeValues(doc, sh, f) {
+    let m = /^(?:'?([^'!]+)'?!)?(.+)$/.exec(f); if (!m) return null;
+    const s2 = m[1] ? doc.sheets.find(z => z.name === m[1]) : sh; const g = range(m[2].replace(/\$/g, ''));
+    if (!s2 || !g) return null;
+    const out = [];
+    for (let r = g.r0; r <= g.r1; r++) for (let c = g.c0; c <= g.c1; c++) { const v = (s2.cells[r + ',' + c] || {}).v; if (v != null && String(v).trim()) out.push(String(v).trim()); }
+    return out.length ? out.slice(0, 40) : null;
+  }
+  function xlsxGrid(sh) {
+    const om = {};
+    for (const g of sh.merges) for (let r = g.r0; r <= g.r1; r++) for (let c = g.c0; c <= g.c1; c++) om[r + ',' + c] = { r: g.r0, c: g.c0, rs: g.r1 - g.r0 + 1, cs: g.c1 - g.c0 + 1 };
+    return {
+      rows: sh.maxR, cols: sh.maxC,
+      text: (r, c) => { const x = sh.cells[r + ',' + c]; return x ? String(x.v) : ''; },
+      origin: (r, c) => om[r + ',' + c] || { r, c, rs: 1, cs: 1 },
+      has: (r, c) => !!sh.cells[r + ',' + c] || !!om[r + ',' + c],
+      opts: (r, c) => { for (const v of sh.dvs) if (v.list && v.sq.some(g => r >= g.r0 && r <= g.r1 && c >= g.c0 && c <= g.c1)) return v.list; return null; }
+    };
+  }
+
+  /* ---------------- 한글 HWPX ---------------- */
+  async function hwpxOpen(list) {
+    const secs = list.filter(e => /^Contents\/section\d+\.xml$/.test(e.name)).sort((a, b) => Number(a.name.match(/\d+/)[0]) - Number(b.name.match(/\d+/)[0]));
+    if (!secs.length) throw new Error('한글(HWPX) 문서 안쪽을 찾지 못했어요.');
+    const doc = { kind: 'hwpx', list, sheets: [] };
+    for (const e of secs) {
+      const x = td.decode(await bytesOf(e)), R = xtree(x);
+      let k = 0;
+      for (const tb of walk(R, 'tbl')) doc.sheets.push(Object.assign({ name: (secs.length > 1 ? e.name.match(/\d+/)[0] * 1 + 1 + '구역 ' : '') + '표 ' + (++k), path: e.name }, hwpxTable(x, tb)));
+    }
+    return doc;
+  }
+  function hwpxTable(x, tb) {
+    const cells = {}, om = {}, trs = kids(tb, 'tr');
+    let rows = Number(attr(tb, 'rowCnt')) || trs.length, cols = Number(attr(tb, 'colCnt')) || 0;
+    trs.forEach((tr, i) => {
+      for (const tc of kids(tr, 'tc')) {
+        const a = kid(tc, 'cellAddr'), sp = kid(tc, 'cellSpan');
+        const r = a ? Number(attr(a, 'rowAddr')) : i, c = a ? Number(attr(a, 'colAddr')) : 0;
+        const rs = sp ? Number(attr(sp, 'rowSpan')) || 1 : 1, cs = sp ? Number(attr(sp, 'colSpan')) || 1 : 1;
+        const sub = kid(tc, 'subList');
+        let v = ''; if (sub) v = kids(sub, 'p').map(p => { let s = ''; for (const t of walk(p, 't')) { if (/\bt$/.test(t.name)) s += unesc(inner(x, t).replace(/<[^>]+>/g, '')); } return s; }).join('\n').trim();
+        cells[r + ',' + c] = { v, el: tc, tr, rs, cs };
+        for (let y = r; y < r + rs; y++) for (let z = c; z < c + cs; z++) om[y + ',' + z] = { r, c, rs, cs };
+        cols = Math.max(cols, c + cs); rows = Math.max(rows, r + rs);
+      }
+    });
+    return { x, tb, trs, cells, om, maxR: rows, maxC: cols, dvs: [] };
+  }
+  function hwpxGrid(t) {
+    return {
+      rows: t.maxR, cols: t.maxC,
+      text: (r, c) => { const o = t.om[r + ',' + c]; const x = o ? t.cells[o.r + ',' + o.c] : null; return x ? x.v : ''; },
+      origin: (r, c) => t.om[r + ',' + c] || { r, c, rs: 1, cs: 1 },
+      has: (r, c) => !!t.om[r + ',' + c],
+      opts: () => null
+    };
+  }
+
+  /* ---------------- 열기 ---------------- */
+  async function open(buf, fname) {
+    const u = new Uint8Array(buf);
+    if (u[0] === 0xD0 && u[1] === 0xCF && u[2] === 0x11 && u[3] === 0xE0) {
+      const e = new Error(/\.hwp$/i.test(fname || '') ? 'HWP' : /\.xls$/i.test(fname || '') ? 'XLS' : 'OLE'); e.code = e.message; throw e;
+    }
+    if (!(u[0] === 0x50 && u[1] === 0x4B)) { const e = new Error('엑셀(.xlsx)이나 한글(.hwpx) 파일만 쓸 수 있어요.'); e.code = 'TYPE'; throw e; }
+    const list = unzip(u);
+    const doc = list.some(e => e.name === 'xl/workbook.xml') ? await xlsxOpen(list) : list.some(e => /^Contents\/section\d+\.xml$/.test(e.name)) ? await hwpxOpen(list) : null;
+    if (!doc) { const e = new Error('엑셀(.xlsx)이나 한글(.hwpx) 파일만 쓸 수 있어요.'); e.code = 'TYPE'; throw e; }
+    doc.tables = [];
+    doc.sheets.forEach((sh, i) => {
+      if (sh.hidden) return;
+      const T = doc.kind === 'xlsx' ? xlsxGrid(sh) : hwpxGrid(sh);
+      const d = detect(T);
+      if (d) {
+        /* 제목: 표 위쪽 글 중 가장 긴 것 (엑셀) · 표 앞 문단 (한글) */
+        let title = '';
+        if (doc.kind === 'xlsx') { for (let r = 0; r < d.hr; r++) for (let c = 0; c < T.cols; c++) { const v = String(T.text(r, c) || '').trim(); if (v.length > title.length && !(/\(\s*\d*\s*\)\s*(학년|반)|담임/.test(v) && v.length < 40)) title = v; } }
+        else { const before = sh.x.slice(0, sh.tb.s); const ts = []; for (const m of before.matchAll(/<(\w+:)?t>([^<]*)<\/(\w+:)?t>/g)) ts.push(unesc(m[2])); title = ts.map(x => x.trim()).filter(Boolean).slice(-4).sort((a, b) => b.length - a.length)[0] || ''; }
+        doc.tables.push(Object.assign({ id: i, label: doc.kind === 'xlsx' ? '시트 ' + sh.name : sh.name, T, title: title.replace(/\s+/g, ' ').slice(0, 60) }, d));
+      }
+    });
+    return doc;
+  }
+  /* 미리보기용: 표 앞쪽 몇 줄을 글자 격자로 */
+  function preview(doc, t, nRows) {
+    const T = t.T, out = [];
+    const r0 = Math.max(0, t.hr - 2), r1 = Math.min(T.rows - 1, t.ds + (nRows || 4) - 1);
+    for (let r = r0; r <= r1; r++) {
+      const row = [];
+      for (let c = t.c0; c <= t.c1; c++) { const o = T.origin(r, c); row.push(o.r === r && o.c === c ? { t: T.text(r, c), rs: Math.min(o.rs, r1 - r + 1), cs: Math.min(o.cs, t.c1 - c + 1), c } : null); }
+      out.push({ r, cells: row, head: r >= t.hr && r < t.ds, data: r >= t.ds });
+    }
+    return out;
+  }
+
+  /* ---------------- 채우기 ----------------
+   * fill(buf, name, plan) → Uint8Array
+   * plan = { table: id, cols: [{role, cols:[c], mark, ...}], rows: [{ no, name, vals: { key: '글자' | 보기번호(표시 칸) } }], grade, klass } */
+  function cellsFor(plan, t, st) {
+    const W = [];  /* [c, value] */
+    const pad = n => String(n).padStart(2, '0');
+    for (const col of plan.cols) {
+      const c = col.cols[0];
+      if (col.role === 'no') { if (t.match !== 'no') W.push([c, st.no]); }
+      else if (col.role === 'name') { if (t.match !== 'name') W.push([c, st.name]); }
+      else if (col.role === 'grade') W.push([c, plan.grade]);
+      else if (col.role === 'klass') W.push([c, plan.klass]);
+      else if (col.role === 'hakbun') W.push([c, Number(String(plan.grade) + pad(plan.klass) + pad(st.no))]);
+      else if (col.role === 'mark') { const i = st.vals[col.key]; (Array.isArray(i) ? i : [i]).forEach(k => { if (k != null && k >= 0 && col.cols[k] != null) W.push([col.cols[k], col.mark || '○']); }); }
+      else if (col.role === 'q') { const v = st.vals[col.key]; if (v != null && v !== '') W.push([c, v]); }
+    }
+    return W;
+  }
+  /* '(   )학년 (   )반' 처럼 비어 있는 괄호에 학년 · 반 넣기 */
+  function blanks(v, plan) {
+    return String(v).replace(/\((\s*)\)(\s*)(학년|반)/g, (m, sp, sp2, w) => '( ' + (w === '학년' ? plan.grade : plan.klass) + ' )' + sp2 + w);
+  }
+  const hasBlank = v => /\(\s*\)\s*(학년|반)/.test(String(v || ''));
+  function placeRows(t, students) {
+    /* 학생 → 줄 번호. 남는 학생은 extra로 */
+    const T = t.T, map = [], extra = [];
+    const nc = t.cols.find(x => x.role === 'no'), mc = t.cols.find(x => x.role === 'name');
+    if (t.match === 'no') {
+      const by = {}; t.rows.forEach(r => { const v = N(T.text(r, nc.cols[0])); if (v) by[Number(v)] = r; });
+      const free = t.rows.filter(r => !N(T.text(r, nc.cols[0])));
+      students.forEach(s => { if (by[s.no] != null) map.push([s, by[s.no]]); else if (free.length) map.push([s, free.shift()]); else extra.push(s); });
+    } else if (t.match === 'name') {
+      const by = {}; t.rows.forEach(r => { const v = N(T.text(r, mc.cols[0])); if (v) by[v] = r; });
+      students.forEach(s => { const r = by[N(s.name)]; if (r != null) map.push([s, r]); else extra.push(s); });
+    } else students.forEach((s, i) => { if (i < t.rows.length) map.push([s, t.rows[i]]); else extra.push(s); });
+    return { map, extra };
+  }
+  async function fill(buf, fname, plan) {
+    const doc = await open(buf, fname);
+    const t = doc.tables.find(x => x.id === plan.table) || doc.tables[0];
+    if (!t) throw new Error('양식에서 번호 · 이름이 있는 표를 찾지 못했어요.');
+    const sh = doc.sheets[t.id];
+    const students = plan.rows.slice().sort((a, b) => a.no - b.no);
+    const P = placeRows(t, students);
+    const report = { filled: P.map.length, added: 0, short: 0 };
+    if (doc.kind === 'xlsx') {
+      let rowsUse = P.map.map(([s, r]) => [s, r]);
+      if (P.extra.length) {
+        /* 표 아래가 비어 있으면 마지막 줄 모양을 본떠 이어 적기 */
+        const last = t.rows[t.rows.length - 1], need = P.extra.length;
+        let free = true;
+        for (let k = 1; k <= need && free; k++) for (let c = t.c0; c <= t.c1; c++) if (xlsxGrid(sh).has(last + k, c)) { free = false; break; }
+        if (free && t.match === 'seq') { P.extra.forEach((s, k) => rowsUse.push([s, last + 1 + k, last])); report.added = need; }
+        else report.short = need;
+      }
+      const out = xlsxWrite(sh, t, plan, rowsUse);
+      const e = doc.list.find(z => z.name === sh.path); e.data = te.encode(out); e.changed = true;
+      /* 열 때 수식 다시 계산 */
+      const we = doc.list.find(z => z.name === 'xl/workbook.xml'); let wx = td.decode(await bytesOf(we));
+      if (/<calcPr\b/.test(wx)) wx = wx.replace(/<calcPr\b([^>]*?)(\/?)>/, (m, a, sl) => '<calcPr' + a.replace(/\sfullCalcOnLoad="[^"]*"/, '') + ' fullCalcOnLoad="1"' + sl + '>');
+      else wx = wx.replace(/<\/workbook>/, '<calcPr fullCalcOnLoad="1"/></workbook>');
+      we.data = te.encode(wx); we.changed = true;
+      /* 계산 사슬은 지워 두면 엑셀이 새로 만듦 */
+    } else {
+      const out = hwpxWrite(sh, t, plan, P, report);
+      const e = doc.list.find(z => z.name === sh.path); e.data = te.encode(out); e.changed = true;
+    }
+    return { bytes: await zip(doc.list), report };
+  }
+
+  function xlsxWrite(sh, t, plan, rowsUse) {
+    const x = sh.x, G = xlsxGrid(sh);
+    /* 줄마다 쓸 칸 모으기 */
+    const W = {};  /* r -> {c: {v, styleFrom}} */
+    if (plan.blanks !== false) for (let r = 0; r < t.hr; r++) for (let c = 0; c < G.cols; c++) {
+      const x0 = sh.cells[r + ',' + c]; if (x0 && hasBlank(x0.v)) (W[r] = W[r] || {})[c] = { v: blanks(x0.v, plan), like: null };
+    }
+    for (const [s, r, likeRow] of rowsUse) {
+      for (const [c0, v] of cellsFor(plan, t, s)) {
+        const o = G.origin(r, c0); const rr = o.r, cc = o.c;
+        (W[rr] = W[rr] || {})[cc] = { v, like: likeRow != null ? likeRow : null };
+      }
+    }
+    const cellXml = (r, c, v, s0) => {
+      const rr = colName(c) + (r + 1), s = s0 != null ? ' s="' + s0 + '"' : '';
+      if (typeof v === 'number' && isFinite(v)) return '<c r="' + rr + '"' + s + '><v>' + v + '</v></c>';
+      return '<c r="' + rr + '"' + s + ' t="inlineStr"><is><t xml:space="preserve">' + esc(v) + '</t></is></c>';
+    };
+    const edits = [];
+    const rowNums = Object.keys(W).map(Number).sort((a, b) => a - b);
+    const newRows = [];
+    for (const r of rowNums) {
+      const row = sh.rowsEl[r], want = W[r];
+      if (row) {
+        /* 이미 있는 줄: 칸을 바꾸거나 끼워 넣기 */
+        const cs = kids(row, 'c').map(c => ({ el: c, c: ref(attr(c, 'r')).c }));
+        const parts = []; let pos = row.self ? null : row.is;
+        const cols = Object.keys(want).map(Number).sort((a, b) => a - b);
+        let out = '', last = row.self ? 0 : row.is;
+        const body = row.self ? '' : x.slice(row.is, row.ie);
+        /* 다시 짜기: 원래 칸 + 새 칸을 열 순서대로 */
+        const all = cs.map(z => ({ c: z.c, xml: x.slice(z.el.s, z.el.e), s: attr(z.el, 's') }));
+        for (const c of cols) {
+          const i = all.findIndex(z => z.c === c);
+          const like = want[c].like != null ? (sh.cells[want[c].like + ',' + c] || {}).s : null;
+          const s0 = i >= 0 ? all[i].s : like;
+          const xml = cellXml(r, c, want[c].v, s0);
+          if (i >= 0) all[i].xml = xml; else all.push({ c, xml });
+        }
+        all.sort((a, b) => a.c - b.c);
+        const open = x.slice(row.s, row.is).replace(/\s+spans="[^"]*"/, '').replace(/\/>$/, '>');
+        edits.push({ s: row.s, e: row.e, str: open + all.map(z => z.xml).join('') + '</row>' });
+      } else newRows.push(r);
+    }
+    /* 없는 줄 새로 만들기: 순서에 맞게 끼워 넣기 */
+    if (newRows.length) {
+      const sd = sh.sd; const exist = Object.keys(sh.rowsEl).map(Number).sort((a, b) => a - b);
+      for (const r of newRows) {
+        const want = W[r];
+        const like = Object.values(want)[0].like;
+        const likeEl = like != null ? sh.rowsEl[like] : null;
+        const rattr = likeEl ? (likeEl.a.match(/\s(ht|customHeight)="[^"]*"/g) || []).join('') : '';
+        /* 표 줄 모양(테두리)을 본뜨기: 비슷한 줄의 모든 칸 스타일 복사 */
+        const cellsXml = [];
+        const cset = new Set(Object.keys(want).map(Number));
+        if (like != null) for (let c = t.c0; c <= t.c1; c++) cset.add(c);
+        [...cset].sort((a, b) => a - b).forEach(c => {
+          const s0 = like != null ? (sh.cells[like + ',' + c] || {}).s : null;
+          if (want[c]) cellsXml.push(cellXml(r, c, want[c].v, s0)); else if (s0 != null) cellsXml.push('<c r="' + colName(c) + (r + 1) + '" s="' + s0 + '"/>');
+        });
+        const xml = '<row r="' + (r + 1) + '"' + rattr + '>' + cellsXml.join('') + '</row>';
+        const nextR = exist.find(z => z > r);
+        if (nextR != null) edits.push({ s: sh.rowsEl[nextR].s, e: sh.rowsEl[nextR].s, str: xml });
+        else if (sd.self) edits.push({ s: sd.s, e: sd.e, str: '<sheetData>' + xml + '</sheetData>' });
+        else edits.push({ s: sd.ie, e: sd.ie, str: xml });
+      }
+    }
+    /* 같은 자리에 끼우는 새 줄이 여러 개면 순서를 지키도록 */
+    const merged = []; const byPos = {};
+    edits.forEach(ed => { if (ed.s === ed.e) { (byPos[ed.s] = byPos[ed.s] || []).push(ed.str); } else merged.push(ed); });
+    Object.keys(byPos).forEach(p => merged.push({ s: Number(p), e: Number(p), str: byPos[p].join('') }));
+    let out = splice(x, merged);
+    /* 표 범위(dimension) 넓히기 */
+    const maxR = Math.max(sh.maxR, ...rowNums.map(r => r + 1));
+    out = out.replace(/<dimension ref="([A-Z]+\d+)(?::([A-Z]+)(\d+))?"\s*\/>/, (m, a, c2, r2) => r2 && Number(r2) < maxR ? '<dimension ref="' + a + ':' + c2 + maxR + '"/>' : m);
+    return out;
+  }
+
+  function hwpxWrite(sh, t, plan, P, report) {
+    let x = sh.x;
+    const edits = [];
+    const cellText = (tc, val) => {
+      const sub = kid(tc, 'subList'); if (!sub) return null;
+      const ps = kids(sub, 'p'); if (!ps.length) return null;
+      const p = ps[0]; const run = kid(p, 'run');
+      const pOpen = x.slice(p.s, p.is);
+      const cp = run ? attr(run, 'charPrIDRef') : '0';
+      const pre = run ? x.slice(run.s, run.is).replace(/\/>$/, '>') : '<hp:run charPrIDRef="' + cp + '">';
+      const nsp = (p.name.match(/^(\w+):/) || [, 'hp'])[1];
+      const txt = String(val).split('\n').map(esc).join('<' + nsp + ':lineBreak/>');
+      const np = pOpen + pre + '<' + nsp + ':t>' + txt + '</' + nsp + ':t></' + nsp + ':run></' + p.name + '>';
+      return { s: p.s, e: ps[ps.length - 1].e, str: np };
+    };
+    const G = hwpxGrid(sh);
+    const put = (r, c, v) => { const o = G.origin(r, c); const cell = sh.cells[o.r + ',' + o.c]; if (!cell) return; const ed = cellText(cell.el, v); if (ed) edits.push(ed); };
+    for (const [s, r] of P.map) for (const [c, v] of cellsFor(plan, t, s)) put(r, c, v);
+    /* 줄이 모자라면 마지막 자료 줄을 본떠 늘리기 */
+    if (P.extra.length && t.match === 'seq') {
+      const lastR = t.rows[t.rows.length - 1];
+      const tr = sh.trs.find(tr => kids(tr, 'tc').some(tc => { const a = kid(tc, 'cellAddr'); return a && Number(attr(a, 'rowAddr')) === lastR; }));
+      const simple = tr && kids(tr, 'tc').every(tc => { const sp = kid(tc, 'cellSpan'); return !sp || Number(attr(sp, 'rowSpan') || 1) === 1; });
+      if (tr && simple) {
+        const k = P.extra.length;
+        const trXml = x.slice(tr.s, tr.e);
+        let rowsXml = '';
+        P.extra.forEach((s, i) => {
+          const rr = lastR + 1 + i;
+          const vals = {}; for (const [c, v] of cellsFor(plan, t, s)) vals[c] = v;
+          /* 칸마다: 주소 바꾸고 글자 넣기 */
+          const sub = xtree(trXml); const trn = sub.kids[0];
+          const ed = [];
+          for (const tc of kids(trn, 'tc')) {
+            const a = kid(tc, 'cellAddr'); const c = Number(attr(a, 'colAddr'));
+            ed.push({ s: a.s, e: a.e, str: trXml.slice(a.s, a.e).replace(/rowAddr="\d+"/, 'rowAddr="' + rr + '"') });
+            const sl = kid(tc, 'subList'); const ps = sl ? kids(sl, 'p') : [];
+            if (ps.length) {
+              const p = ps[0], run = kid(p, 'run'), nsp = (p.name.match(/^(\w+):/) || [, 'hp'])[1];
+              const pre = run ? trXml.slice(run.s, run.is).replace(/\/>$/, '>') : '<' + nsp + ':run charPrIDRef="0">';
+              const v = vals[c] != null ? esc(vals[c]) : '';
+              ed.push({ s: p.s, e: ps[ps.length - 1].e, str: trXml.slice(p.s, p.is) + pre + (v ? '<' + nsp + ':t>' + v + '</' + nsp + ':t>' : '') + '</' + nsp + ':run></' + p.name + '>' });
+            }
+          }
+          rowsXml += splice(trXml, ed);
+        });
+        edits.push({ s: tr.e, e: tr.e, str: rowsXml });
+        /* 뒤쪽 줄(합계 등) 주소 밀기 + 표 줄 수 */
+        for (const tr2 of sh.trs) for (const tc of kids(tr2, 'tc')) {
+          const a = kid(tc, 'cellAddr'); if (!a) continue; const r0 = Number(attr(a, 'rowAddr'));
+          if (r0 > lastR) edits.push({ s: a.s, e: a.e, str: x.slice(a.s, a.e).replace(/rowAddr="\d+"/, 'rowAddr="' + (r0 + k) + '"') });
+        }
+        /* 표 전체 높이도 늘린 줄만큼 */
+        const sz = kid(sh.tb, 'sz'), csz = kid(kids(tr, 'tc')[0], 'cellSz');
+        const rh = csz ? Number(attr(csz, 'height')) || 0 : 0;
+        if (sz && rh) edits.push({ s: sz.s, e: sz.e, str: x.slice(sz.s, sz.e).replace(/\bheight="(\d+)"/, (m, n) => 'height="' + (Number(n) + rh * k) + '"') });
+        const tbOpen = x.slice(sh.tb.s, sh.tb.is);
+        edits.push({ s: sh.tb.s, e: sh.tb.is, str: tbOpen.replace(/rowCnt="(\d+)"/, (m, n) => 'rowCnt="' + (Number(n) + k) + '"') });
+        report.added = k;
+      } else report.short = P.extra.length;
+    } else if (P.extra.length) report.short = P.extra.length;
+    if (plan.blanks !== false) {
+      const R = xtree(x);
+      for (const tn of walk(R, 't')) {
+        if (!/^(\w+:)?t$/.test(tn.name) || tn.self) continue;
+        if (tn.s > sh.tb.s && tn.s < sh.tb.e) continue;
+        const v = unesc(inner(x, tn)); if (hasBlank(v)) edits.push({ s: tn.is, e: tn.ie, str: esc(blanks(v, plan)) });
+      }
+    }
+    /* 한 칸 안에서 여러 고침이 겹치지 않게: 같은 시작은 하나만 */
+    const seen = {}; const uniq = edits.filter(e => { const k = e.s + ':' + e.e; if (seen[k]) return false; seen[k] = 1; return true; });
+    return splice(x, uniq);
+  }
+
+  /* 미리 보기 표(HTML)와 붙여넣기용(탭) 글자 — 옛 .hwp 등에 */
+  function tsv(rows, heads) { return [heads.join('\t')].concat(rows.map(r => r.map(v => String(v == null ? '' : v).replace(/[\t\n]/g, ' ')).join('\t'))).join('\n'); }
+
+  G.FORMX = { open, fill, preview, tsv, _: { unzip, zip, xtree, detect, crc32, optsFromTitle } };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
 <script type="module">
 import { fb, OPERATOR, SCHOOL, DEFAULT_PERIODS, DEFAULT_SPECIALS, DEFAULT_LUNCH, rid, kstToday } from './fb.js';
 
@@ -710,10 +1305,15 @@ const mark = anim => `<svg class="mk${anim ? ' anim' : ''}" viewBox="0 0 64 64" 
 const svg = (k, w) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w || 2}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k] || ''}</svg>`;
 /* ---------- 첫 화면: 도입 애니메이션 + 소개 ---------- */
 const G_ICON = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-17.1z"/><path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.8-5.8l-7.4-5.7c-2.1 1.4-4.8 2.3-8.4 2.3-6.2 0-11.5-4.1-13.4-9.8l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>';
+/* 도입 애니메이션: 앱(페이지)을 새로 열 때마다 한 번. 로그인한 상태여도 나옵니다 */
+let INTRO = 0; const INTRO_Q = [];
 function introPlay(go){
-  let seen = false; try { seen = sessionStorage.getItem('cr_intro') === '1'; } catch (e) {}
-  if (seen || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) || $('intro')){ go && go(); return; }
-  try { sessionStorage.setItem('cr_intro', '1'); } catch (e) {}
+  if (go) INTRO_Q.push(go);
+  const flush = () => { while (INTRO_Q.length) try { INTRO_Q.shift()(); } catch (e) {} };
+  if (INTRO === 2){ flush(); return; }
+  if (INTRO === 1) return;
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches){ INTRO = 2; flush(); return; }
+  INTRO = 1;
   const el = document.createElement('div'); el.id = 'intro'; el.setAttribute('role', 'presentation');
   el.innerHTML = `<div class="zoom"><div class="stage"><span class="mkw">${mark(true)}</span><b>클래스 뷰</b><span class="en">Class View</span><span class="tg">공지 확인부터 현황조사까지, 교실 TV 한 번에</span></div></div>
     <span class="skip">누르면 건너뛰기</span>`;
@@ -721,8 +1321,8 @@ function introPlay(go){
   document.body.appendChild(el);
   const T = []; let out = false;
   const done = () => {
-    if (out) return; out = true; T.forEach(clearTimeout);
-    el.classList.add('out'); document.documentElement.classList.remove('introing'); go && go();
+    if (out) return; out = true; T.forEach(clearTimeout); INTRO = 2;
+    el.classList.add('out'); document.documentElement.classList.remove('introing'); flush();
     setTimeout(() => el.remove(), 800);
   };
   T.push(setTimeout(done, 3300));
@@ -937,7 +1537,7 @@ function watchBoard(){
   S.ansUnsub = F.onSnapshot(F.collection(db, 'boards', S.key, 'answers'), qs => {
     const A = {};
     const AL = [];
-    qs.docs.forEach(d => { const x = d.data(); if (!x || !x.sid || !(x.ch || []).length) return; (A[x.sid] = A[x.sid] || {})[x.no] = { ch: x.ch || [], etc: x.etc || '' }; AL.push({ sid: x.sid, no: x.no, t: msOf(x.at) }); });
+    qs.docs.forEach(d => { const x = d.data(); if (!x || !x.sid || !((x.ch || []).length || x.etc)) return; (A[x.sid] = A[x.sid] || {})[x.no] = { ch: x.ch || [], etc: x.etc || '' }; AL.push({ sid: x.sid, no: x.no, t: msOf(x.at) }); });
     S.ANS = A; S.ANSL = AL;
     if (S.B) render();
   }, () => {});
@@ -1614,7 +2214,8 @@ function sndValidate(o){
   if ((o.lunch || o.clean) && !o.url) return '음악을 켜려면 유튜브 주소를 넣어 주세요.';
   return '';
 }
-document.addEventListener('input', e => { const t = e.target; if (t.id === 'sndVol' || t.id === 'sndFx'){ const s = document.getElementById(t.id + 'V'); if (s) s.textContent = t.value; } });
+document.addEventListener('input', e => { const t = e.target; if (t.dataset && t.dataset.fx && t.tagName === 'INPUT'){ if (fxSet(t)){ const y = scrollY; render(); scrollTo(0, y); const n = document.querySelector(`[data-fx="${t.dataset.fx}"][data-i="${t.dataset.i}"]`); if (n){ n.focus(); n.setSelectionRange(n.value.length, n.value.length); } } return; }
+  if (t.id === 'sndVol' || t.id === 'sndFx'){ const s = document.getElementById(t.id + 'V'); if (s) s.textContent = t.value; } });
 const SND_SRC = () => S.B.sound, SND_TODAY = () => kstToday();
 const SND_K = { box: 'card', lead: 'lead', row: 'row', chk: 'chk', small: 'small muted', btn: 'b', pri: 'b y', act: 'a' };
 function vLook(){
@@ -1871,6 +2472,197 @@ async function readRosterFile(f){
   } catch (e) { fail(e); }
 }
 
+/* ---------- 학교 양식(엑셀 · 한글)으로 조사: 올리기 → 칸 정하기 → TV에서 답 → 양식대로 내려받기 ---------- */
+const FX_ROLE = { no: '번호 (명단으로 채움)', name: '이름 (명단으로 채움)', grade: '학년 (자동)', klass: '반 (자동)', hakbun: '학번 (자동 · 예: 10203)',
+  q: '질문 — 학생이 답해요', mark: '○ 표시 — 학생이 골라요', skip: '비워 두기' };
+const FX_HWP = `<div class="hint warn"><b>옛 한글 파일(.hwp)은 바로 채울 수 없어요.</b> 한글에서 이 파일을 연 뒤
+  <b>[파일] → [다른 이름으로 저장하기]</b> → 파일 형식을 <b>HWPX 문서 (*.hwpx)</b>로 바꿔 저장하고, 그 파일을 올려 주세요. (한글 2014 이후 버전)</div>`;
+const FX_XLS = `<div class="hint warn"><b>옛 엑셀 파일(.xls)은 바로 채울 수 없어요.</b> 엑셀에서 이 파일을 연 뒤
+  <b>[파일] → [다른 이름으로 저장]</b> → 파일 형식을 <b>Excel 통합 문서 (*.xlsx)</b>로 바꿔 저장하고, 그 파일을 올려 주세요.</div>`;
+const fxOpts = v => { const L = String(v || '').split(/\s*[,\n/·]\s*/).map(x => x.trim()).filter(Boolean).map(x => x.slice(0, 40)); return L.filter((x, i) => L.indexOf(x) === i).slice(0, 30); };
+function b64Of(buf){ const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
+function bufOf(b64){ const s = atob(b64), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
+async function fxLoad(f){
+  if (!f) return;
+  if (!window.FORMX || typeof DecompressionStream === 'undefined') return toast('이 브라우저에서는 양식을 읽을 수 없어요. 크롬이나 엣지로 열어 주세요.', true);
+  if (f.size > 4e6){ S.fx = { name: f.name, err: 'big' }; render(); return; }
+  busy('양식을 읽는 중…');
+  try {
+    const buf = await f.arrayBuffer(), doc = await FORMX.open(buf, f.name);
+    S.fx = doc.tables.length ? { name: f.name, buf, doc, ti: 0 } : { name: f.name, err: 'notable' };
+    if (doc.tables.length) fxPick(0);
+  } catch (e){ S.fx = { name: f.name, err: e.code || 'read', msg: e.message }; }
+  busy(''); render();
+}
+function fxPick(i){
+  const X = S.fx, t = X.doc.tables[i]; X.ti = i;
+  X.cols = t.cols.map(c => Object.assign({}, c, { q: c.title, opt: (c.options || []).join(', '), mark: c.mark || '○', req: !/사유|비고|기타|의견|하고\s*싶은|특이/.test(c.title || '') }));
+  X.title = t.title || X.name.replace(/\.[^.]+$/, '');
+}
+function fxPreview(X){
+  const t = X.doc.tables[X.ti], rows = FORMX.preview(X.doc, t, 4);
+  const owner = c => X.cols.find(x => x.cols.indexOf(c) >= 0);
+  let qn = 0; const qno = {}; X.cols.forEach(c => { if (c.role === 'q' || c.role === 'mark') qno[c.key] = ++qn; });
+  const badge = c => { const o = owner(c); if (!o) return '<th></th>';
+    const lb = o.role === 'q' || o.role === 'mark' ? '질문 ' + qno[o.key] : ({ no: '번호', name: '이름', grade: '학년', klass: '반', hakbun: '학번', skip: '비움' })[o.role];
+    return `<th class="r-${o.role}">${lb}</th>`; };
+  const head = `<tr class="bd">${Array.from({ length: t.c1 - t.c0 + 1 }, (_, k) => badge(t.c0 + k)).join('')}</tr>`;
+  const body = rows.map(r => `<tr class="${r.head ? 'h' : r.data ? 'd' : 't'}">${r.cells.map(x => x ? `<td${x.rs > 1 ? ` rowspan="${x.rs}"` : ''}${x.cs > 1 ? ` colspan="${x.cs}"` : ''}>${esc(String(x.t).slice(0, 30))}</td>` : '').join('')}</tr>`).join('');
+  return `<div class="fxpv"><table>${head}${body}<tr class="more"><td colspan="${t.c1 - t.c0 + 1}">… 학생 줄 ${t.rows.length}줄</td></tr></table></div>`;
+}
+function vFormMaker(){
+  const X = S.fx, stu = S.B.students || [];
+  const how = `<p class="lead" style="margin-top:10px">학교에서 받은 현황조사 양식을 그대로 올리세요. <b>번호 · 이름 · 학년 · 반</b> 칸은 명단으로 채우고, 나머지 칸은 학생이 교실 TV에서 답해요.
+    다 모이면 <b>[📥 양식대로 내려받기]</b>로 원래 모양 그대로 받아 바로 제출하면 돼요. ${stu.length ? '' : '<b style="color:var(--pink)">먼저 [학급 명단]에 학생을 넣어 주세요.</b>'}</p>`;
+  const drop = `<button class="fxdrop" data-drop="fx" data-a="fxpick">
+    <b>📄 양식 파일 고르기</b><span>엑셀(.xlsx) · 한글(.hwpx) — 눌러서 고르거나 여기로 끌어 놓기</span></button>`;
+  if (!X || X.err){
+    const err = !X ? '' : X.err === 'HWP' ? FX_HWP : X.err === 'XLS' ? FX_XLS
+      : X.err === 'big' ? '<div class="hint warn">4MB보다 큰 파일이에요. 양식 안의 그림(학교 로고 등)을 빼고 저장해서 올려 주세요.</div>'
+      : X.err === 'notable' ? `<div class="hint warn"><b>${esc(X.name)}</b>에서 <b>번호</b>와 <b>이름(성명)</b> 칸이 함께 있는 표를 찾지 못했어요. 표 맨 위 줄에 '번호', '성명' 같은 칸 이름이 있는지 확인해 주세요.</div>`
+      : `<div class="hint warn">${esc(X.name)} 파일을 읽지 못했어요. ${esc(X.msg || '')}</div>`;
+    return how + err + drop;
+  }
+  const t = X.doc.tables[X.ti], qs = X.cols.filter(c => c.role === 'q' || c.role === 'mark');
+  const roleSel = (c, i) => `<select class="in" data-fx="role" data-i="${i}">${(c.cols.length > 1 ? ['mark', 'skip'] : ['no', 'name', 'grade', 'klass', 'hakbun', 'q', 'skip'])
+    .map(r => `<option value="${r}" ${c.role === r ? 'selected' : ''}>${FX_ROLE[r]}</option>`).join('')}</select>`;
+  const colRow = (c, i) => `<div class="fxc r-${c.role}">
+      <div class="fxh"><b>${esc(c.title || '(이름 없는 칸)')}</b>${c.cols.length > 1 ? `<small>${esc(c.options.join(' · '))} 칸 중 하나에 표시</small>` : ''}</div>
+      ${roleSel(c, i)}
+      ${c.role === 'q' || c.role === 'mark' ? `<input class="in" data-fx="q" data-i="${i}" value="${esc(c.q)}" maxlength="100" placeholder="TV에 보일 질문">` : ''}
+      ${c.role === 'q' ? `<input class="in" data-fx="opt" data-i="${i}" value="${esc(c.opt)}" placeholder="보기를 쉼표로 (예: 희망, 미희망) · 비우면 글로 답해요">
+        <span class="small muted">${fxOpts(c.opt).length >= 2 ? '학생이 보기에서 골라요' : '학생이 TV 자판으로 글을 써요'}</span>
+        ${fxOpts(c.opt).length >= 2 ? '' : `<label class="chk small"><input type="checkbox" data-fx="req" data-i="${i}" ${c.req !== false ? 'checked' : ''}> 꼭 답해야 해요 (끄면 [건너뛰기] 가능)</label>`}` : ''}
+      ${c.role === 'mark' ? `<label class="small muted">표시 글자 <input class="in" data-fx="mk" data-i="${i}" value="${esc(c.mark)}" maxlength="2" style="width:56px;text-align:center"></label>` : ''}
+    </div>`;
+  const short = stu.length > t.rows.length;
+  return how + `<div class="fxfile"><span>📄 <b>${esc(X.name)}</b> · ${X.doc.kind === 'hwpx' ? '한글' : '엑셀'}</span>
+      ${X.doc.tables.length > 1 ? `<select class="in" data-fx="table">${X.doc.tables.map((x, i) => `<option value="${i}" ${i === X.ti ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}</select>` : `<span class="small muted">${esc(t.label)}</span>`}
+      <button class="b sm" data-a="fxreset">다른 파일</button></div>
+    ${fxPreview(X)}
+    <p class="small muted" style="margin:6px 0 0">양식의 학생 줄 <b>${t.rows.length}</b>줄 · 우리 반 <b>${stu.length}</b>명${t.match === 'no' ? ' · 번호가 미리 적혀 있어 번호에 맞춰 적어요' : t.match === 'name' ? ' · 이름이 미리 적혀 있어 이름에 맞춰 적어요' : ''}
+      ${short ? `<br><b style="color:var(--pink)">줄이 ${stu.length - t.rows.length}줄 모자라요.</b> 표 아래가 비어 있으면 같은 모양으로 줄을 이어 붙여요.` : ''}</p>
+    <h3 class="fxt">칸마다 할 일</h3><div class="fxcols">${X.cols.map(colRow).join('')}</div>
+    <input class="in" data-fx="title" value="${esc(X.title || '')}" maxlength="60" style="width:100%;margin-top:12px" placeholder="TV에 보일 조사 이름">
+    <input class="in" data-fx="desc" value="${esc(X.desc || '')}" maxlength="200" style="width:100%;margin-top:8px" placeholder="설명 (선택) — 예: 금요일까지 답해 주세요">
+    <div class="row" style="margin-top:10px;justify-content:space-between"><span class="small muted">학생은 TV에서 이름을 누르고 질문 ${qs.length}개에 차례로 답해요.</span>
+      <button class="b y" data-a="fxmake" ${qs.length && stu.length ? '' : 'disabled'}>TV에 올리기</button></div>`;
+}
+function fxSet(t){
+  const X = S.fx; if (!X || !X.cols) return false;
+  const k = t.dataset.fx, i = +t.dataset.i, c = X.cols[i];
+  if (k === 'role'){ c.role = t.value; return true; }
+  if (k === 'req'){ c.req = t.checked; return false; }
+  if (k === 'q') c.q = t.value; else if (k === 'opt'){ const was = fxOpts(c.opt).length >= 2; c.opt = t.value; return was !== (fxOpts(c.opt).length >= 2); }
+  else if (k === 'mk') c.mark = t.value; else if (k === 'title') X.title = t.value; else if (k === 'desc') X.desc = t.value;
+  else if (k === 'table'){ fxPick(+t.value); return true; }
+  return false;
+}
+async function fxMake(){
+  const { db, F } = S.fb, B = S.B, X = S.fx; if (!X || !X.doc) return;
+  const t = X.doc.tables[X.ti], qs = X.cols.filter(c => c.role === 'q' || c.role === 'mark');
+  if (!qs.length) return toast('학생이 답할 칸(질문)을 하나 이상 골라 주세요.', true);
+  if (!(B.students || []).length) return toast('먼저 [학급 명단]에 학생을 넣어 주세요.', true);
+  if (!X.cols.some(c => c.role === 'name') && t.match !== 'name' && !confirm('이름 칸을 정하지 않았어요. 그래도 만들까요?')) return;
+  if ((B.surveys || []).length + qs.length > 45) return toast('조사가 너무 많아요. 지난 조사를 조금 지워 주세요.', true);
+  if (qs.some(c => !String(c.q || c.title || '').trim())) return toast('질문 문구가 빈 칸이 있어요.', true);
+  const title = String(X.title || '').trim().slice(0, 60) || '학교 양식 조사', fid = 'f' + rid(8);
+  busy('양식을 올리는 중…');
+  try {
+    const b64 = b64Of(X.buf), CH = 700000, parts = Math.ceil(b64.length / CH);
+    for (let i = 0; i < parts; i++) await F.setDoc(F.doc(db, 'boards', S.key, 'formfiles', fid + '_' + i), { d: b64.slice(i * CH, (i + 1) * CH), at: F.serverTimestamp() });
+    const ids = qs.map(() => 's' + rid(8)), now = new Date().toISOString();
+    const sv = qs.map((c, k) => {
+      const opts = c.role === 'mark' ? c.options.slice() : fxOpts(c.opt), choice = c.role === 'mark' || opts.length >= 2;
+      return { id: ids[k], q: String(c.q || c.title).trim().slice(0, 100), kind: choice ? '선택' : '글', options: choice ? opts : [], multi: false, etc: false, anon: false, pub: false,
+        open: true, showMissing: true, desc: k === 0 ? String(X.desc || '').trim().slice(0, 200) : '', file: null, at: now,
+        grp: fid, gi: k, gn: qs.length, gname: title, sub: k > 0, nx: ids[k + 1] || '', req: choice || c.req !== false };
+    });
+    const form = { fid, name: X.name.slice(0, 80), title, kind: X.doc.kind, table: t.id, parts, size: X.buf.byteLength, at: now,
+      cols: X.cols.map(c => ({ key: c.key, role: c.role, cols: c.cols, mark: (c.mark || '○').slice(0, 2), sid: qs.indexOf(c) >= 0 ? ids[qs.indexOf(c)] : '' })) };
+    busy('');
+    if (await save({ surveys: (B.surveys || []).concat(sv), forms: (B.forms || []).concat([form]) }, 'TV에 올렸어요. 다 모이면 [📥 양식대로 내려받기]를 누르세요.')){ S.fx = null; S.svKind = '선택'; render(); }
+  } catch (e){ busy(''); fail(e); }
+}
+function fxGroup(fid){ return (S.B.surveys || []).filter(s => s.grp === fid).sort((a, b) => a.gi - b.gi); }
+function fxAnsText(s, a){
+  if (!a) return '';
+  if (s.kind === '글') return a.etc || '';
+  return (a.ch || []).map(i => s.options[i]).filter(Boolean).join(', ') + (a.etc ? ' (' + a.etc + ')' : '');
+}
+async function fxDownload(fid){
+  const { db, F } = S.fb, B = S.B, f = (B.forms || []).find(x => x.fid === fid); if (!f) return toast('양식 정보를 찾지 못했어요.', true);
+  const L = fxGroup(fid), stu = (B.students || []).slice().sort((a, b) => a.no - b.no);
+  const miss = stu.filter(t => L.some(s => s.req !== false && !(S.ANS[s.id] || {})[t.no]));
+  if (miss.length && !confirm(`아직 다 답하지 않은 학생이 ${miss.length}명 있어요.\n(${miss.slice(0, 10).map(t => t.no + '. ' + t.name).join(', ')}${miss.length > 10 ? ' …' : ''})\n\n안 한 칸은 비워 두고 내려받을까요?`)) return;
+  busy('양식을 채우는 중…');
+  try {
+    let b64 = '';
+    for (let i = 0; i < f.parts; i++){
+      const d = await F.getDoc(F.doc(db, 'boards', S.key, 'formfiles', fid + '_' + i));
+      if (!d.exists()) throw new Error('올려 둔 양식 파일을 찾지 못했어요. (TV 주소를 바꿨거나 백업을 되살렸다면) 양식으로 조사를 다시 만들어 주세요.');
+      b64 += d.data().d;
+    }
+    const rows = stu.map(t => {
+      const vals = {};
+      f.cols.forEach(c => {
+        if (!c.sid) return; const s = L.find(x => x.id === c.sid), a = (S.ANS[c.sid] || {})[t.no]; if (!s || !a) return;
+        vals[c.key] = c.role === 'mark' ? (a.ch || [])[0] : fxAnsText(s, a);
+      });
+      return { no: t.no, name: t.name, vals };
+    });
+    const r = await FORMX.fill(bufOf(b64), f.name, { table: f.table, cols: f.cols, rows, grade: Number(B.grade) || B.grade, klass: Number(B.klass) || B.klass });
+    const ext = f.kind === 'hwpx' ? 'hwpx' : 'xlsx', base = f.name.replace(/\.[^.]+$/, '');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([r.bytes], { type: ext === 'xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'application/hwp+zip' }));
+    a.download = `${base}_${B.grade}학년${B.klass}반.${ext}`; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 3000);
+    busy('');
+    if (r.report.short) toast(`⚠ 양식 줄이 모자라 ${r.report.short}명은 적지 못했어요. 양식에 줄을 늘려 다시 올려 주세요.`, true);
+    else toast(r.report.added ? `받았어요. 줄이 모자라 같은 모양으로 ${r.report.added}줄을 이어 붙였어요.` : '양식대로 채워서 받았어요. 열어서 확인하고 제출하세요.');
+  } catch (e){ busy(''); fail(e); }
+}
+function fxCsv(fid){
+  const B = S.B, f = (B.forms || []).find(x => x.fid === fid) || {}, L = fxGroup(fid), stu = (B.students || []).slice().sort((a, b) => a.no - b.no);
+  const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const lines = [['번호', '이름'].concat(L.map(s => s.q)).map(q).join(',')];
+  stu.forEach(t => lines.push([t.no, q(t.name)].concat(L.map(s => q(fxAnsText(s, (S.ANS[s.id] || {})[t.no])))).join(',')));
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv' }));
+  a.download = String(f.title || '학교 양식 조사').replace(/[\\/:*?"<>|]/g, ' ').slice(0, 40) + '.csv'; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+}
+async function fxDelete(fid){
+  const { db, F } = S.fb, B = S.B, f = (B.forms || []).find(x => x.fid === fid), L = fxGroup(fid);
+  if (!confirm('이 양식 조사와 학생들의 답을 모두 지울까요?')) return;
+  if (await save({ surveys: (B.surveys || []).filter(s => s.grp !== fid), forms: (B.forms || []).filter(x => x.fid !== fid) }, '지웠어요.')){
+    L.forEach(s => delAnswers(s.id));
+    for (let i = 0; i < ((f && f.parts) || 0); i++) F.deleteDoc(F.doc(db, 'boards', S.key, 'formfiles', fid + '_' + i)).catch(() => {});
+  }
+}
+function fxCard(s0){
+  const B = S.B, stu = B.students || [], fid = s0.grp, f = (B.forms || []).find(x => x.fid === fid) || {}, L = fxGroup(fid);
+  const doneAll = stu.filter(t => L.every(s => s.req === false || (S.ANS[s.id] || {})[t.no])), miss = stu.filter(t => doneAll.indexOf(t) < 0), open = S.openSv === s0.id;
+  const nm = no => { const x = stu.find(t => t.no === +no); return x ? x.name : ''; };
+  const res = L.map(s => {
+    const A = S.ANS[s.id] || {}, nos = Object.keys(A).map(Number).sort((a, b) => a - b);
+    if (s.kind === '글') return `<div class="fxq"><b>${s.gi + 1}. ${esc(s.q)}</b> <span class="small muted">${nos.length}명</span>
+      ${nos.length ? `<div class="hint">${nos.map(no => esc(no + '. ' + nm(no) + ' : ' + (A[no].etc || ''))).join('<br>')}</div>` : ''}</div>`;
+    const R = svSummary(s), tot = Math.max(1, R.done.length);
+    return `<div class="fxq"><b>${s.gi + 1}. ${esc(s.q)}</b> <span class="small muted">${R.done.length}명</span>${s.options.map((o, i) => `<div class="opt"><div class="row" style="justify-content:space-between"><span>${esc(o)}</span><span class="small muted">${R.counts[i]}명</span></div>
+      <div class="bar"><i style="width:${Math.round(R.counts[i] / tot * 100)}%"></i></div>${R.by[i].length ? `<div class="nm">${esc(R.by[i].join(', '))}</div>` : ''}</div>`).join('')}</div>`;
+  }).join('');
+  return `<li class="fxli"><div class="t"><span class="tag ${s0.open ? 'on' : ''}">${s0.open ? '진행 중' : '마감'}</span><span class="tag y">📄 학교 양식 · ${f.kind === 'hwpx' ? '한글' : '엑셀'}</span>
+      <div style="font-size:17px;margin-top:4px"><b>${esc(s0.gname || s0.q)}</b></div>
+      <div class="small muted">${esc(f.name || '')} · 질문 ${L.length}개 · 다 답한 학생 <b style="color:var(--yellow)">${doneAll.length}</b> / ${stu.length}명${s0.desc ? ' · ' + esc(s0.desc) : ''}</div>
+      ${open ? `<div style="margin-top:10px">${res}
+        ${miss.length ? `<div class="small" style="margin-top:10px;color:var(--pink)">아직 다 답하지 않은 학생 ${miss.length}명: ${esc(miss.map(t => t.no + '. ' + t.name).join(', '))}</div>` : (stu.length ? '<div class="small" style="margin-top:10px;color:var(--mint)">모두 답했어요</div>' : '')}</div>` : ''}</div>
+    <div class="row"><button class="b sm y" data-a="fxdl" data-id="${esc(fid)}">📥 양식대로 내려받기</button>
+      <button class="b sm" data-a="svopen" data-id="${esc(s0.id)}">${open ? '결과 닫기' : '결과 보기'}</button>
+      <button class="b sm" data-a="fxtog" data-id="${esc(fid)}">${s0.open ? '마감하기' : '다시 열기'}</button>
+      <button class="b sm" data-a="fxcsv" data-id="${esc(fid)}">CSV 받기</button>
+      <button class="b sm r" data-a="fxdel" data-id="${esc(fid)}">지우기</button></div></li>`;
+}
+
 /* ---------- 설문 · 투표 ---------- */
 function svSummary(s){
   const A = S.ANS[s.id] || {}, stu = S.B.students || [];
@@ -1910,10 +2702,10 @@ function vSurvey(){
   };
   return `<section class="card">${vPinMode('survey')}</section>
   <section class="card"><h2>새 설문 · 투표 · 조사 만들기</h2>
-    <p class="lead">선택형 · 체크형은 학생들이 교실 TV에서 자기 번호를 누르고 바로 답하고, 링크형은 다른 사이트(구글 설문 등)로 연결해 줍니다. ${stu.length || kind === '링크' ? '' : '<b style="color:var(--pink)">먼저 [학급 명단]에 학생을 넣어 주세요.</b>'}</p>
-    <div class="row"><div class="seg">${['선택', '체크', '링크'].map(k => `<button data-a="svkind" data-v="${k}" class="${kind === k ? 'on' : ''}">${({ 선택: '선택형 (보기 고르기)', 체크: '체크형 (했어요 / 냈어요)', 링크: '링크형 (구글 설문 등 사이트)' })[k]}</button>`).join('')}</div></div>
+    ${kind === '양식' ? '' : `<p class="lead">선택형 · 체크형은 학생들이 교실 TV에서 자기 번호를 누르고 바로 답하고, 링크형은 다른 사이트(구글 설문 등)로 연결해 줍니다. ${stu.length || kind === '링크' ? '' : '<b style="color:var(--pink)">먼저 [학급 명단]에 학생을 넣어 주세요.</b>'}</p>`}
+    <div class="row"><div class="seg">${['양식', '선택', '체크', '링크'].map(k => `<button data-a="svkind" data-v="${k}" class="${kind === k ? 'on' : ''}">${({ 양식: '📄 학교 양식 (엑셀 · 한글)', 선택: '선택형 (보기 고르기)', 체크: '체크형 (했어요 / 냈어요)', 링크: '링크형 (구글 설문 등 사이트)' })[k]}</button>`).join('')}</div></div>
     <input type="hidden" id="svKind" value="${kind}">
-    ${kind === '링크' ? vLinkForm() : `    <input class="in" id="svQ" data-keep style="width:100%;margin-top:10px" placeholder="${kind === '체크' ? '예) 현장체험학습 동의서 냈어요' : '예) 2학기 희망 도서를 골라 주세요'}">
+    ${kind === '양식' ? vFormMaker() : kind === '링크' ? vLinkForm() : `    <input class="in" id="svQ" data-keep style="width:100%;margin-top:10px" placeholder="${kind === '체크' ? '예) 현장체험학습 동의서 냈어요' : '예) 2학기 희망 도서를 골라 주세요'}">
     <input class="in" id="svDesc" data-keep style="width:100%;margin-top:8px" placeholder="설명 (선택)">
     ${kind === '선택' ? `<textarea class="in" id="svOpts" data-keep rows="6" style="margin-top:8px" placeholder="보기를 한 줄에 하나씩&#10;예) 아몬드&#10;불편한 편의점&#10;(같은 분류는 '분류 · 이름'으로 쓰면 TV에서 묶어 보여 줘요)"></textarea>
     <div class="row" style="margin-top:8px"><label class="chk"><input type="checkbox" id="svMulti" data-keep> 여러 개 고를 수 있음</label>
@@ -1923,7 +2715,7 @@ function vSurvey(){
     <div style="margin-top:10px">${pendBox('survey', '첨부 파일 (1개, 선택)')}</div>
     <div class="row" style="margin-top:10px;justify-content:flex-end"><button class="b y" data-a="svadd">TV에 올리기</button></div>`}</section>
   <section class="card"><h2>조사 · 투표 목록</h2>
-    ${L.length ? `<ul class="list">${L.map(card).join('')}</ul>` : '<p class="small muted">아직 만든 조사가 없어요.</p>'}</section>
+    ${L.length ? `<ul class="list">${L.filter(s => !s.grp || !s.gi).map(s => s.grp ? fxCard(s) : card(s)).join('')}</ul>` : '<p class="small muted">아직 만든 조사가 없어요.</p>'}</section>
   <section class="card"><h2>🔗 링크 조사 목록 <span class="sub">6개까지</span></h2>
     ${(B.links || []).length ? `<ul class="list">${B.links.map(l => `<li><div class="t"><span class="tag ${l.on === false ? '' : 'on'}">${l.on === false ? '숨김' : 'TV에 보이는 중'}</span><b>${esc(l.title)}</b><div class="small muted" style="word-break:break-all"><a href="${esc(l.url)}" target="_blank" rel="noopener" style="color:inherit">${esc(l.url)}</a></div></div>
       <div class="row"><button class="b sm" data-a="ltog" data-id="${esc(l.id)}">${l.on === false ? '다시 보이기' : '숨기기'}</button><button class="b sm r" data-a="ldel" data-id="${esc(l.id)}">지우기</button></div></li>`).join('')}</ul>` : '<p class="small muted">아직 올린 링크가 없어요. 위에서 [링크형]을 골라 올려 보세요.</p>'}</section>`;
@@ -1936,8 +2728,12 @@ function vLinkForm(){
 }
 
 /* ---------- 알림 종 ---------- */
-const APP_VER = '2026-11-05c';
+const APP_VER = '2026-11-06a';
 const UPDATES = [
+  { v: '2026-11-06a', title: '11월 6일 업데이트 · 학교 양식 자동 채우기', items: [
+    '📄 [설문 · 투표 · 조사] → [학교 양식]: 학교에서 받은 엑셀(.xlsx) · 한글(.hwpx) 양식을 올리면 학생이 TV에서 답하고, [📥 양식대로 내려받기]로 원래 모양 그대로 채워진 파일을 받아요',
+    '✍ 글로 답하는 질문(예: 희망 직업)과 여러 질문을 이어서 답하기가 생겼어요',
+    '🎬 앱을 열 때마다 클래스 뷰 도입 애니메이션이 나와요 (누르면 건너뛰기)'] },
   { v: '2026-11-05c', title: '11월 5일 업데이트 · 학생 호출 답장', items: [
     '🌙 관리 화면 기본 색을 눈이 덜 피로한 칠판색(어둡게)으로 바꿨어요. 왼쪽 아래 [색]에서 언제든 바꿀 수 있어요',
     '🎨 [화면 꾸미기] 탭에서 교실 TV 바탕색(칠판 초록 · 밤하늘 · 나무 교실 · 포도 보라 · 깊은 바다 · 밝은 종이)과 배경 무늬를 고를 수 있어요',
@@ -2300,7 +3096,7 @@ if (BETA){ const bb = document.getElementById('betaBar'); if (bb) bb.hidden = fa
 if (/\/classroom-prev\//.test(location.pathname)){ const pb = document.getElementById('prevBar'); if (pb) pb.hidden = false; document.title = '[예전 버전] ' + document.title; }
 /* ---------- 우리 반 백업 · 되살리기 ----------
  * 백업은 선생님 컴퓨터(파일) 또는 선생님 구글 드라이브(비공개 폴더 '교실화면_백업')에만 저장합니다. 운영자는 받지 않습니다. */
-const BK_SUBS = ['answers', 'counsel', 'suggest', 'sevents'];
+const BK_SUBS = ['answers', 'counsel', 'suggest', 'sevents', 'formfiles'];
 const bkOut = v => { if (v && typeof v.toMillis === 'function') return { __ts: v.toMillis() }; if (Array.isArray(v)) return v.map(bkOut);
   if (v && typeof v === 'object'){ const o = {}; for (const k in v) o[k] = bkOut(v[k]); return o; } return v; };
 const bkIn = v => { if (v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length === 1 && typeof v.__ts === 'number') return new Date(v.__ts);
@@ -2511,6 +3307,8 @@ document.addEventListener('change', ev => {
   const t = ev.target;
   if (t.id === 'filePick'){ if (t.files.length) addPending(S.pickFor, [...t.files]); t.value = ''; return; }
   if (t.id === 'xlsPick'){ if (t.files[0]) readRosterFile(t.files[0]); t.value = ''; return; }
+  if (t.id === 'fxPick'){ const f = t.files[0]; t.value = ''; fxLoad(f); return; }
+  if (t.dataset && t.dataset.fx){ if (fxSet(t)) render(); return; }
   if (t.id === 'bkPick'){
     const f = t.files[0]; t.value = ''; if (!f) return;
     f.text().then(async txt => {
@@ -2531,6 +3329,7 @@ document.addEventListener('dragleave', ev => { const d = ev.target.closest && ev
 document.addEventListener('drop', ev => {
   const d = ev.target.closest && ev.target.closest('[data-drop]'); if (!d) return;
   ev.preventDefault(); d.classList.remove('over');
+  if (d.dataset.drop === 'fx'){ fxLoad(ev.dataTransfer.files[0]); return; }
   if (ev.dataTransfer.files.length) addPending(d.dataset.drop, [...ev.dataTransfer.files]);
 });
 document.addEventListener('click', async ev => {
@@ -2759,8 +3558,10 @@ document.addEventListener('click', async ev => {
       if (!confirm('새 TV 주소를 만들까요? 예전 주소로 열어 둔 TV는 연결 숫자 화면으로 바뀌니, 숫자를 넣어 다시 연결해 주세요.')) return;
       try {
         const old = S.key, data = Object.assign({}, B); delete data.updatedAt;
+        const ff = await F.getDocs(F.collection(db, 'boards', old, 'formfiles')).catch(() => null);
         stopWatch();
-        await makeBoard(data);
+        const nk = await makeBoard(data);
+        if (ff) for (const d of ff.docs) await F.setDoc(F.doc(db, 'boards', nk, 'formfiles', d.id), d.data()).catch(() => {});
         await F.deleteDoc(F.doc(db, 'boards', old));
         toast('새 TV 주소를 만들었어요.'); watchBoard();
       } catch (e) { fail(e); }
@@ -2803,7 +3604,7 @@ document.addEventListener('click', async ev => {
         if (options.length > 150) return toast('보기는 150개까지예요.', true);
         if (etc) options.push('기타');
       }
-      if ((B.surveys || []).length >= 30) return toast('조사가 너무 많아요. 지난 조사를 조금 지워 주세요.', true);
+      if ((B.surveys || []).length >= 45) return toast('조사가 너무 많아요. 지난 조사를 조금 지워 주세요.', true);
       let files = [];
       try { files = await uploadPending('survey'); } catch (e) { return fail(e); }
       const s = { id: 's' + rid(8), q, kind, options, multi, etc, anon: $('svAnon').checked, pub: $('svPub').checked, open: true, showMissing: true,
@@ -2863,6 +3664,13 @@ document.addEventListener('click', async ev => {
     case 'pinreset': return pinReset(+t.dataset.no);
     case 'pinset': return pinSetFor(+t.dataset.no);
     case 'pcinst': pcModal(); return;
+    case 'fxreset': S.fx = null; render(); return;
+    case 'fxpick': $('fxPick').click(); return;
+    case 'fxmake': return fxMake();
+    case 'fxdl': return fxDownload(id);
+    case 'fxcsv': return fxCsv(id);
+    case 'fxdel': return fxDelete(id);
+    case 'fxtog': { const L = fxGroup(id); if (!L.length) return; const op = !L[0].open; return save({ surveys: (B.surveys || []).map(s => s.grp === id ? Object.assign({}, s, { open: op }) : s) }, op ? '다시 열었어요.' : '마감했어요.'); }
     case 'svcsv': { const s = (B.surveys || []).find(x => x.id === id); if (s) csvOf(s); return; }
     case 'svdel': {
       if (!confirm('이 조사와 응답을 모두 지울까요?')) return;
@@ -2883,6 +3691,8 @@ document.addEventListener('click', async ev => {
   }
 });
 start();
+/* 앱을 열자마자 도입 애니메이션 (그 사이에 로그인 확인 · 자료 불러오기) */
+introPlay();
 </script>
 </body>
 </html>
