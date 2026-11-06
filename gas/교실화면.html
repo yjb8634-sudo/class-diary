@@ -580,7 +580,7 @@ var FILE_VER = '2026-11-05a';
 /* ---- 화면이 멈추면 이유를 보여 주는 감시꾼 ----
  * 본 코드가 보낸 파일 그대로인지(글자 수 · 지문)도 함께 확인해서, 붙여넣기 문제인지 바로 알 수 있게 합니다. */
 var BOARD_FILE_VER = '2026-11-05a';   /* 파일 버전 (점검용) */
-var EXPECT = {"len": 122390, "h": 3863287132}; /*EXPECT*/
+var EXPECT = {"len": 123147, "h": 2060487559}; /*EXPECT*/
 window.__boardCheck = function(){
   var m = 'BOARD_MARK_', ss = document.getElementsByTagName('script'), found = 0, t = '';
   for (var i = 0; i < ss.length; i++){ var x = ss[i].text || ''; if (x.indexOf(m + 'START = 1') >= 0){ found++; t = x; } }
@@ -1484,9 +1484,10 @@ function drawOv(){
         ${done ? '<button class="go" style="max-width:34rem;background:var(--pink);color:#3A0F0B" data-ov="uncheck">체크 취소하기</button>'
           : '<button class="go" style="max-width:34rem" data-ov="docheck">체크하기</button>'}</div></div>`;
     } else if (o.step === 'who'){
-      const missing = s.showMissing ? D.students.filter(x => !s.doneNos.includes(x.no)).map(x => x.no) : null;
-      el.innerHTML = head(esc(s.gname || s.q), o.intro) + `<div class="ovb"><p class="lead">${s.kind === '체크' ? '내 이름을 눌러 체크해 주세요' : '내 이름을 눌러 주세요'}${s.gn > 1 ? ' · 질문 ' + s.gn + '개에 차례로 답해요' : ''} · <b>${s.count} / ${s.total}</b>명${s.multi ? ' · 여러 개 고를 수 있어요' : ''}
-        ${missing && missing.length ? `<br><span style="font-size:1.25rem">아직 안 한 번호: ${missing.join(', ')}</span>` : ''}</p>${namesGrid(s.doneNos)}</div>`;
+      const dn = s.gn > 1 ? chainDone(s) : s.doneNos;
+      const missing = s.showMissing ? D.students.filter(x => !dn.includes(x.no)).map(x => x.no) : null;
+      el.innerHTML = head(esc(s.gname || s.q), o.intro) + `<div class="ovb"><p class="lead">${s.kind === '체크' ? '내 이름을 눌러 체크해 주세요' : '내 이름을 눌러 주세요'}${s.gn > 1 ? ' · 질문 ' + s.gn + '개에 차례로 답해요' : ''} · <b>${s.gn > 1 ? dn.length : s.count} / ${s.total}</b>명${s.multi ? ' · 여러 개 고를 수 있어요' : ''}
+        ${missing && missing.length ? `<br><span style="font-size:1.25rem">아직 안 한 번호: ${missing.join(', ')}</span>` : ''}</p>${namesGrid(dn)}</div>`;
     } else if (o.step === 'pick'){
       const txt = s.kind === '글', more = !!(s.nx && (D.surveys || []).some(x => x.id === s.nx && x.open));
       el.innerHTML = head(esc(s.q) + prog, true) + `<div class="ovb"><p class="lead"><b>${esc(nameOf(o.no))}</b> 학생${s.doneNos.includes(o.no) ? (txt ? ' · 이미 답했어요. 다시 쓰면 바뀌어요' : ' · 이미 답했어요. 다시 고르면 바뀌어요') : ''}${s.multi ? ' · 여러 개 고를 수 있어요' : ''}</p>
@@ -1834,6 +1835,16 @@ function resultBars(s){
   return `<div class="res" style="width:100%">${s.options.map((op, i) => `<div class="rw"><span>${esc(op)}</span>
     <span class="rb"><i style="width:${Math.round(s.counts[i] / max * 100)}%"></i></span><span class="rn">${s.counts[i]}명</span></div>`).join('')}</div>`;
 }
+/* 질문이 여러 개인 조사: 묶음의 질문들 (첫 질문부터 차례로) */
+function chainOf(s0){ const L = []; let s = s0; while (s && L.indexOf(s) < 0){ L.push(s); s = (D.surveys || []).find(x => x.id === s.nx && x.open); } return L; }
+/* 꼭 답할 질문을 모두 답한 번호 */
+function chainDone(s0){ const L = chainOf(s0).filter(s => s.req !== false); return D.students.map(x => x.no).filter(no => L.every(s => (s.doneNos || []).includes(no))); }
+/* 이름을 누르면 아직 안 한 질문부터 (모두 했으면 첫 질문부터 = 바꾸기) */
+function jumpFirstOpen(no){
+  const s0 = survey(); if (!s0 || !(s0.gn > 1)) return;
+  const n = chainOf(s0).find(s => s.req !== false && !(s.doneNos || []).includes(no));
+  if (n) OV.id = n.id;
+}
 /* 질문이 여러 개인 조사(학교 양식): 다음 질문으로. 이미 답한 질문을 바꾸려면 PIN */
 function goNextQ(){
   const s = survey(); if (!s || !s.nx) return false;
@@ -2015,6 +2026,7 @@ document.addEventListener('click', ev => {
   }
   if (a === 'who'){
     OV.no = Number(b.dataset.no); OV.cpin = '';
+    if (OV.kind === 'survey') jumpFirstOpen(OV.no);
     if (changeNeedsPin(OV.no)){
       OV.pin = ''; OV.pinMsg = ''; OV.pinBad = false; OV.busy = false;
       OV.step = (D.students.find(s => s.no === OV.no) || {}).hasPin === false ? 'nopin' : 'cpin';

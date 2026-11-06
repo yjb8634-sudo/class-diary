@@ -617,6 +617,7 @@ html[data-theme="chalk"] .flst.r-away{background:#5A3934}
 .fxh b{font-size:15px}.fxh small{display:block;font-size:12px;color:var(--chalk3);margin-top:2px}
 .fxc .in{width:100%}
 .fxq{margin-top:10px}
+.fxedit{margin:14px 0 4px;padding:16px;border-radius:20px;border:1px dashed var(--yellow);background:rgba(127,127,127,.05)}
 </style>
 </head>
 <body>
@@ -2516,13 +2517,18 @@ function vFormMaker(){
     다 모이면 <b>[📥 양식대로 내려받기]</b>로 원래 모양 그대로 받아 바로 제출하면 돼요. ${stu.length ? '' : '<b style="color:var(--pink)">먼저 [학급 명단]에 학생을 넣어 주세요.</b>'}</p>`;
   const drop = `<button class="fxdrop" data-drop="fx" data-a="fxpick">
     <b>📄 양식 파일 고르기</b><span>엑셀(.xlsx) · 한글(.hwpx) — 눌러서 고르거나 여기로 끌어 놓기</span></button>`;
-  if (!X || X.err){
-    const err = !X ? '' : X.err === 'HWP' ? FX_HWP : X.err === 'XLS' ? FX_XLS
+  if (!X || X.err || X.edit){
+    const err = !X || X.edit ? '' : X.err === 'HWP' ? FX_HWP : X.err === 'XLS' ? FX_XLS
       : X.err === 'big' ? '<div class="hint warn">4MB보다 큰 파일이에요. 양식 안의 그림(학교 로고 등)을 빼고 저장해서 올려 주세요.</div>'
       : X.err === 'notable' ? `<div class="hint warn"><b>${esc(X.name)}</b>에서 <b>번호</b>와 <b>이름(성명)</b> 칸이 함께 있는 표를 찾지 못했어요. 표 맨 위 줄에 '번호', '성명' 같은 칸 이름이 있는지 확인해 주세요.</div>`
       : `<div class="hint warn">${esc(X.name)} 파일을 읽지 못했어요. ${esc(X.msg || '')}</div>`;
     return how + err + drop;
   }
+  return how + fxBuilder(X);
+}
+/* 칸 정하기 화면 (새로 만들 때 · 게시한 뒤 고칠 때 같이 씀) */
+function fxBuilder(X){
+  const stu = S.B.students || [];
   const t = X.doc.tables[X.ti], qs = X.cols.filter(c => c.role === 'q' || c.role === 'mark');
   const roleSel = (c, i) => `<select class="in" data-fx="role" data-i="${i}">${(c.cols.length > 1 ? ['mark', 'skip'] : ['no', 'name', 'grade', 'klass', 'hakbun', 'q', 'skip'])
     .map(r => `<option value="${r}" ${c.role === r ? 'selected' : ''}>${FX_ROLE[r]}</option>`).join('')}</select>`;
@@ -2536,17 +2542,18 @@ function vFormMaker(){
       ${c.role === 'mark' ? `<label class="small muted">표시 글자 <input class="in" data-fx="mk" data-i="${i}" value="${esc(c.mark)}" maxlength="2" style="width:56px;text-align:center"></label>` : ''}
     </div>`;
   const short = stu.length > t.rows.length;
-  return how + `<div class="fxfile"><span>📄 <b>${esc(X.name)}</b> · ${X.doc.kind === 'hwpx' ? '한글' : '엑셀'}</span>
-      ${X.doc.tables.length > 1 ? `<select class="in" data-fx="table">${X.doc.tables.map((x, i) => `<option value="${i}" ${i === X.ti ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}</select>` : `<span class="small muted">${esc(t.label)}</span>`}
-      <button class="b sm" data-a="fxreset">다른 파일</button></div>
+  return `<div class="fxfile"><span>📄 <b>${esc(X.name)}</b> · ${X.doc.kind === 'hwpx' ? '한글' : '엑셀'}</span>
+      ${X.edit ? '<span class="small muted">파일을 바꾸려면 새로 만들어 주세요</span>' : X.doc.tables.length > 1 ? `<select class="in" data-fx="table">${X.doc.tables.map((x, i) => `<option value="${i}" ${i === X.ti ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}</select>` : `<span class="small muted">${esc(t.label)}</span>`}
+      ${X.edit ? '' : '<button class="b sm" data-a="fxreset">다른 파일</button>'}</div>
     ${fxPreview(X)}
     <p class="small muted" style="margin:6px 0 0">양식의 학생 줄 <b>${t.rows.length}</b>줄 · 우리 반 <b>${stu.length}</b>명${t.match === 'no' ? ' · 번호가 미리 적혀 있어 번호에 맞춰 적어요' : t.match === 'name' ? ' · 이름이 미리 적혀 있어 이름에 맞춰 적어요' : ''}
       ${short ? `<br><b style="color:var(--pink)">줄이 ${stu.length - t.rows.length}줄 모자라요.</b> 표 아래가 비어 있으면 같은 모양으로 줄을 이어 붙여요.` : ''}</p>
     <h3 class="fxt">칸마다 할 일</h3><div class="fxcols">${X.cols.map(colRow).join('')}</div>
     <input class="in" data-fx="title" value="${esc(X.title || '')}" maxlength="60" style="width:100%;margin-top:12px" placeholder="TV에 보일 조사 이름">
     <input class="in" data-fx="desc" value="${esc(X.desc || '')}" maxlength="200" style="width:100%;margin-top:8px" placeholder="설명 (선택) — 예: 금요일까지 답해 주세요">
-    <div class="row" style="margin-top:10px;justify-content:space-between"><span class="small muted">학생은 TV에서 이름을 누르고 질문 ${qs.length}개에 차례로 답해요.</span>
-      <button class="b y" data-a="fxmake" ${qs.length && stu.length ? '' : 'disabled'}>TV에 올리기</button></div>`;
+    <div class="row" style="margin-top:10px;justify-content:space-between"><span class="small muted">학생은 TV에서 이름을 누르고 질문 ${qs.length}개에 차례로 답해요.${X.edit ? '<br>이미 낸 답은 보기 글자가 같으면 그대로 남아요.' : ''}</span>
+      ${X.edit ? `<span class="row" style="gap:8px"><button class="b" data-a="fxeditx">닫기</button><button class="b y" data-a="fxesave" ${qs.length ? '' : 'disabled'}>고친 내용 저장</button></span>`
+        : `<button class="b y" data-a="fxmake" ${qs.length && stu.length ? '' : 'disabled'}>TV에 올리기</button>`}</div>`;
 }
 function fxSet(t){
   const X = S.fx; if (!X || !X.cols) return false;
@@ -2584,6 +2591,79 @@ async function fxMake(){
     if (await save({ surveys: (B.surveys || []).concat(sv), forms: (B.forms || []).concat([form]) }, 'TV에 올렸어요. 다 모이면 [📥 양식대로 내려받기]를 누르세요.')){ S.fx = null; S.svKind = '선택'; render(); }
   } catch (e){ busy(''); fail(e); }
 }
+async function fxEditOpen(fid){
+  const B = S.B, f = (B.forms || []).find(x => x.fid === fid); if (!f) return toast('양식 정보를 찾지 못했어요.', true);
+  if (S.fx && S.fx.doc && !S.fx.edit && !confirm('새로 만들던 양식 조사가 있어요. 그만두고 이 조사를 고칠까요?')) return;
+  busy('양식을 여는 중…');
+  try {
+    const buf = await fxFile(f), doc = await FORMX.open(buf, f.name);
+    const ti = doc.tables.findIndex(x => x.id === f.table); if (ti < 0) throw new Error('양식에서 표를 다시 찾지 못했어요.');
+    const t = doc.tables[ti], L = fxGroup(fid);
+    const cols = t.cols.map(c => {
+      const sc = (f.cols || []).find(x => x.key === c.key) || {}, sv = sc.sid ? L.find(s => s.id === sc.sid) : null;
+      const role = sc.role || c.role;
+      return Object.assign({}, c, { role, sid: sv ? sv.id : '', mark: sc.mark || '○',
+        q: sv ? sv.q : c.title, opt: sv ? (sv.kind === '글' ? '' : (role === 'mark' ? '' : sv.options.join(', '))) : (c.options || []).join(', '),
+        req: sv ? sv.req !== false : !/사유|비고|기타|의견|하고\s*싶은|특이/.test(c.title || '') });
+    });
+    S.fx = { name: f.name, buf, doc, ti, cols, title: f.title, desc: (L[0] && L[0].desc) || '', edit: fid };
+    S.openSv = '';
+  } catch (e){ busy(''); return fail(e); }
+  busy(''); render();
+  setTimeout(() => { const el = document.querySelector('.fxedit'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 60);
+}
+async function fxFile(f){
+  const { db, F } = S.fb; let b64 = '';
+  for (let i = 0; i < f.parts; i++){
+    const d = await F.getDoc(F.doc(db, 'boards', S.key, 'formfiles', f.fid + '_' + i));
+    if (!d.exists()) throw new Error('올려 둔 양식 파일을 찾지 못했어요. (TV 주소를 바꿨거나 백업을 되살렸다면) 양식으로 조사를 다시 만들어 주세요.');
+    b64 += d.data().d;
+  }
+  return bufOf(b64);
+}
+async function fxEditSave(){
+  const { db, F } = S.fb, B = S.B, X = S.fx; if (!X || !X.edit) return;
+  const fid = X.edit, f = (B.forms || []).find(x => x.fid === fid); if (!f) return;
+  const L = fxGroup(fid), qs = X.cols.filter(c => c.role === 'q' || c.role === 'mark');
+  if (!qs.length) return toast('학생이 답할 칸(질문)을 하나 이상 남겨 주세요.', true);
+  if (qs.some(c => !String(c.q || c.title || '').trim())) return toast('질문 문구가 빈 칸이 있어요.', true);
+  const title = String(X.title || '').trim().slice(0, 60) || '학교 양식 조사', open = L.length ? !!L[0].open : true, now = new Date().toISOString();
+  const ops = []; let lost = 0;
+  const ids = qs.map(c => (c.sid && L.some(s => s.id === c.sid)) ? c.sid : 's' + rid(8));
+  const sv = qs.map((c, k) => {
+    const opts = c.role === 'mark' ? c.options.slice() : fxOpts(c.opt), choice = c.role === 'mark' || opts.length >= 2;
+    const old = L.find(s => s.id === ids[k]), kind = choice ? '선택' : '글', options = choice ? opts : [];
+    /* 이미 낸 답 옮기기 */
+    if (old){
+      const A = S.ANS[old.id] || {};
+      Object.keys(A).forEach(no => {
+        if (old.kind !== kind){ lost++; ops.push(['del', old.id, no]); return; }
+        if (kind === '글') return;
+        const ch = (A[no].ch || []).map(i => options.indexOf(old.options[i])).filter(j => j >= 0).slice(0, 1);
+        if (!ch.length){ lost++; ops.push(['del', old.id, no]); }
+        else if (JSON.stringify(ch) !== JSON.stringify(A[no].ch || [])) ops.push(['set', old.id, no, ch]);
+      });
+    }
+    return Object.assign({}, old || { anon: false, pub: false, showMissing: true, file: null, at: now, multi: false, etc: false },
+      { id: ids[k], q: String(c.q || c.title).trim().slice(0, 100), kind, options, multi: false, etc: false, open,
+        desc: k === 0 ? String(X.desc || '').trim().slice(0, 200) : '', grp: fid, gi: k, gn: qs.length, gname: title, sub: k > 0, nx: ids[k + 1] || '', req: choice || c.req !== false });
+  });
+  const gone = L.filter(s => ids.indexOf(s.id) < 0);
+  gone.forEach(s => { lost += Object.keys(S.ANS[s.id] || {}).length; });
+  if (lost && !confirm(`고친 내용 때문에 학생 답 ${lost}개가 사라져요. (질문을 빼거나, 보기를 바꾸거나, 글 ↔ 보기로 바꾼 칸)\n계속할까요?`)) return;
+  const form = Object.assign({}, f, { title, cols: X.cols.map(c => ({ key: c.key, role: c.role, cols: c.cols, mark: (c.mark || '○').slice(0, 2), sid: qs.indexOf(c) >= 0 ? ids[qs.indexOf(c)] : '' })) });
+  /* 순서: 이 묶음이 있던 자리에 새 묶음 */
+  const all = B.surveys || [], at = all.findIndex(s => s.grp === fid);
+  const rest = all.filter(s => s.grp !== fid), pos = at < 0 ? rest.length : all.slice(0, at).filter(s => s.grp !== fid).length;
+  const surveys = rest.slice(0, pos).concat(sv, rest.slice(pos));
+  if (!await save({ surveys, forms: (B.forms || []).map(x => x.fid === fid ? form : x) }, '양식 조사를 고쳤어요.')) return;
+  try {
+    await Promise.all(ops.map(o => o[0] === 'del' ? F.deleteDoc(F.doc(db, 'boards', S.key, 'answers', o[1] + '_' + o[2]))
+      : F.setDoc(F.doc(db, 'boards', S.key, 'answers', o[1] + '_' + o[2]), { sid: o[1], no: +o[2], ch: o[3], etc: '', at: F.serverTimestamp() })));
+    gone.forEach(s => delAnswers(s.id));
+  } catch (e){ fail(e); }
+  S.fx = null; render();
+}
 function fxGroup(fid){ return (S.B.surveys || []).filter(s => s.grp === fid).sort((a, b) => a.gi - b.gi); }
 function fxAnsText(s, a){
   if (!a) return '';
@@ -2597,12 +2677,7 @@ async function fxDownload(fid){
   if (miss.length && !confirm(`아직 다 답하지 않은 학생이 ${miss.length}명 있어요.\n(${miss.slice(0, 10).map(t => t.no + '. ' + t.name).join(', ')}${miss.length > 10 ? ' …' : ''})\n\n안 한 칸은 비워 두고 내려받을까요?`)) return;
   busy('양식을 채우는 중…');
   try {
-    let b64 = '';
-    for (let i = 0; i < f.parts; i++){
-      const d = await F.getDoc(F.doc(db, 'boards', S.key, 'formfiles', fid + '_' + i));
-      if (!d.exists()) throw new Error('올려 둔 양식 파일을 찾지 못했어요. (TV 주소를 바꿨거나 백업을 되살렸다면) 양식으로 조사를 다시 만들어 주세요.');
-      b64 += d.data().d;
-    }
+    const buf = await fxFile(f);
     const rows = stu.map(t => {
       const vals = {};
       f.cols.forEach(c => {
@@ -2611,7 +2686,7 @@ async function fxDownload(fid){
       });
       return { no: t.no, name: t.name, vals };
     });
-    const r = await FORMX.fill(bufOf(b64), f.name, { table: f.table, cols: f.cols, rows, grade: Number(B.grade) || B.grade, klass: Number(B.klass) || B.klass });
+    const r = await FORMX.fill(buf, f.name, { table: f.table, cols: f.cols, rows, grade: Number(B.grade) || B.grade, klass: Number(B.klass) || B.klass });
     const ext = f.kind === 'hwpx' ? 'hwpx' : 'xlsx', base = f.name.replace(/\.[^.]+$/, '');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([r.bytes], { type: ext === 'xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'application/hwp+zip' }));
@@ -2635,6 +2710,7 @@ async function fxDelete(fid){
   const { db, F } = S.fb, B = S.B, f = (B.forms || []).find(x => x.fid === fid), L = fxGroup(fid);
   if (!confirm('이 양식 조사와 학생들의 답을 모두 지울까요?')) return;
   if (await save({ surveys: (B.surveys || []).filter(s => s.grp !== fid), forms: (B.forms || []).filter(x => x.fid !== fid) }, '지웠어요.')){
+    if (S.fx && S.fx.edit === fid) S.fx = null;
     L.forEach(s => delAnswers(s.id));
     for (let i = 0; i < ((f && f.parts) || 0); i++) F.deleteDoc(F.doc(db, 'boards', S.key, 'formfiles', fid + '_' + i)).catch(() => {});
   }
@@ -2656,7 +2732,9 @@ function fxCard(s0){
       <div class="small muted">${esc(f.name || '')} · 질문 ${L.length}개 · 다 답한 학생 <b style="color:var(--yellow)">${doneAll.length}</b> / ${stu.length}명${s0.desc ? ' · ' + esc(s0.desc) : ''}</div>
       ${open ? `<div style="margin-top:10px">${res}
         ${miss.length ? `<div class="small" style="margin-top:10px;color:var(--pink)">아직 다 답하지 않은 학생 ${miss.length}명: ${esc(miss.map(t => t.no + '. ' + t.name).join(', '))}</div>` : (stu.length ? '<div class="small" style="margin-top:10px;color:var(--mint)">모두 답했어요</div>' : '')}</div>` : ''}</div>
+    ${S.fx && S.fx.edit === fid ? `<div class="fxedit"><h3 class="fxt" style="margin-top:4px">✏️ 칸마다 할 일 고치기</h3>${fxBuilder(S.fx)}</div>` : ''}
     <div class="row"><button class="b sm y" data-a="fxdl" data-id="${esc(fid)}">📥 양식대로 내려받기</button>
+      <button class="b sm" data-a="fxedit" data-id="${esc(fid)}">${S.fx && S.fx.edit === fid ? '고치기 닫기' : '✏️ 칸 고치기'}</button>
       <button class="b sm" data-a="svopen" data-id="${esc(s0.id)}">${open ? '결과 닫기' : '결과 보기'}</button>
       <button class="b sm" data-a="fxtog" data-id="${esc(fid)}">${s0.open ? '마감하기' : '다시 열기'}</button>
       <button class="b sm" data-a="fxcsv" data-id="${esc(fid)}">CSV 받기</button>
@@ -3667,6 +3745,9 @@ document.addEventListener('click', async ev => {
     case 'fxreset': S.fx = null; render(); return;
     case 'fxpick': $('fxPick').click(); return;
     case 'fxmake': return fxMake();
+    case 'fxedit': if (S.fx && S.fx.edit === id){ S.fx = null; render(); return; } return fxEditOpen(id);
+    case 'fxeditx': S.fx = null; render(); return;
+    case 'fxesave': return fxEditSave();
     case 'fxdl': return fxDownload(id);
     case 'fxcsv': return fxCsv(id);
     case 'fxdel': return fxDelete(id);
