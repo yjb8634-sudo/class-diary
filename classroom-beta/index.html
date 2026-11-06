@@ -1373,7 +1373,7 @@ const TAB_DESC = {
 };
 const THEMES = [['sky', '#A6CDFA', '스카이'], ['mint', '#9FDFC6', '민트'], ['lavender', '#C9BDF7', '라벤더'], ['peach', '#F8C3A6', '피치'], ['beige', '#F1D995', '베이지'], ['chalk', '#1D2A25', '칠판(어둡게)']];
 function themeNow(){ return document.documentElement.dataset.theme || 'sky'; }
-/* 화면 색은 로그인한 선생님마다 따로 기억하고, 로그아웃하면(첫 화면) 기본 색으로 돌아가요 */
+/* 화면 색은 로그인한 선생님마다 따로 기억해요. 관리 화면 기본은 칠판색, 로그아웃한 첫 화면(소개)은 밝은 색 */
 function themeApply(k){
   if (!k || k === 'sky') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = k;
   const m = document.querySelector('meta[name="theme-color"]'); if (m && document.body) m.content = getComputedStyle(document.body).backgroundColor;
@@ -1381,7 +1381,7 @@ function themeApply(k){
 function themeUser(u){
   let k = 'sky';
   try {
-    if (u){ k = localStorage.getItem('cr_theme_' + u.uid) || 'sky'; localStorage.setItem('cr_theme_cur', k); }
+    if (u){ k = localStorage.getItem('cr_theme_' + u.uid) || 'chalk'; localStorage.setItem('cr_theme_cur', k); }   /* 처음 색은 칠판(어둡게) */
     else localStorage.removeItem('cr_theme_cur');
     localStorage.removeItem('cr_theme');   /* 예전(모두 같이 쓰던) 저장값 정리 */
   } catch (e) {}
@@ -1938,6 +1938,7 @@ function vLinkForm(){
 const APP_VER = '2026-11-05c';
 const UPDATES = [
   { v: '2026-11-05c', title: '11월 5일 업데이트 · 학생 호출 답장', items: [
+    '🌙 관리 화면 기본 색을 눈이 덜 피로한 칠판색(어둡게)으로 바꿨어요. 왼쪽 아래 [색]에서 언제든 바꿀 수 있어요',
     '🎨 [화면 꾸미기] 탭에서 교실 TV 바탕색(칠판 초록 · 밤하늘 · 나무 교실 · 포도 보라 · 깊은 바다 · 밝은 종이)과 배경 무늬를 고를 수 있어요',
     '🗂 메뉴 정리: [학급 일정] · [교실 TV 소리] · [백업 · 되살리기]가 따로 탭이 됐고, [TV 주소 바꾸기]는 [TV 연결] 탭 아래로 옮겼어요',
     '🏷 프로그램 이름이 [클래스 뷰 (Class View)]로 바뀌었어요 (자료 · 주소 · 백업은 그대로예요)',
