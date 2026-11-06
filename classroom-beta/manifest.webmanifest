@@ -26,5 +26,11 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "manifest.webmanifest"
+    }
   ]
 }
