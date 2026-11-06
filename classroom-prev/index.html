@@ -371,6 +371,8 @@ nav.tabs button .dot{position:absolute;top:6px;right:8px;min-width:18px;height:1
 .viewbox{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line2)}
 .tt td{padding:3px}.tt .in{width:100%;min-width:70px;padding:6px 8px;font-size:14px}.tt th{font-weight:600;color:var(--chalk2);font-size:13.5px}
 .ttwrap{overflow-x:auto}
+.autow td,.autow th{vertical-align:top}.autow td b{font-size:14.5px}.autow .td{background:rgba(242,209,107,.08)}
+.chgb{display:inline-block;padding:0 5px;border-radius:5px;background:var(--yellow);color:#2A2306;font-size:11px;font-weight:800}
 .pairsteps .addr{color:#F2D16B;word-break:break-all}
 .pairrow #pairIn{font-size:26px;letter-spacing:.18em;width:220px;text-align:center;font-weight:700}
 .pairrow #pairIn::placeholder{font-size:16px;letter-spacing:0;font-weight:400}
@@ -1139,6 +1141,41 @@ function vNotice(){
 function addDays(s, n){ const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
 
 /* ---------- 화면 꾸미기 ---------- */
+/* ---------- 교실 TV 소리 · 음악 설정 ---------- */
+const SND_DEF = { lunch: false, clean: false, url: '', vol: 30, offDay: '', chime: true, flash: true, bday: true, fxVol: 60 };
+function sndCur(){ return Object.assign({}, SND_DEF, SND_SRC() || {}); }
+function ytOk(u){ return /^https:\/\/(www\.|m\.|music\.)?(youtube\.com|youtu\.be)\//.test(String(u || '').trim()) && /([?&]list=[\w-]{10,}|[?&]v=[\w-]{11}|youtu\.be\/[\w-]{11}|\/shorts\/[\w-]{11}|\/live\/[\w-]{11})/.test(u); }
+function sndBoxHtml(K){
+  const o = sndCur(), off = o.offDay === SND_TODAY();
+  const chk = (id, v, l) => `<label class="${K.chk}"><input type="checkbox" id="${id}" ${v ? 'checked' : ''}> ${l}</label>`;
+  return `<section class="${K.box}"><h2>🎵 교실 TV 음악 · 소리</h2>
+    <p class="${K.lead}">점심시간 · 청소시간에 교실 TV가 유튜브 음악을 작게 틀어 주고, <b>다음 수업 1분 전에는 저절로 멈춰요.</b> 학생은 TV에서 멈춤 · 다음 곡 · 소리 크기만 바꿀 수 있어요.
+      아침에 TV를 켜면 화면을 한 번 눌러 주세요 (브라우저 규칙상 한 번 눌러야 소리가 나요).</p>
+    <div class="${K.row}">${chk('sndLunch', o.lunch, '점심시간 음악')}${chk('sndClean', o.clean, '청소시간 음악')}</div>
+    <input class="in" id="sndUrl" style="width:100%;margin-top:8px" inputmode="url" value="${esc(o.url)}" placeholder="유튜브 재생목록 또는 영상 주소 붙여 넣기 (예: https://www.youtube.com/playlist?list=…)">
+    <p class="${K.small}" style="margin-top:4px">유튜브에서 재생목록을 열고 <b>공유 → 복사</b>한 주소를 넣으세요. 재생목록은 섞어서 틀어요. 광고가 나올 수 있어요.</p>
+    <div class="${K.row}" style="margin-top:8px;align-items:center">음악 크기 <input type="range" id="sndVol" min="5" max="100" step="5" value="${o.vol}" style="width:180px"> <span id="sndVolV">${o.vol}</span></div>
+    <div class="${K.row}" style="margin-top:12px">${chk('sndChime', o.chime, '수업 시작 1분 전 종소리')}${chk('sndFlash', o.flash, '긴급 호출 알림음')}${chk('sndBday', o.bday, '생일 이름을 누르면 생일 축하 노래')}</div>
+    <div class="${K.row}" style="margin-top:8px;align-items:center">효과음 크기 <input type="range" id="sndFx" min="10" max="100" step="10" value="${o.fxVol}" style="width:180px"> <span id="sndFxV">${o.fxVol}</span></div>
+    <p class="${K.small}" style="margin-top:6px">⏱ 타이머: 교실 TV 오른쪽 위 ⏱ 단추로 1~50분을 재고, 끝나면 종소리가 세 번 울려요.</p>
+    <div class="${K.row}" style="margin-top:12px;justify-content:flex-end">
+      <button class="${K.btn}" data-${K.act}="sndoff">${off ? '오늘 음악 다시 켜기' : '🔇 오늘은 음악 끄기'}</button>
+      <button class="${K.pri}" data-${K.act}="sndsave">저장</button></div>
+    ${off ? `<p class="${K.small}" style="color:var(--yellow);text-align:right;margin-top:4px">오늘은 음악이 나오지 않아요.</p>` : ''}</section>`;
+}
+function sndRead(){
+  const v = id => document.getElementById(id), o = sndCur();
+  const url = (v('sndUrl').value || '').trim();
+  return Object.assign(o, { lunch: v('sndLunch').checked, clean: v('sndClean').checked, url, vol: +v('sndVol').value, chime: v('sndChime').checked, flash: v('sndFlash').checked, bday: v('sndBday').checked, fxVol: +v('sndFx').value });
+}
+function sndValidate(o){
+  if (o.url && !ytOk(o.url)) return '유튜브 재생목록이나 영상 주소가 아니에요. 유튜브에서 [공유 → 복사]한 주소를 넣어 주세요.';
+  if ((o.lunch || o.clean) && !o.url) return '음악을 켜려면 유튜브 주소를 넣어 주세요.';
+  return '';
+}
+document.addEventListener('input', e => { const t = e.target; if (t.id === 'sndVol' || t.id === 'sndFx'){ const s = document.getElementById(t.id + 'V'); if (s) s.textContent = t.value; } });
+const SND_SRC = () => S.B.sound, SND_TODAY = () => kstToday();
+const SND_K = { box: 'card', lead: 'lead', row: 'row', chk: 'chk', small: 'small muted', btn: 'b', pri: 'b y', act: 'a' };
 function vLook(){
   const B = S.B, Q = B.quote || { on: true, mode: 'day', list: [] };
   const dd = (B.ddays || []).concat([{}, {}, {}]).slice(0, 3);
@@ -1146,6 +1183,7 @@ function vLook(){
       <button class="b sm" data-a="pvreload">새로고침</button><a class="b sm" href="${esc(tvUrl())}" target="_blank" rel="noopener">새 탭에서 열기</a></div>
     <div id="pvSlot" class="pvslot"></div>
     <p class="lead" style="margin:8px 0 0">교실 TV와 같은 모습이에요. 눌러 봐도 실제로 저장되지 않아요. 여기서 고친 내용은 몇 초 안에 미리보기에도 바뀝니다.</p></section>
+  ${sndBoxHtml(SND_K)}
   <section class="card"><h2>🔤 TV 글꼴</h2>
     <p class="lead">교실 TV 화면 전체의 글꼴을 바꿉니다. 누르면 몇 초 안에 TV와 위 미리보기에 바뀌어요.</p>
     ${fontPickHtml(S.B.font, 'a')}</section>
@@ -1172,17 +1210,59 @@ function vLook(){
 }
 
 /* ---------- 시간표 설정 ---------- */
+/* 깃허브가 받아 두는 컴시간(data/comci.json) · 나이스(data/school.json) 시간표를 관리 화면에서도 보여 줌 */
+const AUTO = { cm: null, sc: null, at: 0, busy: false };
+function loadAuto(force){
+  if (AUTO.busy || (!force && Date.now() - AUTO.at < 5 * 60e3)) return;
+  AUTO.busy = true;
+  const h = Math.floor(Date.now() / 300e3), get = f => fetch('../data/' + f + '?h=' + h, { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).catch(() => null);
+  Promise.all([get('comci.json'), get('school.json')]).then(([cm, sc]) => { AUTO.cm = cm; AUTO.sc = sc; AUTO.at = Date.now(); AUTO.busy = false; if (S.tab === 'time') render(); });
+}
+function weekDates(){
+  const d = new Date(kstToday() + 'T00:00:00Z'), w = d.getUTCDay(), off = w === 0 ? 1 : w === 6 ? 2 : 1 - w;   /* 이번 주 월요일 (주말이면 다음 주) */
+  return [0, 1, 2, 3, 4].map(i => new Date(d.getTime() + (off + i) * 864e5).toISOString().slice(0, 10));
+}
+/* 그날 그 교시에 TV가 실제로 보여 줄 과목 · 선생님 · 출처 */
+function autoCell(date, dow, n){
+  const B = S.B, key = B.grade + '-' + B.klass, src = B.ttSource === 'manual' ? 'manual' : (B.ttSource === 'neis' ? 'neis' : 'comci');
+  const man = ((B.timetable || {})[String(dow)] || {})[String(n)] || '', tch = ((B.teachers || {})[String(dow)] || {})[String(n)] || '';
+  const pick = rows => (rows || []).filter(x => String(x.p) === String(n));
+  const CT = AUTO.cm && AUTO.cm.timetable && AUTO.cm.timetable[key], NT = AUTO.sc && AUTO.sc.timetable && AUTO.sc.timetable[key];
+  if (src !== 'manual'){
+    if (src === 'comci' && CT && CT[date] && CT[date].length){ const r = pick(CT[date]); return { s: r.map(x => x.s).join('/'), t: tch || (r[0] && r[0].t) || '', masked: !tch && !!(r[0] && r[0].t), chg: r.some(x => x.c), from: '컴시간' }; }
+    if (NT && NT[date] && NT[date].length){ const r = pick(NT[date]); return { s: r.map(x => x.s).join('/') || man, t: tch, from: '나이스' }; }
+  }
+  return { s: man, t: tch, from: man ? '직접' : '' };
+}
+function vAutoWeek(){
+  loadAuto();
+  const B = S.B, P = (B.periods || DEFAULT_PERIODS).filter(p => p && p.n), W = weekDates(), DN = ['월', '화', '수', '목', '금'], today = kstToday();
+  const md = d => `${+d.slice(5, 7)}/${+d.slice(8, 10)}`;
+  const cells = W.map((d, i) => P.map(p => autoCell(d, i + 1, p.n)));
+  const from = W.map((d, i) => { const f = cells[i].map(c => c.from).filter(Boolean); return f.includes('컴시간') ? '컴시간' : f.includes('나이스') ? '나이스' : f.length ? '직접' : '없음'; });
+  const upd = AUTO.cm && AUTO.cm.updated ? ` · 컴시간 ${esc(AUTO.cm.updated.slice(5).replace('-', '/'))} 받음` : '';
+  return `<h3 style="margin:14px 0 6px;font-size:15px">📺 이번 주 TV에 나오는 시간표 <span class="small muted">${md(W[0])} ~ ${md(W[4])}${upd}</span></h3>
+    ${!AUTO.at ? '<p class="small muted">시간표를 불러오는 중…</p>' : `<div class="ttwrap"><table class="t tt autow"><tr><th></th>${W.map((d, i) => `<th class="${d === today ? 'td' : ''}">${DN[i]} ${md(d)}<br><span class="small muted">${from[i]}</span></th>`).join('')}</tr>
+    ${P.map((p, pi) => `<tr><th>${esc(p.n)}교시</th>${W.map((d, i) => { const c = cells[i][pi]; return `<td class="${d === today ? 'td' : ''}">${c.s ? `<b>${esc(c.s)}</b>${c.chg ? ' <span class="chgb">변경</span>' : ''}` : '<span class="muted">—</span>'}${c.t ? `<div class="small ${c.masked ? 'muted' : ''}" title="${c.masked ? '컴시간은 성만 보여 줘요. 아래 칸에 이름을 넣으면 TV에 나와요' : ''}">${esc(c.t)}</div>` : ''}</td>`; }).join('')}</tr>`).join('')}</table></div>
+    <p class="small muted" style="margin-top:6px">컴시간은 선생님 이름을 '김*'처럼 일부만 알려 줘요. TV에도 그대로 나오고, 아래 칸에 이름을 넣으면 그 이름으로 바뀌어요.</p>`}`;
+}
 function vTimetable(){
-  const B = S.B, P = (B.periods || DEFAULT_PERIODS).filter(p => p && p.n), src = B.ttSource === 'manual' ? 'manual' : 'neis';
+  const B = S.B, P = (B.periods || DEFAULT_PERIODS).filter(p => p && p.n), src = B.ttSource === 'manual' ? 'manual' : (B.ttSource === 'neis' ? 'neis' : 'comci');
   const T = B.timetable || {}, TC = B.teachers || {}, D = ['월', '화', '수', '목', '금'];
   const cell = (m, d, n) => esc(((m || {})[String(d)] || {})[String(n)] || '');
+  const WD = weekDates();
   return `<section class="card"><h2>요일별 시간표 <span class="sub">과목 · 선생님 이름</span></h2>
-    <div class="row"><div class="seg">${[['neis', '나이스 자동 (추천)'], ['manual', '직접 입력']].map(([v, l]) => `<button data-a="ttsrc" data-v="${v}" class="${src === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
-    <p class="lead" style="margin-top:8px">${src === 'manual' ? '아래 과목을 그대로 TV에 보여 줘요. 학기가 바뀌면 고쳐 주세요.' : '과목은 나이스 것을 씁니다. 아래 과목 칸은 나이스에 그날 시간표가 없을 때만 대신 보여요.'}
+    <div class="row"><div class="seg">${[['comci', '컴시간 자동 (추천)'], ['neis', '나이스 자동'], ['manual', '직접 입력']].map(([v, l]) => `<button data-a="ttsrc" data-v="${v}" class="${src === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+    <p class="lead" style="margin-top:8px">${src === 'manual' ? '아래 과목을 그대로 TV에 보여 줘요. 학기가 바뀌면 고쳐 주세요.'
+      : src === 'comci' ? '<b>컴시간</b> 시간표를 씁니다. 일과계에서 <b>수업 교환 · 보강</b>을 입력하면 30분 안에 TV에 반영되고, 바뀐 교시에 <b style="color:var(--yellow)">변경</b> 표시가 붙어요. 컴시간 자료가 없는 날은 나이스 → 아래 과목 칸 순서로 대신 보여요.'
+      : '과목은 나이스 것을 씁니다. 아래 과목 칸은 나이스에 그날 시간표가 없을 때만 대신 보여요. (나이스에는 수업 교환이 늦게 들어가거나 빠질 수 있어요)'}
       선생님 이름을 넣으면 TV 과목 옆에 작게 나와요. (비워 두면 안 보임)</p>
+    ${src === 'manual' ? '' : vAutoWeek()}
+    <h3 style="margin:16px 0 6px;font-size:15px">✏️ ${src === 'manual' ? '요일별 과목 · 선생님' : '대신 쓸 과목 · 선생님 이름'} <span class="small muted">흐린 글씨는 이번 주 자동 시간표예요</span></h3>
+    ${src === 'manual' ? '' : '<div class="row" style="margin-bottom:8px"><button class="b sm" data-a="ttfill">이번 주 시간표로 빈칸 채우기</button><span class="small muted">채운 뒤 [시간표 저장]을 눌러야 저장돼요</span></div>'}
     <div class="ttwrap"><table class="t tt"><tr><th></th>${D.map(d => `<th>${d}</th>`).join('')}</tr>
-    ${P.map(p => `<tr><th>${esc(p.n)}교시</th>${D.map((_, i) => `<td><input class="in" data-tts="${i + 1}|${esc(p.n)}" value="${cell(T, i + 1, p.n)}" placeholder="과목" maxlength="12">
-      <input class="in" data-ttt="${i + 1}|${esc(p.n)}" value="${cell(TC, i + 1, p.n)}" placeholder="선생님" maxlength="6" style="margin-top:3px;font-size:13px"></td>`).join('')}</tr>`).join('')}</table></div>
+    ${P.map(p => `<tr><th>${esc(p.n)}교시</th>${D.map((_, i) => { const a = src === 'manual' || !AUTO.at ? {} : autoCell(WD[i], i + 1, p.n); return `<td><input class="in" data-tts="${i + 1}|${esc(p.n)}" value="${cell(T, i + 1, p.n)}" placeholder="${esc(a.from && a.from !== '직접' ? a.s || '과목' : '과목')}" data-auto="${esc(a.from && a.from !== '직접' ? a.s || '' : '')}" maxlength="12">
+      <input class="in" data-ttt="${i + 1}|${esc(p.n)}" value="${cell(TC, i + 1, p.n)}" placeholder="${esc(a.t || '선생님')}" data-auto="${esc(a.masked ? a.t : '')}" maxlength="6" style="margin-top:3px;font-size:13px"></td>`; }).join('')}</tr>`).join('')}</table></div>
     <div class="row" style="margin-top:10px;justify-content:flex-end"><button class="b" data-a="ttclear">모두 비우기</button><button class="b y" data-a="ttsave">시간표 저장</button></div></section>`;
 }
 function vTime(){
@@ -1193,7 +1273,7 @@ function vTime(){
       <label class="small">반 <input class="in" id="sClass" type="number" min="1" max="20" value="${esc(B.klass)}" style="width:84px"></label>
       <label class="small">성함 <input class="in" id="sName" value="${esc(S.me.name)}" style="width:160px"></label>
       <span class="grow"></span><button class="b y" data-a="classsave">저장</button></div>
-    <p class="lead" style="margin:8px 0 0">시간표 과목은 나이스에서 이 학년 · 반 것을 자동으로 가져옵니다 (매일 새벽 · 점심 무렵 갱신). 직접 넣으려면 아래 [요일별 시간표]에서 바꾸세요.</p></section>
+    <p class="lead" style="margin:8px 0 0">시간표 과목은 이 학년 · 반 것을 자동으로 가져옵니다 (컴시간: 수업일 30분마다 · 나이스: 새벽 · 점심 무렵). 아래 [요일별 시간표]에서 출처를 고르거나 직접 넣을 수 있어요.</p></section>
   ${vTimetable()}
   <div class="grid2"><section class="card"><h2>교시 시각</h2>
     <p class="lead">TV가 '지금 몇 교시'인지 계산하는 데 씁니다.</p>
@@ -1302,7 +1382,7 @@ function rosterFromRows(rows){
 function rosterFromText(t){
   const rows = String(t || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(l => {
     if (l.indexOf('\t') >= 0) return l.split('\t');
-    const m = l.match(/^(\d{1,3})\s*[.,)\s]\s*(\S+(?:\s\S+)?)\s*(.*)$/);
+    const m = l.match(/^(\d{1,3})\s*[.,)\s]\s*([^\d\s]\S*(?:\s[^\d\s]\S*)?)\s*(.*)$/);   /* 이름 칸이 생일(숫자)까지 삼키지 않게 */
     return m ? [m[1], m[2], m[3]] : l.split(/\s+/);
   });
   const r1 = rosterFromRows(rows);
@@ -1404,14 +1484,18 @@ function vLinkForm(){
 }
 
 /* ---------- 알림 종 ---------- */
-const APP_VER = '2026-10-23c';
+const APP_VER = '2026-11-02a';
 const UPDATES = [
-  { v: '2026-10-23c', title: '10월 23일 업데이트 (3)', items: [
+  { v: '2026-11-02a', title: '11월 2일 업데이트', items: [
+    '📋 시간표 설정 탭에서 이번 주 TV 시간표(과목 · 선생님)를 바로 볼 수 있고, [이번 주 시간표로 빈칸 채우기]로 칸을 채울 수 있어요',
+    '🕘 TV 시간표가 컴시간을 따라요: 일과계에서 수업 교환 · 보강을 입력하면 30분 안에 교실 TV에 반영되고, 바뀐 교시에 노란 [변경] 표시가 붙어요 (시간표 설정 탭에서 컴시간 / 나이스 / 직접 입력을 고를 수 있어요)'] },
+  { v: '2026-10-27a', title: '10월 27일 업데이트', items: [
     '🔑 이미 낸 답을 바꿀 때 [PIN 없이 간단하게 / PIN으로 안전하게] 중에서 골라요 (설문·투표·조사 탭 맨 위)',
     '🔒 PIN으로 안전하게: 교실 TV에서 이미 낸 답을 바꾸거나 지울 때는 그 학생의 PIN 6자리를 넣어야 해요 (처음 답할 때는 이름만). 숫자판은 TV 오른쪽 아래에 작게 떠서 손으로 가리고 눌러요',
     '📱 학생은 휴대폰 앱의 [🔑 내 PIN]에서 직접 만들어요. 학급 명단 탭에서 누가 만들었는지 보고, 초기화 · 대신 정하기를 할 수 있어요 (PIN은 선생님 · 운영자도 볼 수 없어요)',
     '📤 설문·투표·조사 결과를 그림으로 만들어 카카오톡 단톡방에 보내요 (조사마다 [결과 그림 · 카톡])',
     '💻 위쪽 [바탕화면] 단추: 이 컴퓨터에 앱으로 설치해 바탕화면에서 바로 열어요',
+    '🎵 화면 꾸미기 → 교실 TV 음악 · 소리: 점심 · 청소시간 유튜브 음악(수업 1분 전 저절로 멈춤), 수업 시작 1분 전 종소리, 긴급 호출 알림음, 생일 이름을 누르면 생일 축하 노래, TV 오른쪽 위 ⏱ 타이머',
     '🗓 학생이 올린 일정은 학생도 교실 TV 일정 칸의 [학생 ✕]로 지울 수 있어요. 지운 일정은 시간표 설정 탭에서 되살릴 수 있어요'] },
   { v: '2026-10-23b', title: '10월 23일 업데이트 (2)', items: [
     '📌 탭 순서: 공지·알림장이 맨 앞, TV 연결은 탭으로, 긴급 호출은 맨 뒤로',
@@ -2070,8 +2154,13 @@ document.addEventListener('click', async ev => {
       return;
     }
     /* 요일별 시간표 */
-    case 'ttsrc': return save({ ttSource: t.dataset.v }, t.dataset.v === 'manual' ? '직접 입력한 시간표를 써요.' : '나이스 시간표를 써요.');
+    case 'ttsrc': return save({ ttSource: t.dataset.v }, ({ manual: '직접 입력한 시간표를 써요.', neis: '나이스 시간표를 써요.', comci: '컴시간 시간표를 써요. 수업 교환이 TV에 30분 안에 반영돼요.' })[t.dataset.v]);
     case 'ttclear': if (!confirm('요일별 과목 · 선생님 칸을 모두 비울까요?')) return; return save({ timetable: {}, teachers: {} }, '비웠어요.');
+    case 'ttfill': {
+      let n = 0;
+      document.querySelectorAll('[data-tts],[data-ttt]').forEach(el => { if (!el.value.trim() && el.dataset.auto){ el.value = el.dataset.auto; n++; } });
+      toast(n ? n + '칸을 채웠어요. 선생님 이름(김* 등)을 고친 뒤 [시간표 저장]을 눌러 주세요.' : '채울 빈칸이 없어요.'); return;
+    }
     case 'ttsave': {
       const T = {}, TC = {};
       document.querySelectorAll('[data-tts]').forEach(el => { const [d, n] = el.dataset.tts.split('|'), v = el.value.trim().slice(0, 12); if (v) (T[d] = T[d] || {})[n] = v; });
@@ -2296,6 +2385,8 @@ document.addEventListener('click', async ev => {
       await save({ pinChange: on }, on ? '🔒 PIN으로 안전하게: 이미 낸 답은 PIN을 넣어야 바꿀 수 있어요.' : '🙂 PIN 없이 간단하게: 이름만 누르면 답을 바꿀 수 있어요.');
       return;
     }
+    case 'sndsave': { const o = sndRead(), e = sndValidate(o); if (e) return toast(e); await save({ sound: o }, '소리 설정을 저장했어요. 교실 TV에 곧 반영돼요.'); return; }
+    case 'sndoff': { const o = sndCur(); o.offDay = o.offDay === kstToday() ? '' : kstToday(); await save({ sound: o }, o.offDay ? '오늘은 교실 TV 음악을 껐어요.' : '오늘 음악을 다시 켰어요.'); return; }
     case 'pinreset': return pinReset(+t.dataset.no);
     case 'pinset': return pinSetFor(+t.dataset.no);
     case 'pcinst': pcModal(); return;
