@@ -2919,13 +2919,13 @@ function vFlashBox(){
     <div class="row" style="margin-top:8px">${['교무실로 와 주세요', '급식실 앞으로 모여 주세요', '종례 늦어요. 교실에서 기다려 주세요', '조용히 자습하세요'].map(x =>
       `<button class="btn txt sm" data-bact="fltext" data-v="${esc(x)}">${esc(x)}</button>`).join('')}</div></section>`;
 }
-/* 클래스 뷰(공용판)로 옮기기: 교실 화면 기록을 파일로 받아 클래스 뷰 [백업 · 되살리기]에 넣음 */
+/* 클래스 나우(공용판)로 옮기기: 교실 화면 기록을 파일로 받아 클래스 나우 [백업 · 되살리기]에 넣음 */
 function vCvMoveBox(){
-  return `<section class="box"><h2>📦 클래스 뷰로 옮기기</h2>
+  return `<section class="box"><h2>📦 클래스 나우로 옮기기</h2>
     <p class="small muted">이 교실 화면의 기록(학급 명단 · 생일, 공지, 알림장, 조사와 학생 응답, 학급 일정 · 학생 일정, 건의, 교시 · 시간표 · 소리 · 글꼴 · 색 같은 화면 설정)을 한 파일로 받아요.
-      <b>클래스 뷰 → [백업 · 되살리기] → [백업 파일로 되살리기]</b>에 이 파일을 넣으면 그대로 옮겨져요. 이 프로그램의 자료는 바뀌지 않아요.</p>
-    <p class="small muted">옮겨지지 않는 것: 학생 PIN(클래스 뷰에서 학생이 새로 만들어요) · TV 주소 · 상담 예약 · 긴급 호출</p>
-    <div class="row" style="margin-top:8px"><button class="btn" data-bact="cvexport">클래스 뷰로 옮길 파일 받기</button></div></section>`;
+      <b>클래스 나우 → [백업 · 되살리기] → [백업 파일로 되살리기]</b>에 이 파일을 넣으면 그대로 옮겨져요. 이 프로그램의 자료는 바뀌지 않아요.</p>
+    <p class="small muted">옮겨지지 않는 것: 학생 PIN(클래스 나우에서 학생이 새로 만들어요) · TV 주소 · 상담 예약 · 긴급 호출</p>
+    <div class="row" style="margin-top:8px"><button class="btn" data-bact="cvexport">클래스 나우로 옮길 파일 받기</button></div></section>`;
 }
 function vPhoneBox(){
   const B = S.B, c = B.cfg;
@@ -2980,7 +2980,7 @@ document.addEventListener('click', ev => {
         t.disabled = false;
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([JSON.stringify(j, null, 1)], { type: 'application/json' }));
-        a.download = `클래스뷰_옮기기_${j.grade}-${j.klass}_${String(j.at).slice(0, 10)}.json`; document.body.appendChild(a); a.click();
+        a.download = `클래스나우_옮기기_${j.grade}-${j.klass}_${String(j.at).slice(0, 10)}.json`; document.body.appendChild(a); a.click();
         setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
         const n = j.count || {};
         toast(`받았어요: 학생 ${n.students} · 공지 ${n.notices} · 알림장 ${n.notes} · 조사 ${n.surveys}(응답 ${n.answers}) · 일정 ${n.events + n.sevents} · 건의 ${n.suggest}`);
