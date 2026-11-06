@@ -1,63 +1,33 @@
-# 컴시간 접속 진단 (손으로만 돌림). 결과는 실행 화면의 알림(annotation)으로 남습니다.
+# 컴시간 접속 진단 (손으로만 돌림): 컴시간 첫 화면과 도구 설정을 diag/ 폴더에 저장합니다.
 name: 컴시간 진단
 on: workflow_dispatch
 permissions:
-  contents: read
+  contents: write
 jobs:
   diag:
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - run: pip install --quiet "comci==0.7.0"
       - name: 진단
         run: |
+          mkdir -p diag
           python - <<'PY'
-          import os, re, glob, json, base64, traceback, importlib.util
-          def note(m): print('::notice title=진단::' + str(m).replace('%','%25').replace('\n','%0A')[:900])
+          import os, re, glob, importlib.util, requests, shutil
           spec = importlib.util.find_spec('comci'); d = os.path.dirname(spec.origin)
-          files = sorted(glob.glob(d + '/**/*.py', recursive=True))
-          note('파일: ' + ', '.join(os.path.relpath(f, d) for f in files))
-          for f in files:
-              s = open(f, encoding='utf-8').read()
-              hits = sorted(set(re.findall(r'(https?://[^\s\'"]+|requests\.\w+|urlopen|httpx\.\w+|aiohttp|Session\(\)|headers\s*=)', s)))
-              if hits: note(os.path.relpath(f, d) + ': ' + ' | '.join(hits)[:800])
-          import requests
-          UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36'
-          H = {'User-Agent': UA, 'Referer': 'http://comci.net:4082/st'}
-          for ua in (None, UA):
-              try:
-                  r = requests.get('http://comci.net:4082/st', headers={'User-Agent': ua} if ua else None, timeout=20)
-                  note(f'st 접속 ({"브라우저" if ua else "기본"}): {r.status_code} {len(r.content)}')
-              except Exception as e:
-                  note(f'st 접속 ({"브라우저" if ua else "기본"}) 실패: {e}'[:300])
-          r = requests.get('http://comci.net:4082/st', headers=H, timeout=20); r.encoding = 'euc-kr'; t = r.text
-          note('경로 후보: ' + ' / '.join(sorted(set(re.findall(r"\./(\d+)\?(\d+)l", t))) .__repr__()[:300]))
-          note('sc_data: ' + repr(re.findall(r"sc_data\('(\d+_)'", t)[:5]))
-          note('자료 키: ' + repr(sorted(set(re.findall(r'자료(\d+)', t)))[:40]))
-          m = re.search(r"\./(\d+)\?(\d+)l", t); sc = re.search(r"sc_data\('(\d+_)'", t)
-          if m and sc:
-              base = f'http://comci.net:4082/{m.group(1)}?'
-              try:
-                  q = requests.utils.quote('강릉제일'.encode('euc-kr'))
-                  s1 = requests.get(base + m.group(2) + 'l' + q, headers=H, timeout=20)
-                  note('학교 찾기: ' + s1.status_code.__str__() + ' ' + s1.content.decode('utf-8', 'ignore').strip('\x00')[:300])
-              except Exception as e: note('학교 찾기 실패: ' + str(e)[:300])
-              try:
-                  key = base64.b64encode((sc.group(1) + '24660_0_1').encode()).decode()
-                  s2 = requests.get(base + key, headers=H, timeout=25)
-                  body = s2.content.decode('utf-8', 'ignore').strip('\x00')
-                  note(f'시간표 받기: {s2.status_code} {len(body)}자 · 앞부분 {body[:200]}')
-                  try:
-                      j = json.loads(body); note('시간표 키: ' + ', '.join(list(j.keys())[:40]))
-                  except Exception as e: note('JSON 아님: ' + str(e)[:200])
-              except Exception as e: note('시간표 받기 실패: ' + str(e)[:300])
-          try:
-              from comci import get_timetable
-              w = get_timetable(24660, grade=1, class_num=2)
-              note('도구로 1-2 받기 성공: ' + json.dumps(w, ensure_ascii=False)[:400])
-          except Exception as e:
-              note('도구로 1-2 받기 실패: ' + ''.join(traceback.format_exception(type(e), e, e.__traceback__))[-700:])
+          for f in glob.glob(d + '/**/*.py', recursive=True):
+              out = 'diag/comci_' + os.path.relpath(f, d).replace('/', '_') + '.txt'
+              shutil.copy(f, out)
+          H = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36'}
+          r = requests.get('http://comci.net:4082/st', headers=H, timeout=20)
+          open('diag/st.html', 'wb').write(r.content)
           PY
+      - name: 저장
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add diag && git commit -m "컴시간 진단 자료" && git push || echo nothing
