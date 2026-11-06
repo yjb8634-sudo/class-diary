@@ -1,0 +1,108 @@
+"""
+Comci.net API 타입 정의
+
+모듈 전반에서 사용하는 구조화된 타입을 정의한다.
+``Dict[str, Any]`` 남발을 방지하고, IDE 자동완성·정적 분석을 강화한다.
+"""
+
+from __future__ import annotations
+
+from datetime import date
+from typing import Any, Dict, List, Literal, Optional, Sequence, TypedDict, Union
+
+
+# ---------------------------------------------------------------------------
+# 학교 검색
+# ---------------------------------------------------------------------------
+
+class SchoolInfo(TypedDict):
+    """학교 검색 결과 단일 항목."""
+    region: str
+    school_name: str
+    school_code: int
+
+
+# ---------------------------------------------------------------------------
+# 일자자료 (주차 정보)
+# ---------------------------------------------------------------------------
+
+class WeekInfo(TypedDict):
+    """``일자자료`` 배열의 파싱 결과 한 행."""
+    r: int
+    label: str
+    start: date
+    end: date
+
+
+# ---------------------------------------------------------------------------
+# 시간표 슬롯 (1교시 1칸)
+# ---------------------------------------------------------------------------
+
+class TimetableSlot(TypedDict, total=False):
+    """시간표 한 칸(교시) 정보.
+
+    ``total=False`` 로 선언하여, 호출 맥락에 따라 선택 필드가 빠질 수 있음을 허용한다.
+    """
+    period: int
+    time: str
+    subject: str
+    teacher: str
+    room: str
+    changed: bool
+    # 컨텍스트 보강(enrich) 필드
+    r: Optional[int]
+    day: int
+    calendar_date: Optional[str]
+
+
+#: 하루(요일)별 교시 리스트.  ``None`` = 해당 교시 수업 없음.
+DayPeriods = List[Optional[TimetableSlot]]
+
+#: 주간 시간표 – 요일 한글 키("월"~"금") → 교시 리스트
+WeeklyTimetable = Dict[str, DayPeriods]
+
+
+# ---------------------------------------------------------------------------
+# 컨텍스트
+# ---------------------------------------------------------------------------
+
+class TimetableContext(TypedDict, total=False):
+    """``extract_timetable_context()`` 가 반환하는 메타 정보."""
+    requested_r: int
+    today_r: Optional[int]
+    weeks: List[WeekInfo]
+    일자자료: Any
+    active_week: Optional[WeekInfo]
+    day_dates: Dict[int, date]
+    학교명: Optional[str]
+    학년도: Optional[str]
+    시작일: Optional[str]
+
+
+class TimetableWithContext(TypedDict):
+    """``with_context=True`` 일 때의 반환 구조."""
+    context: TimetableContext
+    timetable: Union[WeeklyTimetable, Dict[str, WeeklyTimetable]]
+
+
+class DayTimetableWithContext(TypedDict):
+    """``get_day_timetable(with_context=True)`` 반환 구조."""
+    context: TimetableContext
+    periods: DayPeriods
+
+
+# ---------------------------------------------------------------------------
+# 요일 리터럴
+# ---------------------------------------------------------------------------
+
+#: comci_weekday 가 반환할 수 있는 값 (주말은 None)
+Weekday = Literal[1, 2, 3, 4, 5]
+
+#: API 원시 JSON – 키·값 구조가 유동적이므로 alias로만 둔다.
+RawApiResponse = Dict[str, Any]
+
+#: 자료 배열 (자료481, 자료147 등) – 중첩 리스트
+NestedJaryoData = List[Any]
+
+#: 과목·교사 등의 인덱스 배열
+IndexArray = Sequence[str]

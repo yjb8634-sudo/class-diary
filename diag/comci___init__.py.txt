@@ -1,0 +1,68 @@
+"""
+Comci.net 시간표 API 클라이언트
+"""
+
+from .client import (
+    get_day_timetable,
+    get_timetable,
+    search_and_get_schools,
+    search_and_get_timetable,
+)
+from .school_search import search_schools
+from .timetable import (
+    comci_weekday,
+    extract_timetable_context,
+    fetch_timetable_for_calendar_date,
+    fetch_timetable_raw,
+    parse_ilja_weeks,
+    parse_timetable,
+    resolve_date_index_for_school,
+    timetable_for_calendar_day,
+)
+from .types import (
+    DayPeriods,
+    DayTimetableWithContext,
+    SchoolInfo,
+    TimetableContext,
+    TimetableSlot,
+    TimetableWithContext,
+    WeekInfo,
+    WeeklyTimetable,
+)
+
+# comci_th 통합: /th 원시 조회 후 학생용과 동일 규칙으로 파싱(학급 키는 "N학년 M반")
+from . import th
+from .th import get_timetable as get_timetable_by_class
+from .th import get_teacher_timetable
+
+__all__ = [
+    # 타입
+    "SchoolInfo",
+    "WeekInfo",
+    "TimetableSlot",
+    "TimetableContext",
+    "TimetableWithContext",
+    "DayTimetableWithContext",
+    "DayPeriods",
+    "WeeklyTimetable",
+    # 학교 검색
+    "search_schools",
+    "search_and_get_schools",
+    # 시간표 조회/파싱
+    "fetch_timetable_raw",
+    "fetch_timetable_for_calendar_date",
+    "resolve_date_index_for_school",
+    "extract_timetable_context",
+    "parse_ilja_weeks",
+    "comci_weekday",
+    "parse_timetable",
+    "timetable_for_calendar_day",
+    # 고수준 클라이언트
+    "get_timetable",
+    "get_day_timetable",
+    "search_and_get_timetable",
+    # comci_th
+    "get_timetable_by_class",
+    "get_teacher_timetable",
+    "th",
+]

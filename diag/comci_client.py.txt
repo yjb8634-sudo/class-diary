@@ -1,0 +1,232 @@
+"""
+Comci.net API 통합 클라이언트
+
+최상위 인터페이스. 검색 → 조회 → 파싱을 한 번에 수행하는 고수준 함수들을 제공한다.
+"""
+
+from __future__ import annotations
+
+from datetime import date
+from typing import Dict, List, Optional, Union, overload
+
+from .school_search import search_schools
+from .timetable import (
+    extract_timetable_context,
+    fetch_timetable_for_calendar_date,
+    fetch_timetable_raw,
+    parse_timetable,
+    timetable_for_calendar_day,
+)
+from .types import (
+    DayPeriods,
+    DayTimetableWithContext,
+    SchoolInfo,
+    TimetableContext,
+    TimetableWithContext,
+    WeeklyTimetable,
+)
+
+
+def search_and_get_schools(query: str) -> List[SchoolInfo]:
+    """검색어로 학교 검색.
+
+    :func:`school_search.search_schools` 의 편의 래퍼.
+
+    Args:
+        query: 검색어 (예: ``"신송"``).
+
+    Returns:
+        :class:`SchoolInfo` 리스트.
+    """
+    return search_schools(query)
+
+
+# ---------------------------------------------------------------------------
+#  get_timetable  – overload 로 반환 타입을 분기한다
+# ---------------------------------------------------------------------------
+
+
+@overload
+def get_timetable(
+    school_code: int,
+    grade: int,
+    class_num: int,
+    date_index: int = ...,
+    on: Optional[date] = ...,
+    *,
+    with_context: bool = ...,
+    enrich_calendar: bool = ...,
+    strict_parse: bool = ...,
+    parse_errors_out: Optional[List[str]] = ...,
+) -> Union[WeeklyTimetable, TimetableWithContext]: ...
+
+
+@overload
+def get_timetable(
+    school_code: int,
+    grade: None = ...,
+    class_num: None = ...,
+    date_index: int = ...,
+    on: Optional[date] = ...,
+    *,
+    with_context: bool = ...,
+    enrich_calendar: bool = ...,
+    strict_parse: bool = ...,
+    parse_errors_out: Optional[List[str]] = ...,
+) -> Union[Dict[str, WeeklyTimetable], TimetableWithContext]: ...
+
+
+def get_timetable(
+    school_code: int,
+    grade: Optional[int] = None,
+    class_num: Optional[int] = None,
+    date_index: int = 1,
+    on: Optional[date] = None,
+    *,
+    with_context: bool = False,
+    enrich_calendar: bool = True,
+    strict_parse: bool = False,
+    parse_errors_out: Optional[List[str]] = None,
+) -> Union[WeeklyTimetable, Dict[str, WeeklyTimetable], TimetableWithContext]:
+    """학교 시간표 조회.
+
+    Args:
+        school_code: 학교코드.
+        grade: 학년 (1-based). ``None`` 이면 전체.
+        class_num: 반 (1-based). ``None`` 이면 전체.
+        date_index: ``on`` 이 없을 때만 사용. 주차 ``r`` (드롭다운 순번).
+        on: 달력 날짜. 주면 ``일자자료`` 로 속한 주의 ``r`` 을 자동 선택.
+        with_context: ``True`` 면 ``TimetableWithContext`` 형태로 반환.
+        enrich_calendar: 각 슬롯에 ``calendar_date``, ``r`` 필드 추가.
+        strict_parse: 첫 파싱 예외를 그대로 전파.
+        parse_errors_out: 학급 순회 실패 메시지 수집용 리스트.
+
+    Returns:
+        - ``grade``/``class_num`` 지정 + ``with_context=False``: :data:`WeeklyTimetable`
+        - 미지정 + ``with_context=False``: ``Dict[str, WeeklyTimetable]``
+        - ``with_context=True``: :class:`TimetableWithContext`
+    """
+    if on is not None:
+        used_r, raw = fetch_timetable_for_calendar_date(school_code, on)
+    else:
+        used_r = date_index
+        raw = fetch_timetable_raw(school_code, used_r)
+
+    context: TimetableContext = extract_timetable_context(raw, used_r)
+    parsed = parse_timetable(
+        raw,
+        grade=grade,
+        class_num=class_num,
+        requested_r=used_r,
+        enrich_calendar=enrich_calendar,
+        strict=strict_parse,
+        errors_out=parse_errors_out,
+    )
+
+    # 특정 학급이면 dict 껍데기를 벗긴다
+    timetable: Union[WeeklyTimetable, Dict[str, WeeklyTimetable]]
+    if grade is not None and class_num is not None and parsed:
+        timetable = next(iter(parsed.values()))
+    else:
+        timetable = parsed
+
+    if not with_context:
+        return timetable
+    return TimetableWithContext(context=context, timetable=timetable)
+
+
+def get_day_timetable(
+    school_code: int,
+    on: date,
+    grade: int,
+    class_num: int,
+    *,
+    with_context: bool = False,
+    enrich_calendar: bool = True,
+) -> Union[DayPeriods, DayTimetableWithContext]:
+    """특정 날짜(월~금) 하루의 교시별 시간표만 반환.
+
+    ``on`` 이 주말이면 빈 리스트.
+
+    Args:
+        school_code: 학교코드.
+        on: 조회할 날짜.
+        grade: 학년 (1-based).
+        class_num: 반 (1-based).
+        with_context: 컨텍스트 포함 여부.
+        enrich_calendar: 달력 날짜 부착 여부.
+
+    Returns:
+        ``with_context=False``: :data:`DayPeriods`
+        ``with_context=True``: :class:`DayTimetableWithContext`
+    """
+    bundle = get_timetable(
+        school_code,
+        grade=grade,
+        class_num=class_num,
+        on=on,
+        with_context=True,
+        enrich_calendar=enrich_calendar,
+    )
+    # with_context=True 이므로 TimetableWithContext 보장
+    assert isinstance(bundle, dict) and "timetable" in bundle
+    day_rows = timetable_for_calendar_day(bundle["timetable"], on)  # type: ignore[arg-type]
+
+    if not with_context:
+        return day_rows
+    return DayTimetableWithContext(context=bundle["context"], periods=day_rows)
+
+
+def search_and_get_timetable(
+    query: str,
+    school_index: int = 0,
+    grade: Optional[int] = None,
+    class_num: Optional[int] = None,
+    date_index: int = 1,
+    on: Optional[date] = None,
+    *,
+    with_context: bool = False,
+    enrich_calendar: bool = True,
+) -> Union[WeeklyTimetable, Dict[str, WeeklyTimetable], TimetableWithContext]:
+    """검색 → 학교 선택 → 시간표 조회를 한 번에 수행.
+
+    Args:
+        query: 검색어.
+        school_index: 검색 결과 중 선택할 학교 인덱스 (0 = 첫 번째).
+        grade: 학년 (``None`` = 전체).
+        class_num: 반 (``None`` = 전체).
+        date_index: ``on`` 이 없을 때 쓰는 ``r``.
+        on: 달력 기준으로 ``r`` 자동 선택.
+        with_context: 컨텍스트 포함 여부.
+        enrich_calendar: 달력 날짜 부착 여부.
+
+    Returns:
+        시간표 데이터. 검색 결과가 없으면 빈 dict.
+
+    Raises:
+        IndexError: ``school_index`` 가 검색 결과 범위를 벗어남.
+    """
+    schools = search_schools(query)
+    if not schools:
+        if with_context:
+            return TimetableWithContext(
+                context=TimetableContext(  # type: ignore[typeddict-item]
+                    requested_r=date_index,
+                    today_r=None,
+                    weeks=[],
+                    day_dates={},
+                ),
+                timetable={},
+            )
+        return {}
+
+    school = schools[school_index]
+    return get_timetable(
+        school["school_code"],
+        grade=grade,
+        class_num=class_num,
+        date_index=date_index,
+        on=on,
+        with_context=with_context,
+        enrich_calendar=enrich_calendar,
+    )

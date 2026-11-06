@@ -1,0 +1,67 @@
+"""
+학교 검색 API 모듈
+"""
+
+from __future__ import annotations
+
+import urllib.parse
+from typing import List
+
+from .config import BASE_URL, SEARCH_PREFIX, SEARCH_ENCODING
+from .types import SchoolInfo
+from ._http import fetch_json, decode_first_json
+
+
+def encode_search_query(query: str) -> str:
+    """검색어를 EUC-KR 인코딩 후 퍼센트 인코딩.
+
+    Args:
+        query: 한글 검색어.
+
+    Returns:
+        퍼센트 인코딩된 문자열 (예: ``"%BD%C5%BC%DB"``).
+    """
+    return urllib.parse.quote(query, encoding=SEARCH_ENCODING, safe="")
+
+
+def search_schools(query: str) -> List[SchoolInfo]:
+    """학교 검색 API 호출.
+
+    Args:
+        query: 검색어 (예: ``"신송"``, ``"신"``).
+
+    Returns:
+        검색 결과 리스트. 각 항목은 :class:`SchoolInfo` 형식.
+        알림 메시지(``"없으면 추가 검색하세요"``)는 제외된다.
+
+    Raises:
+        requests.HTTPError: API 서버 오류.
+        requests.Timeout: 타임아웃 초과.
+    """
+    encoded = encode_search_query(query)
+    url = f"{BASE_URL}?{SEARCH_PREFIX}{encoded}"
+
+    resp = fetch_json(url)
+    data = decode_first_json(resp.text)
+
+    raw_results = data.get("학교검색", [])
+    if not raw_results and data:
+        # 키 이름이 다를 수 있음 – 첫 번째 list 값을 fallback
+        for v in data.values():
+            if isinstance(v, list):
+                raw_results = v
+                break
+
+    results: List[SchoolInfo] = []
+    for item in raw_results:
+        # [0, "알림", "없으면 추가 검색하세요", 0] 형태의 알림 제외
+        if len(item) >= 4 and item[1] != "알림" and item[3] != 0:
+            results.append(
+                SchoolInfo(
+                    region=str(item[1]),
+                    school_name=str(item[2]),
+                    school_code=int(item[3]),
+                )
+            )
+
+    return results

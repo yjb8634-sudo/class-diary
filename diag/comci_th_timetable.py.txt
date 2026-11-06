@@ -1,0 +1,165 @@
+"""
+comci.net /th API: 원시 조회 및 학생용(:mod:`comci.timetable`)과 동일 규칙 파싱.
+"""
+
+from __future__ import annotations
+
+from datetime import date
+from typing import Any, Dict, List, Optional, Tuple
+
+from .._http import decode_json_matching, fetch_json
+from ..timetable import (
+    _has_jaryo481,
+    build_timetable_param,
+    parse_ilja_weeks,
+    resolve_r_for_date,
+)
+from ..types import RawApiResponse, WeeklyTimetable
+from .config import (
+    DEFAULT_DATE_INDEX,
+    DEFAULT_HEADERS,
+    DAYS_OF_WEEK,
+    MAX_PERIOD,
+    TH_API_HOST,
+    TH_PATH_PREFIX,
+)
+
+
+def fetch_timetable_raw(
+    school_code: int,
+    date_index: int = DEFAULT_DATE_INDEX,
+) -> RawApiResponse:
+    """``/th`` 엔드포인트에서 시간표 원본 JSON 조회.
+
+    학생용 :func:`comci.timetable.fetch_timetable_raw` 와 동일하게
+    연속 JSON·인코딩 처리·``자료481`` 우선 선택을 적용한다.
+
+    Raises:
+        ValueError: 응답이 ``.`` 인 경우 (학교 코드·서버 ID 불일치 등).
+        requests.HTTPError: API 서버 오류.
+    """
+    param = build_timetable_param(school_code, date_index)
+    url = f"{TH_API_HOST}/{TH_PATH_PREFIX}_T?{param}"
+    resp = fetch_json(url, headers=DEFAULT_HEADERS)
+    text = resp.text.strip()
+    if text == ".":
+        raise ValueError("서버 ID와 학교 코드가 일치하지 않습니다.")
+    return decode_json_matching(resp.text, _has_jaryo481)
+
+
+def fetch_timetable_for_calendar_date(
+    school_code: int,
+    on: date,
+) -> Tuple[int, RawApiResponse]:
+    """특정 달력 날짜가 속한 주의 ``/th`` JSON 을 가져온다.
+
+    :func:`comci.timetable.fetch_timetable_for_calendar_date` 와 동일 로직이며
+    HTTP 만 ``fetch_timetable_raw`` (:mod:`comci.th`) 를 사용한다.
+    """
+    probe = fetch_timetable_raw(school_code, 1)
+    weeks = parse_ilja_weeks(probe.get("일자자료"))
+    r = resolve_r_for_date(weeks, on)
+
+    if r is None:
+        today_r_raw = probe.get("오늘r")
+        try:
+            r = int(today_r_raw) if today_r_raw is not None else DEFAULT_DATE_INDEX
+        except (TypeError, ValueError):
+            r = DEFAULT_DATE_INDEX
+
+    if r == 1:
+        return r, probe
+    return r, fetch_timetable_raw(school_code, r)
+
+
+def resolve_date_index_for_school(school_code: int, on: date) -> int:
+    """``on`` 이 속한 주의 ``r`` 만 계산 (네트워크 1~2회)."""
+    r, _ = fetch_timetable_for_calendar_date(school_code, on)
+    return r
+
+
+def parse_timetable(
+    data: RawApiResponse,
+    grade: Optional[int] = None,
+    class_num: Optional[int] = None,
+    *,
+    requested_r: Optional[int] = None,
+    enrich_calendar: bool = True,
+    strict: bool = False,
+    errors_out: Optional[List[str]] = None,
+) -> Dict[str, WeeklyTimetable]:
+    """``/th``·``/st`` 공통 JSON 을 학생 시간표 모듈과 동일 규칙으로 파싱.
+
+    반 키는 ``1학년 1반`` 형식이다.
+    """
+    from ..timetable import parse_timetable as _parse_st
+
+    if requested_r is None:
+        tr = data.get("오늘r")
+        try:
+            requested_r = int(tr) if tr is not None else 1
+        except (TypeError, ValueError):
+            requested_r = 1
+    return _parse_st(
+        data,
+        grade=grade,
+        class_num=class_num,
+        requested_r=requested_r,
+        enrich_calendar=enrich_calendar,
+        strict=strict,
+        errors_out=errors_out,
+    )
+
+
+def _aggregate_by_teacher(
+    by_class: Dict[str, WeeklyTimetable],
+) -> Dict[str, Dict[str, List[Optional[Dict[str, Any]]]]]:
+    """학급 키 기준 파싱 결과를 교사명으로 묶는다."""
+    result: Dict[str, Dict[str, List[Optional[Dict[str, Any]]]]] = {}
+
+    for class_label, weekly in by_class.items():
+        for day_name in DAYS_OF_WEEK:
+            slots = weekly.get(day_name) or []
+            for slot in slots:
+                if slot is None:
+                    continue
+                teacher = str(slot.get("teacher") or "미정")
+                if teacher not in result:
+                    result[teacher] = {d: [None] * MAX_PERIOD for d in DAYS_OF_WEEK}
+                try:
+                    p = int(slot.get("period", 1))
+                except (TypeError, ValueError):
+                    continue
+                idx = p - 1
+                if not (0 <= idx < MAX_PERIOD):
+                    continue
+                cell = {**slot, "class_label": class_label}
+                result[teacher][day_name][idx] = cell
+
+    return result
+
+
+def parse_teacher_timetable(
+    data: RawApiResponse,
+    grade: Optional[int] = None,
+    class_num: Optional[int] = None,
+    *,
+    requested_r: Optional[int] = None,
+    enrich_calendar: bool = True,
+    strict: bool = False,
+    errors_out: Optional[List[str]] = None,
+) -> Dict[str, Dict[str, List[Optional[Dict[str, Any]]]]]:
+    """원시 데이터를 교사별 시간표로 묶는다.
+
+    각 칸은 학생 시간표 필드에 ``class_label``(예: ``1학년 1반``)이 추가된다.
+    """
+    by_class = parse_timetable(
+        data,
+        grade=grade,
+        class_num=class_num,
+        requested_r=requested_r,
+        enrich_calendar=enrich_calendar,
+        strict=strict,
+        errors_out=errors_out,
+    )
+    return _aggregate_by_teacher(by_class)

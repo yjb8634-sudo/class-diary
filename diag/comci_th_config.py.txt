@@ -1,0 +1,46 @@
+"""
+comci.net /th (교사·학급 시간표) API 설정
+
+일반 모듈 :mod:`comci.config` 와 동일하게 ``Final`` 로 고정한다.
+"""
+
+from typing import Dict, Final, List
+
+# ---------------------------------------------------------------------------
+# API 엔드포인트 (/st·검색은 ``comci.config.BASE_URL`` 단일 호스트+경로)
+# ---------------------------------------------------------------------------
+
+#: /th 요청 시 사용하는 호스트 (경로 없음)
+TH_API_HOST: Final[str] = "http://comci.net:4082"
+
+#: URL 경로 접두 (``…/36179_T?…``)
+TH_PATH_PREFIX: Final[str] = "36179"
+
+# ---------------------------------------------------------------------------
+# 시간표 (Base64 쿼리는 학생용과 동일 형식)
+# ---------------------------------------------------------------------------
+
+TIMETABLE_KEY: Final[str] = "73629"
+TIMETABLE_CACHE: Final[str] = "0"
+DEFAULT_DATE_INDEX: Final[int] = 1
+
+MAX_PERIOD: Final[int] = 8
+
+# ---------------------------------------------------------------------------
+# 요청 헤더
+# ---------------------------------------------------------------------------
+
+DEFAULT_HEADERS: Final[Dict[str, str]] = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    "Accept": "application/json,text/plain,*/*",
+    "Accept-Language": "ko-KR,ko;q=0.9",
+    "Referer": "http://comci.net:4082/th",
+    "x-requested-with": "XMLHttpRequest",
+}
+
+# ---------------------------------------------------------------------------
+# 공통 상수 (파싱·교사 집계)
+# ---------------------------------------------------------------------------
+
+DAYS_OF_WEEK: Final[List[str]] = ["월", "화", "수", "목", "금"]
+EMPTY_CLASS_THRESHOLD: Final[int] = 100

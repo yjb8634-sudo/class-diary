@@ -1,0 +1,74 @@
+"""
+HTTP 유틸리티
+
+중복되는 ``requests`` 호출·인코딩 보정·다중 JSON 파싱 로직을 공용 헬퍼로 분리한다.
+"""
+
+from __future__ import annotations
+
+import json
+from typing import Any, Callable, Dict, Optional
+
+import requests
+
+from .config import DEFAULT_HEADERS, _FALLBACK_ENCODINGS
+
+
+def _fix_encoding(response: requests.Response) -> None:
+    """requests 가 잘못 추론한 인코딩을 UTF-8 로 교정."""
+    if response.encoding in _FALLBACK_ENCODINGS:
+        response.encoding = "utf-8"
+
+
+def fetch_json(
+    url: str,
+    *,
+    timeout: int = 10,
+    headers: Optional[Dict[str, str]] = None,
+) -> requests.Response:
+    """GET 요청 후 인코딩 보정된 ``Response`` 를 반환.
+
+    Args:
+        url: 요청 URL.
+        timeout: 타임아웃(초).
+        headers: 요청 헤더. ``None`` 이면 ``DEFAULT_HEADERS`` 사용.
+
+    Raises:
+        requests.HTTPError: 4xx/5xx 응답.
+        requests.ConnectionError: 네트워크 장애.
+        requests.Timeout: 타임아웃 초과.
+    """
+    resp = requests.get(url, headers=headers or DEFAULT_HEADERS, timeout=timeout)
+    resp.raise_for_status()
+    _fix_encoding(resp)
+    return resp
+
+
+def decode_first_json(text: str) -> Any:
+    """연속된 JSON 스트림에서 **첫 번째** 객체만 파싱."""
+    data, _ = json.JSONDecoder().raw_decode(text.strip())
+    return data
+
+
+def decode_json_matching(
+    text: str,
+    predicate: Callable[[Dict[str, Any]], bool],
+) -> Dict[str, Any]:
+    """연속 JSON 스트림에서 ``predicate`` 를 만족하는 첫 dict 를 반환.
+
+    조건에 맞는 객체가 없으면 스트림의 첫 번째 객체를 fallback 으로 반환한다.
+    """
+    stripped = text.strip()
+    decoder = json.JSONDecoder()
+    idx = 0
+    while idx < len(stripped):
+        try:
+            data, end = decoder.raw_decode(stripped[idx:])
+            if isinstance(data, dict) and predicate(data):
+                return data
+            idx += end
+        except json.JSONDecodeError:
+            break
+    # fallback: 첫 번째 객체
+    data, _ = decoder.raw_decode(stripped)
+    return data  # type: ignore[return-value]
