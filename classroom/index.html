@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
-<title>클래스 뷰 (Class View)</title>
+<title>클래스 나우 (Class Now)</title>
 <link rel="icon" href="favicon-32.png" sizes="32x32">
 <link rel="icon" href="app-192.png" sizes="192x192">
 <link rel="apple-touch-icon" href="app-180.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="apple-mobile-web-app-title" content="클래스 뷰">
+<meta name="apple-mobile-web-app-title" content="클래스 나우">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <script>window.__defp=null;window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__defp=e;});try{var __t=localStorage.getItem('cr_theme_cur');if(__t&&__t!=='sky')document.documentElement.dataset.theme=__t;}catch(e){}</script>
 <meta name="theme-color" content="#F2F6FD">
@@ -1341,7 +1341,7 @@ function introPlay(go){
   if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches){ INTRO = 2; flush(); return; }
   INTRO = 1;
   const el = document.createElement('div'); el.id = 'intro'; el.setAttribute('role', 'presentation');
-  el.innerHTML = `<div class="zoom"><div class="stage"><span class="mkw">${mark(true)}</span><b>클래스 뷰</b><span class="en">Class View</span><span class="tg">공지 확인부터 현황조사까지, 교실 TV 한 번에</span></div></div>
+  el.innerHTML = `<div class="zoom"><div class="stage"><span class="mkw">${mark(true)}</span><b>클래스 나우</b><span class="en">Class Now</span><span class="tg">공지 확인부터 현황조사까지, 교실 TV 한 번에</span></div></div>
     <span class="skip">누르면 건너뛰기</span>`;
   document.documentElement.classList.add('introing');
   document.body.appendChild(el);
@@ -1357,7 +1357,7 @@ function introPlay(go){
 function vLogin(){
   const n15 = Array.from({length: 24}, (_, k) => `<span style="animation-delay:${(k * 0.17).toFixed(2)}s">${k + 1}</span>`).join('');
   $('app').innerHTML = `<div class="lp">
-    <header class="lp-nav"><a class="lg" href="#top"><span class="bi2">${mark()}</span>클래스 뷰<i class="en">Class View</i></a>
+    <header class="lp-nav"><a class="lg" href="#top"><span class="bi2">${mark()}</span>클래스 나우<i class="en">Class Now</i></a>
       <nav><a href="#f">기능</a><a href="#s">시작하기</a><a href="#q">안심하고 쓰기</a></nav>
       <button class="b y" data-go="login">시작하기</button></header>
     <div class="lp-in" id="top">
@@ -1365,7 +1365,7 @@ function vLogin(){
         <div class="reveal">
           <span class="eyebrow"><i></i>${esc(SCHOOL.name)} 담임 선생님을 위한 무료 도구</span>
           <h1>공지 확인부터<br>현황조사까지,<br>교실 TV <span class="hl">한 번에</span><span class="stamp" style="right:.2em;top:1.45em">DONE ✓</span></h1>
-          <p class="sub">매일 칠판에 쓰던 공지, 단톡방에 올리던 가정통신문, 종이로 걷던 동의서와 희망 조사. <b>클래스 뷰</b>가 우리 반 스마트 TV에 띄우고 학생이 TV에서 바로 답해요. 학교에서 받은 <b>엑셀 · 한글 조사 양식</b>도 그대로 올리면, 학생 답이 양식에 채워져 바로 제출할 수 있어요.</p>
+          <p class="sub">매일 칠판에 쓰던 공지, 단톡방에 올리던 가정통신문, 종이로 걷던 동의서와 희망 조사. <b>클래스 나우</b>가 우리 반 스마트 TV에 띄우고 학생이 TV에서 바로 답해요. 학교에서 받은 <b>엑셀 · 한글 조사 양식</b>도 그대로 올리면, 학생 답이 양식에 채워져 바로 제출할 수 있어요.</p>
           <div class="cta"><button class="b y gbtn" id="btnLogin" data-go="login">${G_ICON} 구글 계정으로 시작하기</button><a class="b ol" href="#f">${svg('play')} 어떻게 쓰나요 <span class="mn">3분</span></a></div>
           <div class="chks"><span>설치 없음</span><span>완전 무료</span><span>PC · 휴대폰 · TV</span><span>3분이면 시작</span></div>
           <div class="newc"><a href="#fx"><i>NEW</i>학교 양식(엑셀 · 한글) 그대로 조사 → 받아서 바로 제출 →</a><a href="#f2"><i>NEW</i>학생 호출, "네, 갈게요" 답장까지 →</a></div>
@@ -1373,7 +1373,7 @@ function vLogin(){
         <div class="cmp reveal">
           <div class="cc"><h3>평소 <em>할 일 8개</em></h3><ol>
             <li>칠판에 공지 쓰기</li><li>단톡방에 가정통신문 올리기</li><li>동의서 종이 나눠 주기</li><li>걷어서 명단과 대조</li><li>안 낸 학생 다시 부르기</li><li class="fd">희망 조사 종이 걷기</li><li class="fd">엑셀로 다시 정리</li><li class="fd">결과 사진 찍어 공유</li></ol></div>
-          <div class="cc on"><h3>클래스 뷰 <em>한 번</em></h3>
+          <div class="cc on"><h3>클래스 나우 <em>한 번</em></h3>
             <div class="mtv"><div class="sc">
               <div class="r1"><span class="clk">08:35</span><span style="color:#A9B3A9">11/6 금 · 맑음</span></div>
               <div class="bx"><h4>📌 공지</h4><div class="nt"><i>중요</i>3교시 체육관 집합</div></div>
@@ -1394,7 +1394,7 @@ function vLogin(){
             <p>공지를 적고 <b>[공지 올리기]</b>만 누르세요. 중요 · 긴급 공지는 TV 맨 위에 빨갛게 고정되고, 첨부한 PDF · 사진은 TV에서 크게 열려요.</p>
             <ul><li>보이는 기간을 정하면 알아서 내려가요</li><li>가정통신문 · 제출 서류 · 준비물은 마감일과 함께</li></ul></div>
           <div class="live bg-y reveal"><span class="lb">LIVE</span>
-            <div class="app"><div class="ah"><span class="bi2">${mark()}</span>클래스 뷰 <em>● 저장됨</em></div>
+            <div class="app"><div class="ah"><span class="bi2">${mark()}</span>클래스 나우 <em>● 저장됨</em></div>
               <div class="ac"><b>공지</b><div class="typ" id="lpType"></div>
                 <div class="lvls"><span>보통</span><span class="on">중요</span><span>긴급</span></div><div class="go">공지 올리기</div></div></div>
             <span class="cap">쓰기 → 올리기 → TV</span></div></div>
@@ -1462,7 +1462,7 @@ function vLogin(){
 
       <section class="lp-end reveal"><h2>내일 아침 조회부터,<br><span class="hl">공지는 TV 한 번에</span></h2><p>설치 없이 지금 바로 시작할 수 있어요.</p>
         <button class="b y gbtn" data-go="login">${G_ICON} 구글 계정으로 시작하기</button></section>
-      <footer class="lp-foot"><span>제작자 : 강릉제일고 유준배 선생님 · 현직 교사가 만든 무료 도구예요</span><span>클래스 뷰 (Class View) · ${esc(SCHOOL.name)}</span></footer>
+      <footer class="lp-foot"><span>제작자 : 강릉제일고 유준배 선생님 · 현직 교사가 만든 무료 도구예요</span><span>클래스 나우 (Class Now) · ${esc(SCHOOL.name)}</span></footer>
     </div></div>`;
   document.querySelectorAll('[data-go="login"]').forEach(b => b.onclick = login);
   const R = document.querySelectorAll('.lp .reveal');
@@ -1529,8 +1529,8 @@ function vStopped(){
   $('btnOut').onclick = logout;
 }
 function vOperatorOnly(){
-  $('app').innerHTML = `<header class="top"><h1>클래스 뷰 · 운영자<small>${esc(S.user.email)}</small></h1><button class="b sm" id="btnOut">로그아웃</button></header>
-    <div class="card"><h2>내 반 클래스 뷰</h2><p class="lead" style="margin-top:6px">운영자 선생님 반도 쓰려면 학년 · 반을 입력하세요. 바로 승인됩니다.</p>
+  $('app').innerHTML = `<header class="top"><h1>클래스 나우 · 운영자<small>${esc(S.user.email)}</small></h1><button class="b sm" id="btnOut">로그아웃</button></header>
+    <div class="card"><h2>내 반 클래스 나우</h2><p class="lead" style="margin-top:6px">운영자 선생님 반도 쓰려면 학년 · 반을 입력하세요. 바로 승인됩니다.</p>
       <button class="b y" id="btnSelf">학년 · 반 입력</button></div>
     <div id="opBox"></div>`;
   $('btnOut').onclick = logout;
@@ -2076,9 +2076,9 @@ function render(){
   const tabBtn = ([v, ic, l]) => `<button data-tab="${v}" class="${S.tab === v ? 'on' : ''}"><span class="ic">${svg(ic)}</span>${l}${v === 'survey' && openSv ? `<span class="dot">${openSv}</span>` : ''}${v === 'counsel' && upC ? `<span class="dot">${upC}</span>` : ''}</button>`;
   const grp = TAB_GROUPS.map(([g, ids], gi) => { const L = T.filter(t => ids.includes(t[0])); return L.length ? `${gi ? '<div class="ng" aria-hidden="true"></div>' : ''}${L.map(tabBtn).join('')}` : ''; }).join('');
   $('app').innerHTML = `<div class="shell">
-    <aside class="side"><div class="brand"><span class="bi2">${mark()}</span><div><b>클래스 뷰</b><span>${esc(B.grade)}학년 ${esc(B.klass)}반 · ${esc(S.me.name)} 선생님</span></div></div>
+    <aside class="side"><div class="brand"><span class="bi2">${mark()}</span><div><b>클래스 나우</b><span>${esc(B.grade)}학년 ${esc(B.klass)}반 · ${esc(S.me.name)} 선생님</span></div></div>
       <nav class="tabs" aria-label="메뉴">${grp}</nav>
-      <div class="sidefoot"><div class="stcard"><i></i><div>${B.tvSeen || B.viewKey ? '교실 TV 연결됨' : '우리 반 클래스 뷰'}<small>학생 ${nStu}명${openSv ? ' · 진행 중 조사 ' + openSv : ''}</small></div></div><div class="themes"><span class="tl">색</span>${THEMES.map(([k, c, n]) => `<button data-theme-set="${k}" title="${n}" aria-label="${n} 테마" class="${themeNow() === k ? 'on' : ''}" style="background:${c}"></button>`).join('')}</div>
+      <div class="sidefoot"><div class="stcard"><i></i><div>${B.tvSeen || B.viewKey ? '교실 TV 연결됨' : '우리 반 클래스 나우'}<small>학생 ${nStu}명${openSv ? ' · 진행 중 조사 ' + openSv : ''}</small></div></div><div class="themes"><span class="tl">색</span>${THEMES.map(([k, c, n]) => `<button data-theme-set="${k}" title="${n}" aria-label="${n} 테마" class="${themeNow() === k ? 'on' : ''}" style="background:${c}"></button>`).join('')}</div>
         <p class="privacy">🔒 우리 반 자료는 담임 선생님만 관리하며, 운영자는 열람할 수 없습니다.</p></div></aside>
     <main class="main">
       <div class="topbar"><span class="pill">학생 <b>${nStu}</b>명</span><button class="b sm mobbtn" data-a="mobile" title="휴대폰에서 쓰기 · 앱 설치">📱 모바일</button>${isPhone() ? '' : '<button class="b sm mobbtn" data-a="pcinst" title="이 컴퓨터 바탕화면에 앱으로 설치">💻 바탕화면</button>'}${bellHtml()}<button class="b sm" id="btnOut">로그아웃</button></div>
@@ -2878,6 +2878,10 @@ function vLinkForm(){
 /* ---------- 알림 종 ---------- */
 const APP_VER = '2026-11-06b';
 const UPDATES = [
+  { v: '2026-11-06b', title: '11월 6일 업데이트 (2)', items: [
+    '🏷️ 프로그램 이름이 \'클래스 나우 (Class Now)\'로 바뀌었어요',
+    '💻 [바탕화면] → [이 컴퓨터에 설치] 단추로 바로 설치돼요',
+    '🕘 컴시간 시간표를 다시 받아 와요 (컴시간이 바뀌어 잠시 나이스 시간표로 보이던 문제)'] },
   { v: '2026-11-06a', title: '11월 6일 업데이트', items: [
     '📄 학교 양식 그대로 조사: 학교에서 받은 엑셀 · 한글 양식을 올리면 학생이 교실 TV에서 답하고, 조사가 끝나면 [양식대로 내려받기]로 받아 바로 제출해요',
     '📎 교실 TV에서 첨부파일이 열리지 않던 문제를 고쳤어요',
@@ -3124,7 +3128,7 @@ async function runInstall(box, pc){
   }
   const btn = box.querySelector('[data-m="install"]');
   if (await insInstalled()){
-    insMsg(box, '✓ <b>클래스 뷰가 이미 이 ' + (pc ? '컴퓨터' : '기기') + '에 설치돼 있어요.</b> ' + (pc ? '바탕화면 · 시작 메뉴의 <b>클래스 뷰</b>를 여세요. (주소창 오른쪽 끝 <b>[앱에서 열기]</b>를 눌러도 돼요)' : '홈 화면의 <b>클래스 뷰</b> 아이콘으로 여세요.'));
+    insMsg(box, '✓ <b>클래스 나우가 이미 이 ' + (pc ? '컴퓨터' : '기기') + '에 설치돼 있어요.</b> ' + (pc ? '바탕화면 · 시작 메뉴의 <b>클래스 나우</b>를 여세요. (주소창 오른쪽 끝 <b>[앱에서 열기]</b>를 눌러도 돼요)' : '홈 화면의 <b>클래스 나우</b> 아이콘으로 여세요.'));
     return;
   }
   if (btn && !btn.dataset.wait){
@@ -3138,7 +3142,7 @@ async function runInstall(box, pc){
   }
   insMsg(box, pc
     ? '이 브라우저가 단추로 바로 설치하는 걸 허락하지 않았어요. 아래 <b>주소창 오른쪽 끝 설치 아이콘</b>으로 설치해 주세요.<br>· 그 자리에 <b>[앱에서 열기]</b> 아이콘이 보이면 <b>이미 설치된 것</b>이에요.<br>· 예전에 설치 창을 닫은 적이 있으면 크롬이 한동안 단추를 막아요.'
-    : '이 브라우저가 단추로 바로 설치하는 걸 허락하지 않았어요. 아래 방법으로 설치해 주세요. 이미 설치돼 있다면 홈 화면의 <b>클래스 뷰</b> 아이콘으로 여세요.');
+    : '이 브라우저가 단추로 바로 설치하는 걸 허락하지 않았어요. 아래 방법으로 설치해 주세요. 이미 설치돼 있다면 홈 화면의 <b>클래스 나우</b> 아이콘으로 여세요.');
   const how = box.querySelector('.how'); if (how){ how.classList.remove('flash'); void how.offsetWidth; how.classList.add('flash'); }
 }
 window.addEventListener('appinstalled', () => { DEFP = null; window.__defp = null; toast('홈 화면에 설치했어요. 이제 앱처럼 열 수 있어요.'); const m = $('mobModal'); if (m) m.remove(); });
@@ -3156,7 +3160,7 @@ function mobModal(kind){
       ${kakao ? '<p>⚠ <b>카카오톡 · 네이버 앱 안에서 열린 화면</b>은 설치가 안 돼요. 오른쪽 위(또는 아래) <b><svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"/></svg></b> → <b>다른 브라우저로 열기</b>를 누른 뒤 설치해 주세요.</p>' : ''}
       <p><b>안드로이드</b> (크롬 · 삼성 인터넷): 주소를 연 뒤 오른쪽 위 <b><svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"/></svg></b> → <b>앱 설치</b> 또는 <b><svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8.5v7M8.5 12h7"/></svg> 홈 화면에 추가</b></p>
       <p><b>아이폰</b> (사파리): 주소를 연 뒤 아래쪽 <b>공유 <svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 9H6.5A1.5 1.5 0 0 0 5 10.5v9A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 17.5 9H16"/><path d="M12 14V3M8 7l4-4 4 4"/></svg></b> → <b><svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8.5v7M8.5 12h7"/></svg> 홈 화면에 추가</b> → <b>추가</b></p>
-      ${view ? '' : '<p>설치하면 홈 화면에 <b>클래스 뷰</b> 아이콘이 생기고, 주소창 없이 앱처럼 열려요. 처음 한 번만 로그인하면 됩니다.</p>'}</div>`;
+      ${view ? '' : '<p>설치하면 홈 화면에 <b>클래스 나우</b> 아이콘이 생기고, 주소창 없이 앱처럼 열려요. 처음 한 번만 로그인하면 됩니다.</p>'}</div>`;
   const box = document.createElement('div'); box.id = 'mobModal';
   box.innerHTML = `<div class="mc" role="dialog" aria-modal="true" aria-labelledby="mobT">
     <div class="mh"><span class="ic">📱</span><div><b id="mobT">${view ? '학생 휴대폰용 주소' : '휴대폰에서 쓰기'}</b><span>${phone && !view ? '이 휴대폰 홈 화면에 앱처럼 설치할 수 있어요.' : '휴대폰 카메라로 QR 코드를 비추세요.'}</span></div>
@@ -3195,7 +3199,7 @@ function pcModal(){
         <p><b>크롬</b>: 주소창 오른쪽 끝의 <b>설치 아이콘 <svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/><path d="M12 7v5M9.5 9.8 12 12.3l2.5-2.5"/></svg></b> → <b>설치</b><br>또는 오른쪽 위 <b><svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"/></svg></b> → <b>전송, 저장, 공유</b> → <b>페이지를 앱으로 설치</b></p>
         <p><b>엣지</b>: 오른쪽 위 <b><svg class="uic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg></b> → <b>앱</b> → <b>이 사이트를 앱으로 설치</b></p>
         ${!chrome && !edge ? '<p>⚠ 지금 브라우저에서 설치 메뉴가 안 보이면 <b>크롬</b>이나 <b>엣지</b>로 이 화면을 열어 주세요.</p>' : ''}
-        <p>설치하면 <b>바탕화면 · 시작 메뉴</b>에 <b>클래스 뷰</b> 아이콘이 생겨요. 아이콘을 오른쪽 클릭 → <b>작업 표시줄에 고정</b>하면 더 빨라요.${edge ? ' (엣지는 설치 뒤 바탕화면 바로 가기 만들기를 물어봐요)' : ''}</p>
+        <p>설치하면 <b>바탕화면 · 시작 메뉴</b>에 <b>클래스 나우</b> 아이콘이 생겨요. 아이콘을 오른쪽 클릭 → <b>작업 표시줄에 고정</b>하면 더 빨라요.${edge ? ' (엣지는 설치 뒤 바탕화면 바로 가기 만들기를 물어봐요)' : ''}</p>
       </div>`}
     </div></div>`;
   box.addEventListener('click', async ev => {
@@ -3205,7 +3209,7 @@ function pcModal(){
     if (b.dataset.m === 'install'){ runInstall(box, true); }
   });
   document.body.appendChild(box);
-  if (!alone && !DEFP) insInstalled().then(y => { if (y && document.body.contains(box)) insMsg(box, '✓ <b>클래스 뷰가 이미 이 컴퓨터에 설치돼 있어요.</b> 바탕화면 · 시작 메뉴의 <b>클래스 뷰</b>를 여세요. (주소창 오른쪽 끝 <b>[앱에서 열기]</b>를 눌러도 돼요)'); });
+  if (!alone && !DEFP) insInstalled().then(y => { if (y && document.body.contains(box)) insMsg(box, '✓ <b>클래스 나우가 이미 이 컴퓨터에 설치돼 있어요.</b> 바탕화면 · 시작 메뉴의 <b>클래스 나우</b>를 여세요. (주소창 오른쪽 끝 <b>[앱에서 열기]</b>를 눌러도 돼요)'); });
 }
 /* 휴대폰으로 처음 열면 한 번만: 홈 화면에 추가 안내 */
 function mobTip(){
@@ -3238,7 +3242,7 @@ async function updModal(mode){
   const L = mode === 'history' ? UPDATES : updList(), prev = mode === 'open' ? await hasPrev() : false;
   const box = document.createElement('div'); box.id = 'updModal';
   box.innerHTML = `<div class="updc" role="dialog" aria-modal="true" aria-labelledby="updT">
-    <h2 id="updT">${mode === 'history' ? '📋 업데이트 내역' : mode === 'live' ? '🆕 새 버전이 올라왔어요' : '🆕 클래스 뷰가 새 버전으로 바뀌었어요'}</h2>
+    <h2 id="updT">${mode === 'history' ? '📋 업데이트 내역' : mode === 'live' ? '🆕 새 버전이 올라왔어요' : '🆕 클래스 나우가 새 버전으로 바뀌었어요'}</h2>
     ${mode === 'live' ? '<p class="lead">지금 업데이트하면 화면을 새로고침합니다. 적고 있던 내용이 있으면 먼저 저장해 주세요.</p>' : ''}
     <div class="updl">${(mode === 'live' ? UPDATES.filter(u => u.v > APP_VER) : L).map(u => `<div class="bupd"><b>${esc(u.title)}</b><ul>${u.items.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('')
       || '<p class="small muted">자세한 내용은 새로고침하면 볼 수 있어요.</p>'}</div>
@@ -3316,11 +3320,11 @@ async function bkDriveSave(j, tok){
 }
 async function bkRestore(j){
   const { db, F } = S.fb;
-  if (!j || j.app !== '교실화면 백업' || !j.board || !j.sub) throw new Error('클래스 뷰 백업 파일이 아니에요.');
+  if (!j || j.app !== '교실화면 백업' || !j.board || !j.sub) throw new Error('클래스 나우 백업 파일이 아니에요.');
   busy('되살리기 전에 지금 자료를 파일로 받아 두는 중…');
   bkDownload(await bkBuild(), `classroom-backup_before-restore_${S.B.grade}-${S.B.klass}_${kstToday()}.json`);
   busy(j.kind === 'migrate' ? '학급 다이어리 기록을 옮기는 중…' : '게시판을 되살리는 중…');
-  /* 학급 다이어리에서 옮겨 온 파일이면: 지금 클래스 뷰 설정(TV 주소 · PIN · 이름 등)에 옮겨 온 내용을 덮어씀 */
+  /* 학급 다이어리에서 옮겨 온 파일이면: 지금 클래스 나우 설정(TV 주소 · PIN · 이름 등)에 옮겨 온 내용을 덮어씀 */
   const mig = j.kind === 'migrate';
   let board = bkIn(j.board);
   delete board.updatedAt;
@@ -3340,7 +3344,7 @@ async function bkRestore(j){
 function vBackup(){
   const B = S.B, last = B.lastBackup ? new Date(B.lastBackup) : null, days = last ? Math.floor((Date.now() - last) / 864e5) : null;
   return `<section class="card"><h2>💾 우리 반 백업 · 되살리기</h2>
-    <p class="lead">공지 · 알림장 · 조사 응답 · 상담 · 건의 · 학생 일정 · 명단을 한 파일로 저장합니다. <b>학급 다이어리(교실 화면)에서 받은 '클래스 뷰로 옮기기' 파일</b>도 [백업 파일로 되살리기]로 넣으면 옮겨져요. 백업은 <b>선생님 컴퓨터나 선생님 구글 드라이브에만</b> 저장되고 운영자는 받지 않아요.
+    <p class="lead">공지 · 알림장 · 조사 응답 · 상담 · 건의 · 학생 일정 · 명단을 한 파일로 저장합니다. <b>학급 다이어리(교실 화면)에서 받은 '클래스 나우로 옮기기' 파일</b>도 [백업 파일로 되살리기]로 넣으면 옮겨져요. 백업은 <b>선생님 컴퓨터나 선생님 구글 드라이브에만</b> 저장되고 운영자는 받지 않아요.
       ${last ? `마지막 백업: <b>${last.toLocaleDateString('ko-KR')}</b> (${days === 0 ? '오늘' : days + '일 전'})` : '<b style="color:var(--pink)">아직 백업한 적이 없어요.</b>'} 일주일에 한 번 해 두면 안심이에요.</p>
     <div class="row"><button class="b y" data-a="bkdrive">내 구글 드라이브에 저장</button><button class="b" data-a="bkfile">파일로 내려받기</button>
       <span class="grow"></span><button class="b r" data-a="bkpick">백업 파일로 되살리기</button></div>
@@ -3497,13 +3501,13 @@ document.addEventListener('change', ev => {
     const f = t.files[0]; t.value = ''; if (!f) return;
     f.text().then(async txt => {
       let j; try { j = JSON.parse(txt); } catch (e) { return toast('백업 파일을 읽지 못했어요.', true); }
-      if (!j || j.app !== '교실화면 백업') return toast('클래스 뷰 백업 파일이 아니에요.', true);
+      if (!j || j.app !== '교실화면 백업') return toast('클래스 나우 백업 파일이 아니에요.', true);
       const n = c => ((j.sub || {})[c] || []).length;
       const other = String(j.grade) !== String(S.B.grade) || String(j.klass) !== String(S.B.klass);
       if (j.kind === 'migrate'){
         const c = j.count || {};
-        if (!confirm(`학급 다이어리(교실 화면)에서 ${new Date(j.at).toLocaleString('ko-KR')}에 받은 ${j.grade}학년 ${j.klass}반 기록이에요.\n\n학생 ${c.students} · 공지 ${c.notices} · 알림장 ${c.notes} · 조사 ${c.surveys} (응답 ${c.answers}) · 학급 일정 ${c.events} · 학생 일정 ${c.sevents} · 건의 ${c.suggest}\n\n이 내용을 클래스 뷰로 옮길까요?\n• 지금 클래스 뷰의 명단 · 공지 · 알림장 · 조사 · 응답 · 일정 · 건의는 이 파일 내용으로 바뀌어요.\n• TV 주소 · 학생 PIN 방식 · 로그인은 그대로예요.\n• 바꾸기 전에 지금 클래스 뷰 자료를 파일로 한 번 받아 둬요.`)) return;
-        try { await bkRestore(j); toast('학급 다이어리 기록을 클래스 뷰로 옮겼어요.'); } catch (e) { busy(''); fail(e); }
+        if (!confirm(`학급 다이어리(교실 화면)에서 ${new Date(j.at).toLocaleString('ko-KR')}에 받은 ${j.grade}학년 ${j.klass}반 기록이에요.\n\n학생 ${c.students} · 공지 ${c.notices} · 알림장 ${c.notes} · 조사 ${c.surveys} (응답 ${c.answers}) · 학급 일정 ${c.events} · 학생 일정 ${c.sevents} · 건의 ${c.suggest}\n\n이 내용을 클래스 나우로 옮길까요?\n• 지금 클래스 나우의 명단 · 공지 · 알림장 · 조사 · 응답 · 일정 · 건의는 이 파일 내용으로 바뀌어요.\n• TV 주소 · 학생 PIN 방식 · 로그인은 그대로예요.\n• 바꾸기 전에 지금 클래스 나우 자료를 파일로 한 번 받아 둬요.`)) return;
+        try { await bkRestore(j); toast('학급 다이어리 기록을 클래스 나우로 옮겼어요.'); } catch (e) { busy(''); fail(e); }
         return;
       }
       if (!confirm(`${new Date(j.at).toLocaleString('ko-KR')}에 만든 ${j.grade}학년 ${j.klass}반 백업으로 되살릴까요?${other ? '\n\n⚠ 지금 반(' + S.B.grade + '-' + S.B.klass + ')과 다른 반의 백업이에요.' : ''}\n\n공지 ${(j.board.notices || []).length} · 조사 ${(j.board.surveys || []).length} · 응답 ${n('answers')} · 상담 ${n('counsel')} · 건의 ${n('suggest')} · 학생 일정 ${n('sevents')}\n\n지금 자료는 이 백업 상태로 바뀝니다.`)) return;
