@@ -630,6 +630,7 @@ html[data-theme="chalk"] .flst.r-away{background:#5A3934}
 <input type="file" id="filePick" hidden multiple>
 <input type="file" id="xlsPick" hidden accept=".xlsx,.xls,.csv">
 <input type="file" id="fxPick" hidden accept=".xlsx,.hwpx,.hwp,.xls">
+<input type="file" id="bkPick" hidden accept=".json,application/json">
 <script>/* =====================================================================
  * FORMX — 학교 양식(엑셀 .xlsx · 한글 .hwpx)을 읽고, 학생 답으로 채워 다시 만듭니다.
  *  - 밖의 라이브러리 없이 브라우저만으로 동작 (압축 풀기 · 묶기는 브라우저 기본 기능)
@@ -2845,6 +2846,7 @@ function vLinkForm(){
 const APP_VER = '2026-11-06a';
 const UPDATES = [
   { v: '2026-11-06a', title: '11월 6일 업데이트 · 학교 양식 자동 채우기', items: [
+    '📦 학급 다이어리(교실 화면)에서 받은 [클래스 뷰로 옮기기] 파일을 [백업 · 되살리기 → 백업 파일로 되살리기]로 넣으면 기록이 그대로 옮겨져요 (TV 주소 · PIN 방식은 그대로)',
     '📑 PDF 첨부는 올릴 때 쪽마다 그림으로도 만들어 두어서, 교실 TV 화면 안에서 [앞 쪽 · 다음 쪽]으로 바로 넘겨 봐요 (크롬으로 넘어가지 않아요). 사진도 화면 안에서 바로 보여요',
     '⚠ 한글(.hwp) 파일을 첨부하면 TV에서 미리 볼 수 없다고 알려 드려요. 한글 → [파일] → [PDF로 저장하기]로 올려 주세요',
     '📄 [설문 · 투표 · 조사] → [학교 양식]: 학교에서 받은 엑셀(.xlsx) · 한글(.hwpx) 양식을 올리면 학생이 TV에서 답하고, [📥 양식대로 내려받기]로 원래 모양 그대로 채워진 파일을 받아요',
@@ -3255,13 +3257,17 @@ async function bkRestore(j){
   if (!j || j.app !== '교실화면 백업' || !j.board || !j.sub) throw new Error('클래스 뷰 백업 파일이 아니에요.');
   busy('되살리기 전에 지금 자료를 파일로 받아 두는 중…');
   bkDownload(await bkBuild(), `classroom-backup_before-restore_${S.B.grade}-${S.B.klass}_${kstToday()}.json`);
-  busy('게시판을 되살리는 중…');
-  const board = bkIn(j.board);
+  busy(j.kind === 'migrate' ? '학급 다이어리 기록을 옮기는 중…' : '게시판을 되살리는 중…');
+  /* 학급 다이어리에서 옮겨 온 파일이면: 지금 클래스 뷰 설정(TV 주소 · PIN · 이름 등)에 옮겨 온 내용을 덮어씀 */
+  const mig = j.kind === 'migrate';
+  let board = bkIn(j.board);
   delete board.updatedAt;
+  if (mig){ const cur = Object.assign({}, S.B); delete cur.updatedAt; board = Object.assign(cur, board); board.forms = []; board.flash = null; }
   board.owner = S.user.uid; board.viewKey = S.B.viewKey || '';
+  if (!board.pinKey && S.B.pinKey) board.pinKey = S.B.pinKey;
   await F.setDoc(F.doc(db, 'boards', S.key), Object.assign(board, { updatedAt: F.serverTimestamp(), lastBackup: S.B.lastBackup || '' }));
-  for (const c of BK_SUBS){
-    busy('되살리는 중… (' + c + ')');
+  for (const c of (mig ? BK_SUBS.filter(x => j.sub[x]) : BK_SUBS)){
+    busy((mig ? '옮기는 중… (' : '되살리는 중… (') + c + ')');
     const cur = await F.getDocs(F.collection(db, 'boards', S.key, c));
     await Promise.all(cur.docs.map(d => F.deleteDoc(d.ref)));
     const L = j.sub[c] || [];
@@ -3272,10 +3278,10 @@ async function bkRestore(j){
 function vBackup(){
   const B = S.B, last = B.lastBackup ? new Date(B.lastBackup) : null, days = last ? Math.floor((Date.now() - last) / 864e5) : null;
   return `<section class="card"><h2>💾 우리 반 백업 · 되살리기</h2>
-    <p class="lead">공지 · 알림장 · 조사 응답 · 상담 · 건의 · 학생 일정 · 명단을 한 파일로 저장합니다. 백업은 <b>선생님 컴퓨터나 선생님 구글 드라이브에만</b> 저장되고 운영자는 받지 않아요.
+    <p class="lead">공지 · 알림장 · 조사 응답 · 상담 · 건의 · 학생 일정 · 명단을 한 파일로 저장합니다. <b>학급 다이어리(교실 화면)에서 받은 '클래스 뷰로 옮기기' 파일</b>도 [백업 파일로 되살리기]로 넣으면 옮겨져요. 백업은 <b>선생님 컴퓨터나 선생님 구글 드라이브에만</b> 저장되고 운영자는 받지 않아요.
       ${last ? `마지막 백업: <b>${last.toLocaleDateString('ko-KR')}</b> (${days === 0 ? '오늘' : days + '일 전'})` : '<b style="color:var(--pink)">아직 백업한 적이 없어요.</b>'} 일주일에 한 번 해 두면 안심이에요.</p>
     <div class="row"><button class="b y" data-a="bkdrive">내 구글 드라이브에 저장</button><button class="b" data-a="bkfile">파일로 내려받기</button>
-      <span class="grow"></span><button class="b r" data-a="bkpick">백업 파일로 되살리기</button><input type="file" id="bkPick" accept=".json,application/json" hidden></div>
+      <span class="grow"></span><button class="b r" data-a="bkpick">백업 파일로 되살리기</button></div>
     <p class="small muted" style="margin:8px 0 0">되살리면 지금 자료가 백업 때 상태로 바뀝니다. 되살리기 직전 자료는 자동으로 파일로 한 번 더 받아 두니 안심하세요. 드라이브 백업은 '교실화면_백업' 폴더에 있어요.</p></section>`;
 }
 
@@ -3432,6 +3438,12 @@ document.addEventListener('change', ev => {
       if (!j || j.app !== '교실화면 백업') return toast('클래스 뷰 백업 파일이 아니에요.', true);
       const n = c => ((j.sub || {})[c] || []).length;
       const other = String(j.grade) !== String(S.B.grade) || String(j.klass) !== String(S.B.klass);
+      if (j.kind === 'migrate'){
+        const c = j.count || {};
+        if (!confirm(`학급 다이어리(교실 화면)에서 ${new Date(j.at).toLocaleString('ko-KR')}에 받은 ${j.grade}학년 ${j.klass}반 기록이에요.\n\n학생 ${c.students} · 공지 ${c.notices} · 알림장 ${c.notes} · 조사 ${c.surveys} (응답 ${c.answers}) · 학급 일정 ${c.events} · 학생 일정 ${c.sevents} · 건의 ${c.suggest}\n\n이 내용을 클래스 뷰로 옮길까요?\n• 지금 클래스 뷰의 명단 · 공지 · 알림장 · 조사 · 응답 · 일정 · 건의는 이 파일 내용으로 바뀌어요.\n• TV 주소 · 학생 PIN 방식 · 로그인은 그대로예요.\n• 바꾸기 전에 지금 클래스 뷰 자료를 파일로 한 번 받아 둬요.`)) return;
+        try { await bkRestore(j); toast('학급 다이어리 기록을 클래스 뷰로 옮겼어요.'); } catch (e) { busy(''); fail(e); }
+        return;
+      }
       if (!confirm(`${new Date(j.at).toLocaleString('ko-KR')}에 만든 ${j.grade}학년 ${j.klass}반 백업으로 되살릴까요?${other ? '\n\n⚠ 지금 반(' + S.B.grade + '-' + S.B.klass + ')과 다른 반의 백업이에요.' : ''}\n\n공지 ${(j.board.notices || []).length} · 조사 ${(j.board.surveys || []).length} · 응답 ${n('answers')} · 상담 ${n('counsel')} · 건의 ${n('suggest')} · 학생 일정 ${n('sevents')}\n\n지금 자료는 이 백업 상태로 바뀝니다.`)) return;
       try { await bkRestore(j); toast('되살렸어요.'); } catch (e) { busy(''); fail(e); }
     });

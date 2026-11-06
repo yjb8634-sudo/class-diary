@@ -1534,3 +1534,85 @@ function apiBoardEvent(pw, op, d) {
   boardBust_();
   return apiBoardAdminGet(pw);
 }
+
+/* =====================================================================
+ * 클래스 뷰(공용판)로 옮기기
+ * 교실 화면 자료를 클래스 뷰의 [백업 · 되살리기 → 백업 파일로 되살리기]가 읽는 모양(JSON)으로 내보냅니다.
+ * 옮기는 것: 학급 명단(생일) · 공지 · 알림장 · 조사와 응답 · 학급 일정 · 학생 일정 · 건의 · 화면 설정(교시 · 시간표 · 소리 · 글꼴 · 색 등)
+ * 옮기지 않는 것: 학생 PIN(클래스 뷰에서 새로 만듦), TV 주소, 상담 예약, 긴급 호출
+ * ===================================================================== */
+function apiBoardExportCV(pw) {
+  isAdmin_(pw);
+  BOARD_FAST = false;
+  board준비_();
+  var c = boardCfg_(), sts = students_(), bd = boardBirthdays_();
+  var P = (c.periods && c.periods.length) ? c.periods : BOARD_PERIODS;
+  var ms = function (v) {
+    if (v instanceof Date) return v.getTime();
+    var m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/);
+    return m ? new Date(m[1] + '-' + m[2] + '-' + m[3] + 'T' + (m[4] || '09') + ':' + (m[5] || '00') + ':00+09:00').getTime() : Date.now();
+  };
+  var iso = function (v) { return new Date(ms(v)).toISOString(); };
+  var ts = function (v) { return { __ts: ms(v) }; };
+  /* 시간표 · 선생님: ['국어','수학',…] → { '1': '국어', '2': '수학', … } */
+  var byPeriod = function (o) {
+    var out = {};
+    Object.keys(o || {}).forEach(function (dow) {
+      var v = o[dow];
+      if (Array.isArray(v)) { var m = {}; v.forEach(function (x, i) { if (x && P[i]) m[String(P[i].n)] = String(x); }); out[String(dow)] = m; }
+      else if (v && typeof v === 'object') out[String(dow)] = v;
+    });
+    return out;
+  };
+  var layout = JSON.parse(JSON.stringify(c.layout || {}));
+  if (Array.isArray(layout.order)) layout.order = layout.order.map(function (x) { return Array.isArray(x) ? x.join(',') : String(x); });
+  /* 조사 · 응답 */
+  var sidMap = {};
+  var sidOf = function (id) { id = String(id); if (!sidMap[id]) sidMap[id] = id.length <= 20 ? id : 's' + Utilities.getUuid().replace(/-/g, '').slice(0, 10); return sidMap[id]; };
+  var surveys = boardSurveys_().map(function (s) {
+    var o = s.options.slice(); if (s.etc && o.length) o[o.length - 1] = '기타';
+    return { id: sidOf(s.id), q: s.q, kind: s.kind, options: o, multi: !!s.multi, etc: !!s.etc, anon: !!s.anon, pub: !!s.pub, open: !!s.open,
+      showMissing: s.showMissing !== false, desc: s.desc || '', file: s.file || null, at: iso(s.at) };
+  });
+  var ans = {};
+  boardResponses_().forEach(function (r) {
+    if (!sidMap[r.id] || !r.no) return;
+    var id = sidMap[r.id] + '_' + r.no, prev = ans[id];
+    if (prev && prev.data.at.__ts > ms(r.at)) return;   /* 같은 학생이 여러 번이면 마지막 답 */
+    ans[id] = { id: id, data: { sid: sidMap[r.id], no: r.no, ch: (r.choices || []).map(Number), etc: String(r.etc || '').slice(0, 100), at: ts(r.at) } };
+  });
+  /* 일정: 선생님이 넣은 일정은 학급 일정으로, 학생이 올린 일정은 학생 일정으로 */
+  var evs = boardManualEvents_(), events = [], sevents = [];
+  evs.forEach(function (e) {
+    if (e.by === '학생') { if (!e.gone) sevents.push({ id: e.id, data: { date: e.start, title: e.title, no: 0, name: '', at: ts(e.start) } }); }
+    else events.push({ id: e.id, start: e.start, end: e.end || e.start, title: e.title });
+  });
+  /* 알림장 (끝나지 않은 것만) */
+  var notes = [];
+  try {
+    noteAdmin_().items.filter(function (it) { return it.open !== false; }).forEach(function (it) {
+      notes.push({ id: it.id, kind: it.kind, title: it.title, text: it.text || '', due: it.due || '', track: !!it.track, file: it.file || null, done: it.done || [], at: new Date().toISOString() });
+    });
+  } catch (e) {}
+  var suggest = hubRows_(BOARD.SUGGEST, 5).filter(function (x) { return x.r[0]; }).map(function (x) {
+    return { id: String(x.r[0]), data: { text: String(x.r[1] || ''), no: 0, name: String(x.r[2] || ''), at: ts(x.r[3]) } };
+  });
+  var board = {
+    grade: String(c.grade), klass: String(c.klass),
+    students: sts.map(function (s) { return { no: s.no, name: s.name, bd: bd[s.no] || '' }; }),
+    notices: boardNotices_(true).map(function (n) { return { id: n.id, text: n.text, level: n.level, start: n.start || '', end: n.end || '', at: iso(n.at), files: n.files || [] }; }),
+    notes: notes, surveys: surveys, events: events,
+    ddays: c.ddays || [], links: c.links || [], quote: c.quote || { on: true, mode: 'day', list: [] }, layout: layout,
+    periods: P, specials: c.specials || [], lunch: c.lunch,
+    ttSource: c.source === '직접' ? 'manual' : (c.source === 'NEIS' ? 'neis' : 'comci'),
+    timetable: byPeriod(c.timetable), teachers: byPeriod(c.teachers),
+    counselOn: !!c.counselOn, counselMode: c.counselMode, suggestOn: !!c.suggestOn,
+    eventAddOn: c.eventAddOn !== false, eventNeis: c.eventNeis !== false, eventDays: c.eventDays || 30,
+    font: c.font || '', tvt: c.tvt || '', tvp: c.tvp || '', sound: c.sound || null,
+    weatherOn: (getConfig_()['날씨_표시'] || '예') !== '아니오'
+  };
+  return { app: '교실화면 백업', v: 1, kind: 'migrate', from: '학급 다이어리', at: new Date().toISOString(), grade: board.grade, klass: board.klass,
+    count: { students: board.students.length, notices: board.notices.length, notes: notes.length, surveys: surveys.length, answers: Object.keys(ans).length,
+      events: events.length, sevents: sevents.length, suggest: suggest.length },
+    board: board, sub: { answers: Object.keys(ans).map(function (k) { return ans[k]; }), sevents: sevents, suggest: suggest } };
+}
