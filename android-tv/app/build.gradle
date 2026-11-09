@@ -1,0 +1,26 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'kr.yjb.classnow.tv'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'kr.yjb.classnow.tv'
+        minSdk 21
+        targetSdk 34
+        versionCode((System.getenv('VC') ?: '1') as int)
+        versionName '1.0.' + (System.getenv('VC') ?: '1')
+    }
+
+    // 서명은 저장소 밖(선생님 보관 열쇠)에서 따로 합니다. 여기서는 서명 없는 앱 파일만 만듭니다.
+    buildTypes {
+        release { minifyEnabled false }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    lint { abortOnError false; checkReleaseBuilds false }
+}
