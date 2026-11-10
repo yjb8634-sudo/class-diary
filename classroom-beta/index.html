@@ -146,6 +146,16 @@ nav.tabs button .dot{position:absolute;top:6px;right:8px;min-width:18px;height:1
 #mobModal .bt .pri{background:#2F6B55;border-color:#2F6B55;color:#fff}
 #mobModal .bt .ins{background:#E6B84A;border-color:#E6B84A;color:#2A2108}
 #mobModal .bt [hidden]{display:none}
+#mobModal .ckin{display:block;width:100%;box-sizing:border-box;margin:6px 0 10px;padding:11px 12px;border:1.5px solid #B9CFC4;border-radius:10px;font-size:16px;background:#fff;color:#1D2A25}
+#mobModal .ckp{font-size:14px;line-height:1.65;color:#24453A;margin:0 0 10px}
+#mobModal .ckp b{color:#1D2A25}
+#mobModal .ckw{background:#FFF6DB;border:1.5px solid #E6B84A;color:#4A3A10;border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.6;margin:0 0 12px}
+#mobModal .ckerr{color:#B33A2B;font-weight:700;font-size:13.5px;min-height:1.2em;margin:0 0 8px}
+#mobModal label.ckc{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;line-height:1.55;margin:0 0 12px;color:#24453A}
+.ckbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:0 0 16px;padding:12px 16px;border-radius:14px;background:#FFF6DB;border:1.5px solid #E6B84A;color:#4A3A10;font-size:14.5px;line-height:1.55}
+.ckbar b{color:#2A2108}.ckbar .b{margin-left:auto}
+.cklock{max-width:460px;margin:12vh auto;padding:0 16px}
+
 #mobModal .bt .ins.wait{opacity:.75;cursor:progress}
 #mobModal .bt .ins.ready{background:#2F6B55;border-color:#2F6B55;color:#fff;animation:insPulse 1.1s ease infinite}
 @keyframes insPulse{50%{box-shadow:0 0 0 5px rgba(47,107,85,.3)}}
@@ -1225,6 +1235,7 @@ html[data-theme="chalk"] .flst.r-away{background:#5A3934}
 </script>
 <script type="module">
 import { fb, OPERATOR, SCHOOL, DEFAULT_PERIODS, DEFAULT_SPECIALS, DEFAULT_LUNCH, rid, kstToday } from './fb.js';
+import * as CKX from './ck.js';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1287,16 +1298,18 @@ async function route(){
   /* TV 열쇠는 본인만 읽을 수 있는 keys/{uid}에 둡니다 (운영자 명단에는 남기지 않음) */
   try {
     let key = '', inKeys = false;
-    try { const ks = await F.getDoc(F.doc(db, 'keys', S.user.uid)); if (ks.exists() && ks.data().boardKey){ key = ks.data().boardKey; inKeys = true; } } catch (e) { console.warn('keys get', e); }
+    S.KD = {};
+    try { const ks = await F.getDoc(F.doc(db, 'keys', S.user.uid)); if (ks.exists()){ S.KD = ks.data() || {}; if (S.KD.boardKey){ key = S.KD.boardKey; inKeys = true; } } } catch (e) { console.warn('keys get', e); }
     if (!key && S.me.boardKey){
       key = S.me.boardKey;
-      try { await F.setDoc(F.doc(db, 'keys', S.user.uid), { boardKey: key }); inKeys = true; } catch (e) { console.warn('keys set (보안 규칙 확인 필요)', e); }
+      try { await F.setDoc(F.doc(db, 'keys', S.user.uid), { boardKey: key }, { merge: true }); inKeys = true; } catch (e) { console.warn('keys set (보안 규칙 확인 필요)', e); }
     }
     /* 열쇠가 keys/로 옮겨진 것이 확인됐을 때만 명단에서 지웁니다 */
     if (S.me.boardKey && inKeys){ await F.updateDoc(F.doc(db, 'teachers', S.user.uid), { boardKey: F.deleteField() }).catch(() => {}); }
     S.me.boardKey = key;
     if (!key) await makeBoard();
   } catch (e) { return fail(e); }
+  await ckInit();
   watchBoard();
 }
 
@@ -1454,9 +1467,10 @@ function vLogin(){
           <div class="step reveal"><b>숫자 넣으면 끝</b><p>관리 화면 [TV 연결]에 그 숫자를 넣으면 우리 반 TV로 바뀌어요. 이제 공지 · 설문을 올려 보세요.</p></div></div></section>
 
       <section class="lp-sec" id="q"><div class="sech reveal"><span class="secno">03 · 안심하고 쓰기</span><h2>우리 반 자료는<br><span class="hl">담임 선생님만</span></h2>
-          <p>🔒 우리 반 자료는 담임 선생님만 관리하며, 운영자는 열람할 수 없습니다.</p></div>
+          <p>🔒 학생 이름 · 조사 답은 <b>우리 반 열쇠로 잠가서만</b> 서버에 둡니다. 열쇠는 선생님 기기와 교실 TV에만 있어요.</p></div>
         <div class="safe reveal">
-          <div>운영자가 우리 반 자료 보기<b>못 함</b></div>
+          <div>학생 이름 · 생일 · 조사 답<b>잠가서 저장 · 운영자 · 서버도 못 봄</b></div>
+          <div>지난 조사 답 · 상담 기록<b>보관 기간이 지나면 저절로 지움</b></div>
           <div>학생 PIN<b>알아볼 수 없게 바꿔 저장 · 선생님도 못 봄</b></div>
           <div>우리 반 백업<b>선생님 구글 드라이브에만</b></div></div></section>
 
@@ -1553,7 +1567,7 @@ async function makeBoard(data){
   const key = rid(24);
   const d = Object.assign(boardDefaults(), data || {}, { owner: S.user.uid, updatedAt: F.serverTimestamp() });
   await F.setDoc(F.doc(db, 'boards', key), d);
-  try { await F.setDoc(F.doc(db, 'keys', S.user.uid), { boardKey: key }); }
+  try { await F.setDoc(F.doc(db, 'keys', S.user.uid), { boardKey: key }, { merge: true }); }
   catch (e) { console.warn('keys set (보안 규칙 확인 필요)', e); await F.updateDoc(F.doc(db, 'teachers', S.user.uid), { boardKey: key }); }
   S.me.boardKey = key;
   return key;
@@ -1562,24 +1576,28 @@ function watchBoard(){
   const { db, F } = S.fb;
   S.key = S.me.boardKey;
   stopWatch();
+  if (S.CK) ckRemember(S.CK);
   S.unsub = F.onSnapshot(F.doc(db, 'boards', S.key), snap => {
     if (!snap.exists()){ S.B = null; makeBoard().then(watchBoard).catch(fail); return; }
-    S.B = snap.data();
-    ensurePinBox(); watchReg(); watchReply();
-    if (!S.updChecked){ S.updChecked = true; setTimeout(updOnOpen, 600); setTimeout(mobTip, 2500); }
-    render(); syncView();
+    S.Braw = snap.data();
+    const my = S.decSeq = (S.decSeq || 0) + 1;
+    decodeB(S.Braw).then(B => {
+      if (my !== S.decSeq) return;
+      S.B = B; fillNames();
+      ensurePinBox(); watchReg(); watchReply();
+      if (!S.updChecked){ S.updChecked = true; setTimeout(updOnOpen, 600); setTimeout(mobTip, 2500); }
+      render(); syncView();
+      if (S.CK && !S.swept){ S.swept = true; setTimeout(() => privacySweep().catch(e => console.warn('sweep', e)), 1500); }
+    });
   }, fail);
   /* 조사 · 투표 응답 (TV에서 학생들이 누른 것) */
   S.ansUnsub = F.onSnapshot(F.collection(db, 'boards', S.key, 'answers'), qs => {
-    const A = {};
-    const AL = [];
-    qs.docs.forEach(d => { const x = d.data(); if (!x || !x.sid || !((x.ch || []).length || x.etc)) return; (A[x.sid] = A[x.sid] || {})[x.no] = { ch: x.ch || [], etc: x.etc || '' }; AL.push({ sid: x.sid, no: x.no, t: msOf(x.at) }); });
-    S.ANS = A; S.ANSL = AL;
-    if (S.B) render();
+    S.ansRaw = qs.docs.map(d => d.data());
+    decodeAnsAdmin();
   }, () => {});
   /* 상담 신청 (TV에서 학생이 신청한 것) */
   S.cnsUnsub = F.onSnapshot(F.collection(db, 'boards', S.key, 'counsel'), qs => {
-    S.CNS = qs.docs.map(d => Object.assign({ id: d.id }, d.data())).filter(x => x.date && x.slot)
+    S.CNS = qs.docs.map(d => Object.assign({ id: d.id }, d.data())).filter(x => x.date && x.slot).map(x => (x.name ? x : Object.assign(x, { name: stuName(x.no) })))
       .sort((a, b) => (a.date + (a.slot === 'lunch' ? 0 : 1)).localeCompare(b.date + (b.slot === 'lunch' ? 0 : 1)));
     if (S.B) render();
   }, () => {});
@@ -1590,9 +1608,11 @@ function watchBoard(){
   }, () => {});
   /* 건의 (알림 종에 개수만) */
   S.sugUnsub = F.onSnapshot(F.collection(db, 'boards', S.key, 'suggest'), qs => {
-    S.SUGL = qs.docs.map(d => ({ id: d.id, t: msOf(d.data().at), text: d.data().text || '' }));
-    if (S.sugg !== null && S.tab === 'suggest') S.sugg = null;
-    if (S.B) render();
+    Promise.all(qs.docs.map(d => sugOpen(d))).then(L => {
+      S.SUGL = L.map(x => ({ id: x.id, t: x.t, text: x.text || '' }));
+      if (S.sugg !== null && S.tab === 'suggest') S.sugg = null;
+      if (S.B) render();
+    });
   }, () => {});
 }
 /* ---------- 학생 호출 답장 (교실 TV에서 [네, 갈게요] · [지금 그 친구가 없어요]) ---------- */
@@ -1882,7 +1902,7 @@ function viewDoc(B){
     'layout', 'ttSource', 'timetable', 'teachers', 'eventDays', 'eventNeis', 'pinKey', 'pinChange'];
   const o = { owner: S.user.uid, ver: 1 };
   pick.forEach(k => { if (B[k] !== undefined) o[k] = B[k]; });
-  o.students = (B.students || []).map(t => ({ no: t.no, name: maskName(t.name), bd: t.bd || '' }));
+  o.students = (B.students || []).map(t => ({ no: t.no }));   /* 학생 휴대폰용 사본에는 번호만 (이름 · 생일 없음) */
   o.links = (B.links || []).filter(l => l.on !== false);
   o.events = (B.events || []).concat((S.SEV || []).filter(e => !e.gone).map(e => ({ id: e.id, title: e.title, start: e.date, end: e.date })));
   return o;
@@ -1901,11 +1921,282 @@ const viewUrl = () => new URL('tv.html?v=' + S.B.viewKey, location.href).href;
 async function save(patch, msg){
   const { db, F } = S.fb;
   try {
-    await F.updateDoc(F.doc(db, 'boards', S.key), Object.assign({}, patch, { updatedAt: F.serverTimestamp() }));
+    const P = await outBoard(patch);
+    await F.updateDoc(F.doc(db, 'boards', S.key), Object.assign(P, { updatedAt: F.serverTimestamp() }));
     if (msg) toast(msg);
     return true;
   } catch (e) { fail(e); return false; }
 }
+
+/* ================= 우리 반 열쇠: 학생 정보 잠그기 (ck.js) =================
+ * 켜면: 학생 명단 · 조사 답 · 건의 · 학생 호출 · 학교 양식 파일을 '우리 반 열쇠'로 잠가서만 서버에 둡니다.
+ * 열쇠는 이 기기(브라우저)와 연결한 교실 TV에만 있고, 다른 기기용으로는 '열쇠 비밀번호'로 감싼 사본만
+ * 선생님 본인만 읽는 칸(keys/{uid})에 둡니다. 운영자 · 서버는 잠긴 글자만 봅니다. */
+const ckLS = () => 'cn_ckt:' + S.user.uid;
+function ckLocal(){ try { return localStorage.getItem(ckLS()) || ''; } catch (e) { return ''; } }
+function ckRemember(raw){
+  try {
+    if (raw){ localStorage.setItem(ckLS(), raw); if (S.key) localStorage.setItem('cn_ck:' + S.key, raw); }
+    else { localStorage.removeItem(ckLS()); if (S.key) localStorage.removeItem('cn_ck:' + S.key); }
+  } catch (e) {}
+}
+async function ckInit(){
+  S.CK = '';
+  const kd = S.KD || {}, loc = ckLocal();
+  if (!loc || !kd.ckId) return;
+  try { if (await CKX.fingerprint(loc) === kd.ckId) S.CK = loc; } catch (e) {}
+}
+const encOn = () => !!(S.Braw && S.Braw.enc);
+const stuName = no => { const t = ((S.B && S.B.students) || []).find(x => x.no === Number(no)); return (t && t.name) || ''; };
+function fillNames(){ (S.CNS || []).forEach(c => { if (!c.name) c.name = stuName(c.no); }); }
+/* 서버 자료 → 화면용: 잠긴 명단 · 학생 호출 풀기 */
+async function decodeB(d){
+  const o = Object.assign({}, d);
+  if (!d.enc) return o;
+  o.students = (d.nos || []).map(no => ({ no: Number(no), name: '', bd: '' }));
+  if (!S.CK) return o;
+  try { if (d.rosterE) o.students = await CKX.open(S.CK, d.rosterE); o.ckBad = false; } catch (e) { o.ckBad = true; }
+  if (d.flash && d.flash.e){ try { const f = await CKX.open(S.CK, d.flash.e); o.flash = Object.assign({}, d.flash, { who: f.who || '', text: f.text || '' }); } catch (e) {} }
+  return o;
+}
+/* 화면용 → 서버에 쓸 모양: 명단 · 학생 호출을 잠그고, 이름 그대로는 빼기 (full: 문서 통째로 쓸 때) */
+async function outBoard(patch, full){
+  const P = Object.assign({}, patch);
+  delete P.ckBad;
+  const on = P.enc || encOn();
+  if (!on) return P;
+  if (!S.CK) throw new Error('우리 반 열쇠가 잠겨 있어요. 먼저 열쇠 비밀번호를 넣어 주세요.');
+  const { F } = S.fb;
+  if ('students' in P){
+    const L = (P.students || []).map(t => ({ no: Number(t.no), name: String(t.name || ''), bd: t.bd || '' })).sort((a, b) => a.no - b.no);
+    P.rosterE = await CKX.seal(S.CK, L); P.nos = L.map(t => t.no);
+    if (full) delete P.students; else P.students = F.deleteField();
+  }
+  if (P.flash && (P.flash.who || P.flash.text)){
+    P.flash = Object.assign({}, P.flash, { e: await CKX.seal(S.CK, { who: P.flash.who || '', text: P.flash.text || '' }), who: '', text: '' });
+  }
+  return P;
+}
+/* 조사 답 풀기 (잠긴 답 e · 예전 답 ch/etc 모두) */
+async function decodeAnsAdmin(){
+  const my = S.ansSeq = (S.ansSeq || 0) + 1, L = S.ansRaw || [];
+  let hid = 0;
+  const rows = await Promise.all(L.map(async x => {
+    if (!x || !x.sid) return null;
+    if (!x.e) return { sid: x.sid, no: x.no, ch: x.ch || [], etc: x.etc || '', at: x.at };
+    if (!S.CK){ hid++; return null; }
+    try { const v = await CKX.open(S.CK, x.e); return { sid: x.sid, no: x.no, ch: v.ch || [], etc: v.etc || '', at: x.at }; } catch (e) { hid++; return null; }
+  }));
+  if (my !== S.ansSeq) return;
+  const A = {}, AL = [];
+  rows.forEach(x => { if (!x || !((x.ch || []).length || x.etc)) return; (A[x.sid] = A[x.sid] || {})[x.no] = { ch: x.ch, etc: x.etc }; AL.push({ sid: x.sid, no: x.no, t: msOf(x.at) }); });
+  S.ANS = A; S.ANSL = AL; S.ansHidden = hid;
+  if (S.B) render();
+}
+async function ansData(sid, no, ch, etc){
+  const { F } = S.fb, at = F.serverTimestamp();
+  if (!encOn()) return { sid, no: +no, ch, etc, at };
+  if (!S.CK) throw new Error('우리 반 열쇠가 잠겨 있어요.');
+  return { sid, no: +no, e: await CKX.seal(S.CK, { ch, etc }), at };
+}
+async function sugOpen(d){
+  const x = d.data() || {}, t = msOf(x.at);
+  if (!x.e) return { id: d.id, t, text: x.text || '', no: x.no || 0, name: x.name || stuName(x.no) };
+  if (!S.CK) return { id: d.id, t, text: '🔒 (우리 반 열쇠가 있어야 볼 수 있어요)', no: 0, name: '' };
+  try { const v = await CKX.open(S.CK, x.e); return { id: d.id, t, text: v.text || '', no: v.no || 0, name: stuName(v.no) }; }
+  catch (e) { return { id: d.id, t, text: '🔒 열 수 없는 건의 (예전 열쇠로 잠긴 것)', no: 0, name: '' }; }
+}
+/* 남아 있는 '잠기지 않은' 자료를 잠그고, 보관 기간이 지난 자료를 지웁니다 (관리 화면을 열 때마다 조용히) */
+const KEEP = { ansDays: 60, counselDays: 14, suggestDays: 180, seventDays: 30 };
+async function privacySweep(){
+  if (!S.CK || !encOn() || !S.B) return;
+  if (S.sweeping) return; S.sweeping = true;
+  const { db, F } = S.fb, raw = S.Braw, key = S.key, col = c => F.collection(db, 'boards', key, c);
+  try {
+    if ((raw.students || []).length) await save({ students: S.B.students });
+    if (raw.flash && (raw.flash.who || raw.flash.text)) await save({ flash: S.B.flash });
+    const today = kstToday(), dayMs = 864e5, now = Date.now();
+    const daysAgo = n => new Date(Date.parse(today + 'T00:00:00+09:00') - n * dayMs).toISOString().slice(0, 10);
+    /* 조사 답 */
+    const sv = {}; (S.B.surveys || []).forEach(x => { sv[x.id] = x; });
+    for (const d of (await F.getDocs(col('answers'))).docs){
+      const x = d.data() || {}, s0 = sv[x.sid];
+      if (!s0 || (!s0.open && msOf(x.at) && now - msOf(x.at) > KEEP.ansDays * dayMs)){ await F.deleteDoc(d.ref).catch(() => {}); continue; }
+      if (x.e || !x.sid) continue;
+      const o = { sid: x.sid, no: x.no, e: await CKX.seal(S.CK, { ch: x.ch || [], etc: x.etc || '' }), at: x.at || F.serverTimestamp() };
+      if (x.pf) o.pf = x.pf;
+      await F.setDoc(d.ref, o);
+    }
+    /* 건의 */
+    for (const d of (await F.getDocs(col('suggest'))).docs){
+      const x = d.data() || {};
+      if (msOf(x.at) && now - msOf(x.at) > KEEP.suggestDays * dayMs){ await F.deleteDoc(d.ref).catch(() => {}); continue; }
+      if (x.e) continue;
+      const e = await CKX.seal(S.CK, { text: x.text || '', no: x.no || 0 });
+      await F.deleteDoc(d.ref); await F.setDoc(d.ref, { e, at: x.at || F.serverTimestamp() });
+    }
+    /* 상담 신청: 이름 빼기 · 지난 상담 지우기 */
+    for (const d of (await F.getDocs(col('counsel'))).docs){
+      const x = d.data() || {};
+      if (x.date && x.date < daysAgo(KEEP.counselDays)){ await F.deleteDoc(d.ref).catch(() => {}); continue; }
+      if (!x.name) continue;
+      await F.deleteDoc(d.ref); await F.setDoc(d.ref, { date: x.date, slot: x.slot, no: x.no, name: '', at: x.at || F.serverTimestamp() });
+    }
+    /* 학생이 올린 일정: 지난 것 지우기 */
+    for (const d of (await F.getDocs(col('sevents'))).docs){ const x = d.data() || {}; if (x.date && x.date < daysAgo(KEEP.seventDays)) await F.deleteDoc(d.ref).catch(() => {}); }
+    /* 학생 호출 답장: 지금 호출 말고는 지우기 */
+    const fid = (S.B.flash && S.B.flash.id) || '';
+    for (const d of (await F.getDocs(col('freply'))).docs) if (d.id !== fid) await F.deleteDoc(d.ref).catch(() => {});
+    /* 학교 양식 파일: 잠그기 · 주인 없는 조각 지우기 */
+    const forms = (S.B.forms || []).slice(), live = {};
+    let changed = false;
+    for (let i = 0; i < forms.length; i++){
+      const f = forms[i];
+      if (!f.enc){
+        try {
+          const buf = await fxFile(f), sealed = await CKX.sealBytes(S.CK, new Uint8Array(buf)), CH = 700000, parts = Math.ceil(sealed.length / CH);
+          for (let k = 0; k < Math.max(parts, f.parts || 0); k++){
+            const ref = F.doc(db, 'boards', key, 'formfiles', f.fid + '_' + k);
+            if (k < parts) await F.setDoc(ref, { d: sealed.slice(k * CH, (k + 1) * CH), at: F.serverTimestamp() }); else await F.deleteDoc(ref).catch(() => {});
+          }
+          forms[i] = Object.assign({}, f, { enc: 1, parts }); changed = true;
+        } catch (e) { console.warn('form seal', f.fid, e); }
+      }
+      for (let k = 0; k < (forms[i].parts || 0); k++) live[f.fid + '_' + k] = 1;
+    }
+    if (changed) await save({ forms });
+    for (const d of (await F.getDocs(col('formfiles'))).docs) if (!live[d.id]) await F.deleteDoc(d.ref).catch(() => {});
+    syncView();
+  } finally { S.sweeping = false; }
+}
+/* 열쇠 창 (켜기 · 열기 · 비밀번호 바꾸기 · 잊었을 때 새로 만들기) */
+function ckModal(mode){
+  const old = $('mobModal'); if (old) old.remove();
+  const box = document.createElement('div'); box.id = 'mobModal';
+  const T = {
+    setup: ['🔒', '학생 정보 잠그기 켜기', '서버에는 잠긴 글자만 남아요'],
+    unlock: ['🔑', '우리 반 열쇠 비밀번호', '이 기기에서 학생 정보를 보려면 필요해요'],
+    change: ['🔑', '열쇠 비밀번호 바꾸기', '열쇠는 그대로, 비밀번호만 바꿔요'],
+    reset: ['⚠️', '열쇠 새로 만들기', '비밀번호를 잊었을 때만 쓰세요']
+  }[mode];
+  const two = mode !== 'unlock';
+  const body = {
+    setup: `<p class="ckp">켜면 <b>학생 이름 · 생일 · 조사 답 · 건의 · 학생 호출 · 학교 양식 파일</b>을 <b>우리 반 열쇠</b>로 잠가서만 서버에 둡니다. 열쇠는 선생님 기기와 연결한 교실 TV에만 있어서, <b>운영자도 서버도 내용을 볼 수 없어요.</b></p>
+      <p class="ckp">다른 기기(휴대폰 · 다른 PC)에서 열 때는 지금 정하는 <b>열쇠 비밀번호</b>만 넣으면 돼요. (구글 비밀번호와 다르게 정해 주세요)</p>
+      <div class="ckw">· 열쇠 비밀번호를 잊으면 서버에 잠긴 답 · 건의 · 양식 파일은 <b>아무도 열 수 없어요.</b> 명단은 백업 파일로 되살릴 수 있으니, 켠 뒤 [백업 · 되살리기]에서 백업을 한 번 받아 두세요.<br>· 교실 TV는 <b>[TV 연결]에서 연결 숫자를 한 번 다시 넣어야</b> 학생 이름이 보이고 답을 받을 수 있어요.<br>· 보관 기간이 지난 자료는 자동으로 지워요: 마감한 조사 답 60일, 지난 상담 14일, 건의 6개월, 학생 일정 30일.</div>`,
+    unlock: `<p class="ckp">이 반은 학생 정보를 잠가 두었어요. 이 기기에서 처음 열었거나 기억이 지워졌으니, <b>열쇠 비밀번호</b>를 넣어 주세요. 한 번 넣으면 이 기기는 기억해요.</p>`,
+    change: `<p class="ckp">새 열쇠 비밀번호를 정해 주세요. 이미 잠긴 자료와 교실 TV 연결은 그대로예요.</p>`,
+    reset: `<div class="ckw">새 열쇠를 만들면 <b>예전 열쇠로 잠긴 명단 · 조사 답 · 건의 · 양식 파일은 열 수 없어서 지워집니다.</b><br>· 명단은 [학급 명단]에서 다시 넣거나 백업 파일로 되살려 주세요.<br>· 교실 TV는 [TV 연결]에서 다시 연결해야 해요.</div>`
+  }[mode];
+  box.innerHTML = `<div class="mc" role="dialog" aria-modal="true" aria-labelledby="ckT">
+    <div class="mh"><span class="ic">${T[0]}</span><div><b id="ckT">${T[1]}</b><span>${T[2]}</span></div><button class="mx" data-m="close" aria-label="닫기">✕</button></div>
+    <div class="mb">${body}
+      <label class="ckp" for="ckP1">${two ? '새 열쇠 비밀번호 (8자 이상)' : '열쇠 비밀번호'}</label>
+      <input class="ckin" id="ckP1" type="password" autocomplete="${two ? 'new-password' : 'current-password'}" maxlength="64">
+      ${two ? '<label class="ckp" for="ckP2">한 번 더</label><input class="ckin" id="ckP2" type="password" autocomplete="new-password" maxlength="64">' : ''}
+      ${mode === 'reset' ? '<label class="ckc"><input type="checkbox" id="ckAgree"> 예전에 잠긴 자료가 지워지는 것을 알고 새로 만들어요</label>' : ''}
+      <p class="ckerr" id="ckErr"></p>
+      <div class="bt"><button class="pri" data-m="go">${{ setup: '잠그기 켜기', unlock: '열기', change: '바꾸기', reset: '새 열쇠 만들기' }[mode]}</button>
+        ${mode === 'unlock' ? '<button data-m="forgot">비밀번호를 잊었어요</button>' : ''}</div>
+    </div></div>`;
+  const err = m => { $('ckErr').textContent = m || ''; };
+  const go = async () => {
+    const p1 = $('ckP1').value, p2 = two ? $('ckP2').value : p1;
+    if (two && p1.length < 8) return err('8자 이상으로 정해 주세요.');
+    if (two && p1 !== p2) return err('두 번 넣은 비밀번호가 달라요.');
+    if (mode === 'reset' && !$('ckAgree').checked) return err('확인란에 표시해 주세요.');
+    if (!p1) return err('비밀번호를 넣어 주세요.');
+    const btn = box.querySelector('[data-m="go"]'); btn.style.pointerEvents = 'none'; btn.textContent = '잠시만요…';
+    try {
+      await ({ setup: ckSetup, unlock: ckUnlock, change: ckChange, reset: ckReset })[mode](p1);
+      box.remove();
+    } catch (e) { err(friendly(e)); btn.style.pointerEvents = ''; btn.textContent = '다시 하기'; }
+  };
+  box.addEventListener('click', ev => {
+    const b = ev.target.closest('[data-m]'); if (!b) return;
+    if (b.dataset.m === 'close') box.remove();
+    if (b.dataset.m === 'go') go();
+    if (b.dataset.m === 'forgot') ckModal('reset');
+  });
+  box.addEventListener('keydown', ev => { if (ev.key === 'Enter' && ev.target.tagName === 'INPUT' && ev.target.type === 'password'){ ev.preventDefault(); go(); } });
+  document.body.appendChild(box);
+  setTimeout(() => { const i = $('ckP1'); if (i) i.focus(); }, 50);
+}
+async function ckSaveWrapped(raw, pass){
+  const { db, F } = S.fb;
+  const w = await CKX.wrap(raw, pass), id = await CKX.fingerprint(raw);
+  await F.setDoc(F.doc(db, 'keys', S.user.uid), { boardKey: S.key, ckw: w, ckId: id }, { merge: true });
+  S.KD = Object.assign({}, S.KD, { ckw: w, ckId: id });
+  return id;
+}
+async function ckReady(raw){
+  S.CK = raw; ckRemember(raw);
+  S.B = await decodeB(S.Braw); fillNames();
+  decodeAnsAdmin(); render();
+}
+async function ckSetup(pass){
+  if (!CKX.ok()) throw new Error('이 브라우저는 잠그기를 지원하지 않아요. 크롬 · 엣지 최신판에서 해 주세요.');
+  busy('우리 반 열쇠를 만드는 중…');
+  try {
+    const raw = CKX.newRaw(), id = await ckSaveWrapped(raw, pass);
+    S.CK = raw; ckRemember(raw);
+    busy('학생 정보를 잠그는 중…');
+    const cur = S.B;
+    await save({ enc: 1, ckId: id, students: cur.students || [], flash: cur.flash || null });
+    S.Braw = Object.assign({}, S.Braw, { enc: 1, ckId: id, students: [] });
+    await privacySweep();
+    busy(''); toast('학생 정보 잠그기를 켰어요. 교실 TV는 [TV 연결]에서 한 번 다시 연결해 주세요.');
+  } catch (e) { busy(''); throw e; }
+}
+async function ckUnlock(pass){
+  const kd = S.KD || {};
+  if (!kd.ckw) throw new Error('저장된 열쇠가 없어요. [비밀번호를 잊었어요]로 새로 만들어 주세요.');
+  const raw = await CKX.unwrap(kd.ckw, pass);
+  if (kd.ckId && await CKX.fingerprint(raw) !== kd.ckId) throw new Error('열쇠가 맞지 않아요.');
+  await ckReady(raw);
+  toast('열었어요. 이 기기는 다음부터 비밀번호 없이 열려요.');
+  if (!S.swept){ S.swept = true; privacySweep().catch(e => console.warn('sweep', e)); }
+}
+async function ckChange(pass){
+  if (!S.CK) throw new Error('먼저 지금 열쇠로 열어 주세요.');
+  await ckSaveWrapped(S.CK, pass);
+  toast('열쇠 비밀번호를 바꿨어요.');
+}
+async function ckReset(pass){
+  const { db, F } = S.fb, key = S.key, col = c => F.collection(db, 'boards', key, c);
+  busy('새 열쇠를 만드는 중…');
+  try {
+    const raw = CKX.newRaw(), id = await ckSaveWrapped(raw, pass);
+    S.CK = raw; ckRemember(raw);
+    const forms = (S.B.forms || []).filter(f => !f.enc);
+    await save({ enc: 1, ckId: id, students: [], flash: null, forms });
+    for (const c of ['answers', 'suggest']) for (const d of (await F.getDocs(col(c))).docs) if ((d.data() || {}).e) await F.deleteDoc(d.ref).catch(() => {});
+    const live = {}; forms.forEach(f => { for (let k = 0; k < (f.parts || 0); k++) live[f.fid + '_' + k] = 1; });
+    for (const d of (await F.getDocs(col('formfiles'))).docs) if (!live[d.id]) await F.deleteDoc(d.ref).catch(() => {});
+    busy(''); S.tab = 'roster'; toast('새 열쇠를 만들었어요. 학급 명단을 다시 넣고, 교실 TV를 다시 연결해 주세요.');
+  } catch (e) { busy(''); throw e; }
+}
+function vUnlock(){
+  $('app').innerHTML = `<div class="cklock"><div class="card"><h2>🔑 학생 정보가 잠겨 있어요</h2>
+    <p class="lead" style="margin-top:8px">${esc(S.Braw.grade)}학년 ${esc(S.Braw.klass)}반은 학생 정보를 잠가 두었어요. 이 기기에서 보려면 <b>우리 반 열쇠 비밀번호</b>가 필요해요.</p>
+    <div class="row" style="margin-top:14px;gap:8px;display:flex;flex-wrap:wrap"><button class="b pri" data-a="ckunlock">열쇠 비밀번호 넣기</button><button class="b" id="btnOut2">로그아웃</button></div></div></div>`;
+  $('btnOut2').onclick = logout;
+  if (!$('mobModal')) ckModal('unlock');
+}
+function ckBar(){
+  if (encOn()) return S.B && S.B.ckBad ? `<div class="ckbar">⚠ 이 기기의 열쇠로 학생 명단을 열지 못했어요. <button class="b sm" data-a="ckunlock">열쇠 비밀번호 다시 넣기</button></div>` : '';
+  return `<div class="ckbar">🔒 <span><b>학생 정보 잠그기를 켜 주세요.</b> 학생 이름 · 조사 답을 잠가서만 서버에 두어, 운영자도 볼 수 없게 돼요. (학교운영위원회 심의 기준: 개인정보 최소 수집)</span><button class="b sm pri" data-a="ckon">잠그기 켜기</button></div>`;
+}
+function ckCard(){
+  if (!encOn()) return `<section class="card"><h2>🔒 학생 정보 잠그기</h2><p class="lead" style="margin-top:6px">아직 꺼져 있어요. 켜면 학생 이름 · 생일 · 조사 답 · 건의 · 학교 양식 파일을 우리 반 열쇠로 잠가서만 서버에 둡니다.</p><div class="row" style="margin-top:10px"><button class="b pri" data-a="ckon">잠그기 켜기</button></div></section>`;
+  return `<section class="card"><h2>🔒 학생 정보 잠그기 <span class="sub">켜져 있음</span></h2>
+    <p class="lead" style="margin-top:6px">학생 명단 · 조사 답 · 건의 · 학생 호출 · 학교 양식 파일은 우리 반 열쇠로 잠가서만 서버에 있어요. 운영자 · 서버는 내용을 볼 수 없어요.</p>
+    <ul class="small" style="margin:10px 0 0;line-height:1.8;padding-left:18px">
+      <li>보관 기간이 지나면 자동으로 지워요: 마감한 조사 답 ${KEEP.ansDays}일 · 지난 상담 ${KEEP.counselDays}일 · 건의 6개월 · 학생 일정 ${KEEP.seventDays}일 (관리 화면을 열 때 정리)</li>
+      <li>다른 기기에서는 열쇠 비밀번호를 한 번 넣으면 돼요. 교실 TV는 [TV 연결]에서 연결하면 열쇠가 안전하게 전달돼요.</li></ul>
+    <div class="row" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="b" data-a="ckchg">열쇠 비밀번호 바꾸기</button><button class="b r" data-a="ckreset">비밀번호를 잊었어요 (새 열쇠)</button></div></section>`;
+}
+
 const TV_SHORT = 'is.gd/jeiltv';
 const tvUrl = edit => new URL('tv.html?k=' + S.key + (edit ? '&edit=1' : ''), location.href).href;
 
@@ -2067,6 +2358,7 @@ function themeSet(k){
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-theme-set]'); if (b){ themeSet(b.dataset.themeSet); render(); } });
 function render(){
   const B = S.B; if (!B) return;
+  if (encOn() && !S.CK) return vUnlock();
   const keep = captureDrafts();
   const T = TABS.slice(); if (isOperator()) T.push(['op', 'op', '운영자']);
   if (!T.some(t => t[0] === S.tab)) S.tab = 'notice';
@@ -2079,10 +2371,11 @@ function render(){
     <aside class="side"><div class="brand"><span class="bi2">${mark()}</span><div><b>클래스 나우</b><span>${esc(B.grade)}학년 ${esc(B.klass)}반 · ${esc(S.me.name)} 선생님</span></div></div>
       <nav class="tabs" aria-label="메뉴">${grp}</nav>
       <div class="sidefoot"><div class="stcard"><i></i><div>${B.tvSeen || B.viewKey ? '교실 TV 연결됨' : '우리 반 클래스 나우'}<small>학생 ${nStu}명${openSv ? ' · 진행 중 조사 ' + openSv : ''}</small></div></div><div class="themes"><span class="tl">색</span>${THEMES.map(([k, c, n]) => `<button data-theme-set="${k}" title="${n}" aria-label="${n} 테마" class="${themeNow() === k ? 'on' : ''}" style="background:${c}"></button>`).join('')}</div>
-        <p class="privacy">🔒 우리 반 자료는 담임 선생님만 관리하며, 운영자는 열람할 수 없습니다.</p></div></aside>
+        <p class="privacy">${encOn() ? '🔒 학생 정보는 우리 반 열쇠로 잠가서 저장돼요. 운영자 · 서버는 볼 수 없어요.' : '⚠ 학생 정보 잠그기가 꺼져 있어요. [백업 · 되살리기]에서 켜 주세요.'}</p></div></aside>
     <main class="main">
       <div class="topbar"><span class="pill">학생 <b>${nStu}</b>명</span><button class="b sm mobbtn" data-a="mobile" title="휴대폰에서 쓰기 · 앱 설치">📱 모바일</button>${isPhone() ? '' : '<button class="b sm mobbtn" data-a="pcinst" title="이 컴퓨터 바탕화면에 앱으로 설치">💻 바탕화면</button>'}${bellHtml()}<button class="b sm" id="btnOut">로그아웃</button></div>
       <header class="top"><h1>${cur[2]}</h1><p>${TAB_DESC[cur[0]] || ''}</p></header>
+      ${ckBar()}
       <div id="body">${({ flash: vFlash, notice: vNotice, look: vLook, time: vTime, cal: vCal, sound: vSound, backup: vBackupTab, roster: vRoster, survey: vSurvey, counsel: vCounsel, suggest: vSuggest, tv: vTvConnect, op: () => '<div id="opBox"></div>' })[S.tab]()}</div>
       <div class="foot"><p class="privacy">${esc(S.user.email)}</p><p class="credit"><button class="updlink" data-a="updhist">📋 업데이트 내역</button>제작자 : 강릉제일고 유준배 선생님</p></div>
     </main></div>`;
@@ -2423,7 +2716,7 @@ function vCal(){
 function vSound(){ return sndBoxHtml(SND_K); }
 
 /* ---------- 백업 · 되살리기 ---------- */
-function vBackupTab(){ return vBackup(); }
+function vBackupTab(){ return ckCard() + vBackup(); }
 
 /* ---------- 학급 명단 ---------- */
 function vRoster(){
@@ -2646,7 +2939,8 @@ async function fxMake(){
   const title = String(X.title || '').trim().slice(0, 60) || '학교 양식 조사', fid = 'f' + rid(8);
   busy('양식을 올리는 중…');
   try {
-    const b64 = b64Of(X.buf), CH = 700000, parts = Math.ceil(b64.length / CH);
+    const enc = !!(S.Braw && S.Braw.enc);
+    const b64 = enc ? await CKX.sealBytes(S.CK, new Uint8Array(X.buf)) : b64Of(X.buf), CH = 700000, parts = Math.ceil(b64.length / CH);
     for (let i = 0; i < parts; i++) await F.setDoc(F.doc(db, 'boards', S.key, 'formfiles', fid + '_' + i), { d: b64.slice(i * CH, (i + 1) * CH), at: F.serverTimestamp() });
     const ids = qs.map(() => 's' + rid(8)), now = new Date().toISOString();
     const sv = qs.map((c, k) => {
@@ -2655,7 +2949,7 @@ async function fxMake(){
         open: true, showMissing: true, desc: k === 0 ? String(X.desc || '').trim().slice(0, 200) : '', file: null, at: now,
         grp: fid, gi: k, gn: qs.length, gname: title, sub: k > 0, nx: ids[k + 1] || '', req: choice || c.req !== false };
     });
-    const form = { fid, name: X.name.slice(0, 80), title, kind: X.doc.kind, table: t.id, parts, size: X.buf.byteLength, at: now,
+    const form = { fid, name: X.name.slice(0, 80), title, kind: X.doc.kind, table: t.id, parts, size: X.buf.byteLength, at: now, enc: enc ? 1 : 0,
       cols: X.cols.map(c => ({ key: c.key, role: c.role, cols: c.cols, mark: (c.mark || '○').slice(0, 2), sid: qs.indexOf(c) >= 0 ? ids[qs.indexOf(c)] : '' })) };
     busy('');
     if (await save({ surveys: (B.surveys || []).concat(sv), forms: (B.forms || []).concat([form]) }, 'TV에 올렸어요. 다 모이면 [📥 양식대로 내려받기]를 누르세요.')){ S.fx = null; S.svKind = '선택'; render(); }
@@ -2688,6 +2982,11 @@ async function fxFile(f){
     const d = await F.getDoc(F.doc(db, 'boards', S.key, 'formfiles', f.fid + '_' + i));
     if (!d.exists()) throw new Error('올려 둔 양식 파일을 찾지 못했어요. (TV 주소를 바꿨거나 백업을 되살렸다면) 양식으로 조사를 다시 만들어 주세요.');
     b64 += d.data().d;
+  }
+  if (f.enc || CKX.isSealed(b64)){
+    if (!S.CK) throw new Error('우리 반 열쇠가 잠겨 있어요. 먼저 열쇠 비밀번호를 넣어 주세요.');
+    const u8 = await CKX.openBytes(S.CK, b64);
+    return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength);
   }
   return bufOf(b64);
 }
@@ -2729,7 +3028,7 @@ async function fxEditSave(){
   if (!await save({ surveys, forms: (B.forms || []).map(x => x.fid === fid ? form : x) }, '양식 조사를 고쳤어요.')) return;
   try {
     await Promise.all(ops.map(o => o[0] === 'del' ? F.deleteDoc(F.doc(db, 'boards', S.key, 'answers', o[1] + '_' + o[2]))
-      : F.setDoc(F.doc(db, 'boards', S.key, 'answers', o[1] + '_' + o[2]), { sid: o[1], no: +o[2], ch: o[3], etc: '', at: F.serverTimestamp() })));
+      : ansData(o[1], o[2], o[3], '').then(d => F.setDoc(F.doc(db, 'boards', S.key, 'answers', o[1] + '_' + o[2]), d))));
     gone.forEach(s => delAnswers(s.id));
   } catch (e){ fail(e); }
   S.fx = null; render();
@@ -2876,8 +3175,12 @@ function vLinkForm(){
 }
 
 /* ---------- 알림 종 ---------- */
-const APP_VER = '2026-11-06b';
+const APP_VER = '2026-11-10a';
 const UPDATES = [
+  { v: '2026-11-10a', title: '11월 10일 업데이트 · 학생 정보 잠그기', items: [
+    '🔒 학생 정보 잠그기: 학생 이름 · 생일 · 조사 답 · 건의 · 학생 호출 · 학교 양식 파일을 우리 반 열쇠로 잠가서만 서버에 둬요. 운영자 · 서버도 내용을 볼 수 없어요 ([백업 · 되살리기]에서 켜기)',
+    '🗑️ 보관 기간이 지난 자료는 저절로 지워요: 마감한 조사 답 60일 · 지난 상담 14일 · 건의 6개월 · 학생 일정 30일',
+    '📱 학생 휴대폰용 화면에는 이름 · 생일 없이 번호만 나와요'] },
   { v: '2026-11-06b', title: '11월 6일 업데이트 (2)', items: [
     '🏷️ 프로그램 이름이 \'클래스 나우 (Class Now)\'로 바뀌었어요',
     '💻 [바탕화면] → [이 컴퓨터에 설치] 단추로 바로 설치돼요',
@@ -3173,7 +3476,7 @@ function mobModal(kind){
         <button data-m="copy">주소 복사</button>
         ${view || alone ? '' : `<button class="ins" data-m="install" ${DEFP ? '' : 'hidden'}>이 기기에 앱 설치</button>`}</div>
       ${alone && !view ? '<div class="ok">✓ 지금 앱으로 설치된 화면이에요</div>' : how}
-      ${view ? '<p class="small" style="margin:10px 0 0;color:#4B5F56;text-align:center">교실 TV나 칠판에 이 창을 띄워 두면 학생들이 바로 찍어 갈 수 있어요. 이름은 가려서 보여요.</p>' : ''}
+      ${view ? '<p class="small" style="margin:10px 0 0;color:#4B5F56;text-align:center">교실 TV나 칠판에 이 창을 띄워 두면 학생들이 바로 찍어 갈 수 있어요. 학생 이름은 보이지 않고 번호로만 나와요.</p>' : ''}
     </div></div>`;
   box.addEventListener('click', async ev => {
     if (ev.target === box){ box.remove(); return; }
@@ -3331,6 +3634,9 @@ async function bkRestore(j){
   if (mig){ const cur = Object.assign({}, S.B); delete cur.updatedAt; board = Object.assign(cur, board); board.forms = []; board.flash = null; }
   board.owner = S.user.uid; board.viewKey = S.B.viewKey || '';
   if (!board.pinKey && S.B.pinKey) board.pinKey = S.B.pinKey;
+  if (S.Braw && S.Braw.enc){ board.enc = 1; board.ckId = S.Braw.ckId || ''; }
+  if (board.enc && !(board.students || []).length && board.rosterE && S.CK){ try { board.students = await CKX.open(S.CK, board.rosterE); } catch (e) {} }
+  board = await outBoard(board, true);
   await F.setDoc(F.doc(db, 'boards', S.key), Object.assign(board, { updatedAt: F.serverTimestamp(), lastBackup: S.B.lastBackup || '' }));
   for (const c of (mig ? BK_SUBS.filter(x => j.sub[x]) : BK_SUBS)){
     busy((mig ? '옮기는 중… (' : '되살리는 중… (') + c + ')');
@@ -3340,6 +3646,7 @@ async function bkRestore(j){
     for (let i = 0; i < L.length; i += 50) await Promise.all(L.slice(i, i + 50).map(x => F.setDoc(F.doc(db, 'boards', S.key, c, x.id), bkIn(x.data))));
   }
   busy('');
+  S.swept = false; if (S.CK) setTimeout(() => privacySweep().catch(e => console.warn('sweep', e)), 1500);
 }
 function vBackup(){
   const B = S.B, last = B.lastBackup ? new Date(B.lastBackup) : null, days = last ? Math.floor((Date.now() - last) / 864e5) : null;
@@ -3424,8 +3731,8 @@ async function loadSuggest(){
   try {
     const qs = await F.getDocs(F.collection(db, 'boards', S.key, 'suggest'));
     const ms = v => v && v.toMillis ? v.toMillis() : (v ? Date.parse(v) : 0);
-    S.sugg = qs.docs.map(d => { const x = d.data(), t = ms(x.at); return { id: d.id, text: x.text, no: x.no, name: x.name, t,
-      when: t ? new Date(t + 9 * 3600e3).toISOString().slice(5, 16).replace('T', ' ').replace('-', '/') : '' }; }).sort((a, b) => b.t - a.t);
+    const L = await Promise.all(qs.docs.map(d => sugOpen(d)));
+    S.sugg = L.map(x => Object.assign(x, { when: x.t ? new Date(x.t + 9 * 3600e3).toISOString().slice(5, 16).replace('T', ' ').replace('-', '/') : '' })).sort((a, b) => b.t - a.t);
   } catch (e) { S.sugg = []; fail(e); }
   if (S.tab === 'suggest') render();
 }
@@ -3535,6 +3842,10 @@ document.addEventListener('click', async ev => {
   const a = t.dataset.a, id = t.dataset.id, B = S.B;
   const { db, F } = S.fb;
   switch (a){
+    case 'ckon': return ckModal('setup');
+    case 'ckunlock': return ckModal('unlock');
+    case 'ckchg': return ckModal('change');
+    case 'ckreset': return ckModal('reset');
     case 'pair': {
       const code = ($('pairIn').value || '').replace(/\D/g, '');
       if (code.length !== 6) return toast('TV 화면의 숫자 6자리를 넣어 주세요.', true);
@@ -3544,7 +3855,9 @@ document.addEventListener('click', async ev => {
         if (!ps.exists()){ busy(''); return toast('그 숫자를 찾지 못했어요. TV 화면의 숫자를 다시 확인해 주세요.', true); }
         const d = ps.data(), at = d.at && d.at.toMillis ? d.at.toMillis() : (Date.parse(d.at) || 0);
         if (Date.now() - at > 11 * 60e3){ busy(''); return toast('시간이 지난 숫자예요. TV 화면의 새 숫자를 넣어 주세요.', true); }
-        await F.setDoc(F.doc(db, 'pairResp', d.sid), { key: S.key, at: F.serverTimestamp() });
+        const resp = { key: S.key, at: F.serverTimestamp() };
+        if (S.CK && d.pub){ try { Object.assign(resp, await CKX.pairSend(d.pub, S.CK)); } catch (e) { console.warn('pair ck', e); } }
+        await F.setDoc(F.doc(db, 'pairResp', d.sid), resp);
         await F.deleteDoc(F.doc(db, 'pair', code)).catch(() => {});
         busy(''); $('pairIn').value = '';
         toast('TV와 연결했어요! 몇 초 안에 TV에 우리 반 화면이 나와요.');
@@ -3751,7 +4064,7 @@ document.addEventListener('click', async ev => {
     case 'rekey': {
       if (!confirm('새 TV 주소를 만들까요? 예전 주소로 열어 둔 TV는 연결 숫자 화면으로 바뀌니, 숫자를 넣어 다시 연결해 주세요.')) return;
       try {
-        const old = S.key, data = Object.assign({}, B); delete data.updatedAt;
+        const old = S.key, data = await outBoard(Object.assign({}, B), true); delete data.updatedAt;
         const ff = await F.getDocs(F.collection(db, 'boards', old, 'formfiles')).catch(() => null);
         stopWatch();
         const nk = await makeBoard(data);
@@ -3837,7 +4150,7 @@ document.addEventListener('click', async ev => {
       if (!await save({ surveys: (B.surveys || []).map(x => x.id === id ? ns : x) }, '조사를 고쳤어요.')) return;
       try {
         await Promise.all(ops.map(o => o[0] === 'del' ? F.deleteDoc(F.doc(db, 'boards', S.key, 'answers', id + '_' + o[1]))
-          : F.setDoc(F.doc(db, 'boards', S.key, 'answers', id + '_' + o[1]), { sid: id, no: +o[1], ch: o[2], etc: o[3], at: F.serverTimestamp() })));
+          : ansData(id, o[1], o[2], o[3]).then(d => F.setDoc(F.doc(db, 'boards', S.key, 'answers', id + '_' + o[1]), d))));
       } catch (e) { fail(e); }
       S.svEdit = ''; render(); return;
     }

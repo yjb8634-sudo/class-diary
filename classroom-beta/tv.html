@@ -806,12 +806,67 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
   var VIEW = !K && V.length >= 20;
   var WANT_EDIT = QS.get('edit') === '1';
   var PV = QS.get('pv') === '1';   /* 관리 화면 안 미리보기: 눌러도 저장 안 됨 */
-  var VER = 'fb-2026-11-17a';
+  var VER = 'fb-2026-11-18a';
   window.__BOOT = { t: K || V, preview: PV ? 1 : 0, phone: VIEW, ver: VER };
   if (VIEW) document.write('<style>#btnMine,#btnEdit,#btnShare{display:none !important}html,body{height:auto !important;overflow:auto !important}</style>');
   var FB = null, B = null, gone = false, SCH = null, schAt = 0, schBusy = false, WX = null, wxAt = 0, wxBusy = false;
   var ANS = {}, EXIST = {}, CNS = [], SEV = [], USER = null, OWNER = false, editDone = false;
   var REG = {}, regPk = '', regUnsub = null, PROOF = {};
+  /* ---- 우리 반 열쇠 (학생 이름 · 답을 잠가서 주고받음, ck.js) ---- */
+  var CK = '', CKM = null, decSeq = 0, ansSeq = 0, RAWANS = null;
+  /* 조사 답 풀기: 잠긴 답(e)은 열쇠로, 예전 답은 그대로. 체크 취소(빈 답)는 안 한 것으로 */
+  function decodeAns(list) {
+    var my = ++ansSeq, sealed = list.some(function (x) { return x && x.e; });
+    var go = function (m) {
+      return Promise.all(list.map(function (x) {
+        if (!x || !x.sid) return null;
+        if (!x.e) return { sid: x.sid, no: x.no, ch: x.ch || [], etc: x.etc || '' };
+        if (!m || !CK) return { sid: x.sid, no: x.no, ch: null, etc: '' };
+        return m.open(CK, x.e).then(function (v) { return { sid: x.sid, no: x.no, ch: v.ch || [], etc: v.etc || '' }; },
+          function () { return { sid: x.sid, no: x.no, ch: null, etc: '' }; });
+      })).then(function (rows) {
+        if (my !== ansSeq) return;
+        var A = {}, E = {};
+        rows.forEach(function (x) {
+          if (!x) return;
+          (E[x.sid] = E[x.sid] || {})[x.no] = true;
+          if (x.ch === null) { (A[x.sid] = A[x.sid] || {})[x.no] = { ch: [], etc: '', hidden: true }; return; }   /* 열쇠 없는 TV: 낸 것만 표시 */
+          if (x.ch.length || x.etc) (A[x.sid] = A[x.sid] || {})[x.no] = { ch: x.ch, etc: x.etc };
+        });
+        ANS = A; EXIST = E; if (B) kick();
+      });
+    };
+    return sealed && CK ? ckMod().then(go) : go(null);
+  }
+  function ckMod() { return CKM || (CKM = import('./ck.js')); }
+  function ckGet(k) { try { return localStorage.getItem('cn_ck:' + k) || ''; } catch (e) { return ''; } }
+  function ckSet(k, raw) { try { if (raw) localStorage.setItem('cn_ck:' + k, raw); else localStorage.removeItem('cn_ck:' + k); } catch (e) {} }
+  function encOn() { return !!(B && B.enc); }
+  var NOKEY = '이 TV에는 아직 우리 반 열쇠가 없어요. 담임 선생님이 [TV 연결]에서 이 TV를 다시 연결해 주세요.';
+  /* 서버에서 받은 반 자료 → 화면용 (명단 · 학생 호출을 열쇠로 풀기) */
+  function decodeBoard(d) {
+    var o = {}; for (var x in d) o[x] = d[x];
+    if (!d.enc) { o._stu = d.students || []; o._flash = d.flash || null; return Promise.resolve(o); }
+    var nos = (d.nos || []).map(function (n) { return { no: Number(n), name: '', bd: '' }; });
+    o._stu = nos; o._flash = d.flash ? { id: d.flash.id, who: '', text: d.flash.e ? '🔒 담임 선생님 호출이 있어요. (이 TV에 우리 반 열쇠가 없어 내용이 안 보여요)' : (d.flash.text || ''), level: d.flash.level, ask: false, until: d.flash.until } : null;
+    if (!CK) return Promise.resolve(o);
+    return ckMod().then(function (m) {
+      var jobs = [];
+      if (d.rosterE) jobs.push(m.open(CK, d.rosterE).then(function (r) { if (Array.isArray(r)) o._stu = r; }, function () { o._ckBad = true; }));
+      if (d.flash && d.flash.e) jobs.push(m.open(CK, d.flash.e).then(function (f) { o._flash.who = f.who || ''; o._flash.text = f.text || ''; o._flash.ask = !!d.flash.ask; }, function () {}));
+      return Promise.all(jobs).then(function () { return o; });
+    });
+  }
+  function keyBanner() {
+    var want = encOn() && !VIEW && !PV && (!CK || (B && B._ckBad));
+    var el = document.getElementById('crNoKey');
+    if (!want) { if (el) el.remove(); return; }
+    if (el || !document.body) return;
+    el = document.createElement('div'); el.id = 'crNoKey';
+    el.style.cssText = 'position:fixed;left:50%;bottom:1.2vh;transform:translateX(-50%);z-index:110;background:#3A2E12;color:#F2D16B;border:2px solid #F2D16B;border-radius:1.2vh;padding:1vh 2vw;font:700 2.2vh/1.5 sans-serif;max-width:90vw;text-align:center;pointer-events:none';
+    el.textContent = '🔒 ' + NOKEY;
+    document.body.appendChild(el);
+  }
 /* 작은 SHA-256 (오래된 TV 브라우저처럼 crypto.subtle 이 없을 때) */
   function sha256hex(str) {
     if (window.crypto && crypto.subtle && window.TextEncoder) {
@@ -920,7 +975,7 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
     else { PAIR = true; startPair(); }
   }
   function startPair() {
-    var ov, codeEl, msgEl, btn, FBp = null, unsub = null, timer = null, rounds = 0, tries = 0;
+    var ov, codeEl, msgEl, btn, FBp = null, unsub = null, timer = null, rounds = 0, tries = 0, PK = null;
     onBody(function () {
       ov = document.createElement('div'); ov.id = 'crPair';
       ov.style.cssText = 'position:fixed;inset:0;z-index:100;background:#1D2A25;color:#E4E0D3;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:3vh 4vw;gap:2.4vh;font-family:inherit';
@@ -942,17 +997,23 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
       var code = String(1 + (crypto.getRandomValues(new Uint32Array(1))[0] % 9)) + rnd(5, '0123456789');
       var sid = rnd(32, 'abcdefghijkmnpqrstuvwxyz23456789');
       FBp.then(function (F) {
-        return F.F.setDoc(F.F.doc(F.db, 'pair', code), { sid: sid, at: F.F.serverTimestamp() }).then(function () {
+        /* 이 TV만의 일회용 공개 열쇠: 선생님 기기가 우리 반 열쇠를 이걸로 잠가 보내요 (서버는 못 풀어요) */
+        return ckMod().then(function (m) { return m.ok() ? m.pairNew() : null; }).catch(function () { return null; }).then(function (pk) {
+          PK = pk;
+          var doc = { sid: sid, at: F.F.serverTimestamp() }; if (pk) doc.pub = pk.pub;
+          return F.F.setDoc(F.F.doc(F.db, 'pair', code), doc);
+        }).then(function () {
           rounds++; tries = 0;
           codeEl.textContent = code.slice(0, 3) + ' ' + code.slice(3);
           msgEl.textContent = '이 숫자는 10분 동안 쓸 수 있어요. 시간이 지나면 새 숫자로 바뀝니다.';
           unsub = F.F.onSnapshot(F.F.doc(F.db, 'pairResp', sid), function (snap) {
-            var k = snap.exists() && String(snap.data().key || '').replace(/[^a-z0-9]/g, '');
+            var R = snap.exists() ? snap.data() : {}, k = String(R.key || '').replace(/[^a-z0-9]/g, '');
             if (!k || k.length < 16) return;
             if (unsub) { unsub(); unsub = null; } clearTimeout(timer);
             codeEl.textContent = '연결됐어요!'; msgEl.textContent = '우리 반 화면을 여는 중…';
             lsSet(k);
-            F.F.deleteDoc(F.F.doc(F.db, 'pairResp', sid)).catch(function () {}).then(function () { goKey(k); });
+            var getCk = (R.ck && R.epub && PK) ? ckMod().then(function (m) { return m.pairOpen(PK.kp, R.epub, R.ck); }).then(function (raw) { ckSet(k, raw); }, function () {}) : Promise.resolve();
+            getCk.then(function () { return F.F.deleteDoc(F.F.doc(F.db, 'pairResp', sid)).catch(function () {}); }).then(function () { goKey(k); });
           }, function () {});
           timer = setTimeout(fresh, 10 * 60e3);
         });
@@ -971,7 +1032,7 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
       FB = F;
       F.F.onSnapshot(F.F.doc(F.db, 'views', V), function (snap) {
         if (!snap.exists()) { gone = true; B = null; failMsg = '이 주소는 더 이상 쓰지 않아요. 담임 선생님께 새 주소를 받아 주세요.'; readyNo(new Error(failMsg)); return; }
-        gone = false; failMsg = ''; B = snap.data(); watchReg(); readyOk(); kick();
+        gone = false; failMsg = ''; decodeBoard(snap.data()).then(function (d) { B = d; watchReg(); readyOk(); kick(); });
       }, function () { failMsg = '이 주소로는 볼 수 없어요. 담임 선생님께 새 주소를 받아 주세요.'; readyNo(new Error(failMsg)); });
     }).catch(function () { failMsg = '인터넷 연결을 확인해 주세요.'; readyNo(new Error(failMsg)); });
   }
@@ -993,22 +1054,24 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
           setTimeout(function () { if (gone) location.replace(location.pathname); }, 6000);
           return;
         }
-        gone = false; failMsg = ''; B = snap.data(); watchReg();
-        if (!WANT_EDIT && !PV && lsGet() !== K) lsSet(K);
-        var g0 = document.getElementById('crGone'); if (g0) g0.remove();
-        readyOk(); checkOwner(); kick();
+        gone = false; failMsg = '';
+        var my = ++decSeq;
+        if (!CK) CK = ckGet(K);
+        decodeBoard(snap.data()).then(function (d) {
+          if (my !== decSeq) return;
+          B = d; watchReg();
+          if (!WANT_EDIT && !PV && lsGet() !== K) lsSet(K);
+          var g0 = document.getElementById('crGone'); if (g0) g0.remove();
+          readyOk(); checkOwner(); kick(); onBody(keyBanner);
+          if (RAWANS) decodeAns(RAWANS);
+        });
       }, function (e) {
         failMsg = /permission/i.test(String(e && e.code)) ? '이 TV 주소로는 볼 수 없어요. 새 주소를 받아 주세요.' : '연결이 끊겼어요. 잠시 뒤 다시 시도합니다.';
         readyNo(new Error(failMsg));
       });
       F.F.onSnapshot(F.F.collection(F.db, 'boards', K, 'answers'), function (qs) {
-        var A = {}, E = {};
-        qs.docs.forEach(function (d) {
-          var x = d.data(); if (!x || !x.sid) return;
-          (E[x.sid] = E[x.sid] || {})[x.no] = true;
-          if ((x.ch || []).length || x.etc) (A[x.sid] = A[x.sid] || {})[x.no] = { ch: x.ch || [], etc: x.etc || '' };   /* 체크 취소(빈 답)는 안 한 것으로 · 글로 쓴 답은 글만 */
-        });
-        ANS = A; EXIST = E; if (B) kick();
+        RAWANS = qs.docs.map(function (d) { return d.data(); });
+        decodeAns(RAWANS);
       }, function () {});
       /* 학생이 TV에서 올린 일정 */
       F.F.onSnapshot(F.F.collection(F.db, 'boards', K, 'sevents'), function (qs) {
@@ -1081,7 +1144,8 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
   }
 
   /* ---- 화면 자료 만들기 ---- */
-  function students() { return ((B && B.students) || []).filter(function (s) { return s && s.no && s.name; }); }
+  function students() { return ((B && B._stu) || []).filter(function (s) { return s && s.no; }); }
+  function nameOf(no) { var s = ((B && B._stu) || []).filter(function (x) { return x.no === Number(no); })[0]; return (s && s.name) || ''; }
   function nextSchoolDay(today) {
     var M = (SCH && SCH.meals) || {};
     for (var i = 1; i <= 10; i++) { var d = addDays(today, i); if (M[d] && M[d].length) return d; }
@@ -1115,7 +1179,7 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
       .sort(function (a, b) { return a.start < b.start ? -1 : a.start > b.start ? 1 : 0; }).slice(0, 20);
   }
   function flashOut() {
-    var f = B && B.flash;
+    var f = B && B._flash;
     if (!f || !f.id || !(Number(f.until) > Date.now())) return null;
     try { if (localStorage.getItem('cr_ack') === f.id) return null; } catch (e) {}
     return { id: f.id, who: f.who || '', text: f.text || '', level: f.level === '긴급' ? '긴급' : '알림', ask: !!(f.ask && f.who), until: new Date(Number(f.until)).toISOString() };
@@ -1135,7 +1199,7 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
     for (var i = 0; i < 7; i++) {
       var d = addDays(mon, i), md = d.slice(5), y = +d.slice(0, 4), leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
       sts.forEach(function (s) {
-        if (s.bd && (s.bd === md || (s.bd === '02-29' && !leap && md === '02-28'))) out.push({ no: s.no, name: s.name, date: d, dow: i + 1, today: d === today });
+        if (s.name && s.bd && (s.bd === md || (s.bd === '02-29' && !leap && md === '02-28'))) out.push({ no: s.no, name: s.name, date: d, dow: i + 1, today: d === today });
       });
     }
     return out;
@@ -1159,7 +1223,7 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
   function counselToday(today) {
     var S2 = cslots(), mode = (B && B.counselMode) || '가린이름';
     return CNS.filter(function (x) { return x.date === today; }).sort(function (a, b) { return a.slot === b.slot ? 0 : (a.slot === 'lunch' ? -1 : 1); })
-      .map(function (x) { var t = S2[x.slot] || CSLOT.lunch; return { slot: x.slot, label: t.label, time: t.time, who: mask(x.name, mode) }; });
+      .map(function (x) { var t = S2[x.slot] || CSLOT.lunch; return { slot: x.slot, label: t.label, time: t.time, who: mask(x.name || nameOf(x.no), mode) }; });
   }
   function counselFree() {
     var S2 = cslots(), now = kst(), today = ymd(now), nowHm = now.getUTCHours() * 60 + now.getUTCMinutes(), out = [];
@@ -1265,6 +1329,14 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
     if (!s) throw new Error('명단에 없는 번호예요.');
     return s;
   }
+  /* 답 잠그기: 열쇠를 쓰는 반은 고른 보기 · 적은 글을 잠가서(e)만 보냅니다 */
+  function sealAns(d) {
+    if (!encOn()) return Promise.resolve(d);
+    if (!CK) return Promise.reject(new Error(NOKEY));
+    return ckMod().then(function (m) { return m.seal(CK, { ch: d.ch, etc: d.etc }); }).then(function (e) {
+      var o = { sid: d.sid, no: d.no, e: e, at: d.at }; if (d.pf) o.pf = d.pf; return o;
+    });
+  }
   var API = {
     apiBoardData: function () {
       return ready.then(function () {
@@ -1348,7 +1420,7 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
       var again = !!(ANS[s.id] && ANS[s.id][st.no]), exists = !!(EXIST[s.id] && EXIST[s.id][st.no]);
       var F = FB.F, d = { sid: s.id, no: st.no, ch: ch, etc: etc, at: F.serverTimestamp() };
       if (exists && pinOn()) d.pf = usePf(st.no, !!(s.nx && survey(s.nx) && survey(s.nx).open));
-      return F.setDoc(F.doc(FB.db, 'boards', K, 'answers', s.id + '_' + st.no), d).then(function () {
+      return sealAns(d).then(function (d2) { return F.setDoc(F.doc(FB.db, 'boards', K, 'answers', s.id + '_' + st.no), d2); }).then(function () {
         (ANS[s.id] = ANS[s.id] || {})[st.no] = { ch: ch, etc: etc }; (EXIST[s.id] = EXIST[s.id] || {})[st.no] = true;
         return { ok: true, again: again, survey: summary(s, students()) };
       }, pinErr);
@@ -1360,7 +1432,7 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
       if (!s.open) throw new Error('이미 마감된 조사입니다.');
       var st = student(no), F = FB.F, ref = F.doc(FB.db, 'boards', K, 'answers', s.id + '_' + st.no);
       /* PIN을 켠 반은 지우지 않고 빈 답으로 (확인증 필요) */
-      var w = pinOn() ? F.setDoc(ref, { sid: s.id, no: st.no, ch: [], etc: '', at: F.serverTimestamp(), pf: usePf(st.no) }) : F.deleteDoc(ref);
+      var w = pinOn() ? sealAns({ sid: s.id, no: st.no, ch: [], etc: '', at: F.serverTimestamp(), pf: usePf(st.no) }).then(function (d2) { return F.setDoc(ref, d2); }) : F.deleteDoc(ref);
       return w.then(function () {
         if (ANS[s.id]) delete ANS[s.id][st.no];
         return { ok: true, survey: summary(s, students()) };
@@ -1372,6 +1444,12 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
       text = String(text || '').trim().slice(0, 300);
       if (text.length < 2) throw new Error('건의할 내용을 적어 주세요.');
       var st = no ? student(no) : null, F = FB.F;
+      if (encOn()) {
+        if (!CK) throw new Error(NOKEY);
+        return ckMod().then(function (m) { return m.seal(CK, { text: text, no: st ? st.no : 0 }); })
+          .then(function (e) { return F.addDoc(F.collection(FB.db, 'boards', K, 'suggest'), { e: e, at: F.serverTimestamp() }); })
+          .then(function () { return { ok: true }; });
+      }
       return F.addDoc(F.collection(FB.db, 'boards', K, 'suggest'), { text: text, no: st ? st.no : 0, name: st ? st.name : '', at: F.serverTimestamp() })
         .then(function () { return { ok: true }; });
     },
@@ -1417,7 +1495,7 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
       if (offOf(date, slot) || !cslots()[slot].on) return { ok: false, reason: 'off' };
       if (CNS.some(function (x) { return x.date === date && x.slot === slot; })) return { ok: false, reason: 'taken' };
       var F = FB.F;
-      return F.setDoc(F.doc(FB.db, 'boards', K, 'counsel', date + '_' + slot), { date: date, slot: slot, no: st.no, name: st.name, at: F.serverTimestamp() })
+      return F.setDoc(F.doc(FB.db, 'boards', K, 'counsel', date + '_' + slot), { date: date, slot: slot, no: st.no, name: encOn() ? '' : st.name, at: F.serverTimestamp() })
         .then(function () { kick(); return { ok: true }; },
           function (e) { if (/permission/i.test(String(e && (e.code || e.message)))) return { ok: false, reason: 'taken' }; throw e; });
     },

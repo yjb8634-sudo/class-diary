@@ -276,3 +276,36 @@ test('규칙에 없는 곳은 모두 막힌다', async () => {
   await assertFails(setDoc(doc(as.t1(), 'random/x'), { a: 1 }));
   await assertFails(getDoc(doc(as.op(), 'random/x')));
 });
+
+/* ---------- 학생 정보 잠그기 (우리 반 열쇠) ---------- */
+const SEALED = 'c1.' + 'A'.repeat(16) + '.' + 'B'.repeat(60);
+test('잠근 답(e)은 교실 TV가 넣을 수 있고, e 와 ch 를 함께 넣거나 너무 길면 안 된다', async () => {
+  await assertSucceeds(setDoc(doc(as.tv(), `boards/${KEY}/answers/sv2_4`), { sid: 'sv2', no: 4, e: SEALED, at: serverTimestamp() }));
+  await assertFails(setDoc(doc(as.tv(), `boards/${KEY}/answers/sv2_5`), { sid: 'sv2', no: 5, e: SEALED, ch: [0], etc: '', at: serverTimestamp() }));
+  await assertFails(setDoc(doc(as.tv(), `boards/${KEY}/answers/sv2_6`), { sid: 'sv2', no: 6, e: 'x'.repeat(3001), at: serverTimestamp() }));
+  await assertFails(setDoc(doc(as.tv(), `boards/${KEY}/answers/sv2_7`), { sid: 'sv2', no: 7, at: serverTimestamp() }));
+});
+test('잠근 답으로 바꾸기도 PIN 확인증이 있어야 한다 (예전 답과 같음)', async () => {
+  await assertFails(setDoc(doc(as.tv(), `boards/${KEY}/answers/sv1_3`), { sid: 'sv1', no: 3, e: SEALED, at: serverTimestamp() }));
+  await assertSucceeds(setDoc(doc(as.t1(), `boards/${KEY}/answers/sv1_3`), { sid: 'sv1', no: 3, e: SEALED, at: new Date() }));
+});
+test('잠근 건의 {e, at}: TV는 넣기만, 담임은 옮겨 넣기, 다른 칸은 안 된다', async () => {
+  await assertSucceeds(addDoc(collection(as.tv(), `boards/${KEY}/suggest`), { e: SEALED, at: serverTimestamp() }));
+  await assertFails(addDoc(collection(as.tv(), `boards/${KEY}/suggest`), { e: SEALED, text: '보임', at: serverTimestamp() }));
+  await assertFails(addDoc(collection(as.tv(), `boards/${KEY2}/suggest`), { e: SEALED, at: serverTimestamp() }));
+  await assertSucceeds(setDoc(doc(as.t1(), `boards/${KEY}/suggest/moved1`), { e: SEALED, at: new Date('2026-10-01') }));
+  await assertFails(getDocs(collection(as.tv(), `boards/${KEY}/suggest`)));
+});
+test('열쇠 칸(keys): 감싼 열쇠 ckw · 지문 ckId 는 본인만 쓰고 읽는다', async () => {
+  await assertSucceeds(setDoc(doc(as.t1(), 'keys/u_t1'), { boardKey: KEY, ckw: { s: 'c2FsdA==', i: 250000, w: SEALED }, ckId: 'abcdef012345' }, { merge: true }));
+  await assertFails(setDoc(doc(as.t1(), 'keys/u_t1'), { boardKey: KEY, ckw: { s: 'x', i: 1, w: SEALED, extra: 1 } }));
+  await assertFails(setDoc(doc(as.t1(), 'keys/u_t1'), { boardKey: KEY, other: 1 }));
+  await assertFails(setDoc(doc(as.t2(), 'keys/u_t1'), { boardKey: KEY2, ckId: 'zz' }));
+  await assertFails(getDoc(doc(as.op(), 'keys/u_t1')));
+});
+test('TV 연결: TV 공개 열쇠(pub)와 잠근 열쇠 답장(epub · ck)을 넣을 수 있다', async () => {
+  await assertSucceeds(setDoc(doc(as.tv(), 'pair/345678'), { sid: 's'.repeat(32), pub: 'P'.repeat(88), at: serverTimestamp() }));
+  await assertFails(setDoc(doc(as.tv(), 'pair/345679'), { sid: 's'.repeat(32), pub: 'P'.repeat(201), at: serverTimestamp() }));
+  await assertSucceeds(setDoc(doc(as.t1(), `pairResp/${'r'.repeat(32)}`), { key: KEY, epub: 'E'.repeat(88), ck: SEALED, at: serverTimestamp() }));
+  await assertFails(setDoc(doc(as.t1(), `pairResp/${'u'.repeat(32)}`), { key: KEY, ck: 'x'.repeat(301), at: serverTimestamp() }));
+});

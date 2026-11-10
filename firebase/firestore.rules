@@ -35,10 +35,13 @@ service cloud.firestore {
     }
 
     // 우리 반 TV 열쇠: 선생님 본인만 읽고 씁니다. (운영자도 못 봄 → 운영자는 다른 반 게시판을 열 수 없음)
+    // ckw: '우리 반 열쇠'를 선생님의 열쇠 비밀번호로 감싼 것(서버 · 운영자는 풀 수 없음), ckId: 열쇠 지문
     match /keys/{uid} {
       allow get: if signedIn() && request.auth.uid == uid;
       allow create, update: if approved() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['boardKey']) && request.resource.data.boardKey is string;
+        && request.resource.data.keys().hasOnly(['boardKey', 'ckw', 'ckId']) && request.resource.data.boardKey is string
+        && (!('ckw' in request.resource.data) || (request.resource.data.ckw is map && request.resource.data.ckw.keys().hasOnly(['s', 'i', 'w'])))
+        && (!('ckId' in request.resource.data) || (request.resource.data.ckId is string && request.resource.data.ckId.size() <= 32));
       allow list, delete: if false;
     }
 
@@ -56,12 +59,14 @@ service cloud.firestore {
       // 조사 · 투표 응답: 교실 TV(로그인 없음)가 씁니다. 학생 번호마다 한 문서.
       // 처음 답할 때는 이름만 누르면 되고, 이미 낸 답을 바꾸거나 지울 때는 그 학생의 PIN 확인증(pinbox/…/proof)이 있어야 합니다.
       match /answers/{aid} {
+        // 잠근 답(e: 우리 반 열쇠로 잠근 글자) 또는 예전 답(ch · etc). 잠근 답에는 ch · etc 를 함께 넣지 못합니다.
         function okAns(d) {
-          return d.keys().hasOnly(['sid', 'no', 'ch', 'etc', 'at', 'pf'])
+          return d.keys().hasOnly(['sid', 'no', 'ch', 'etc', 'e', 'at', 'pf'])
             && d.sid is string && d.sid.size() <= 20
             && d.no is int && d.no >= 1 && d.no <= 99
-            && d.ch is list && d.ch.size() <= 160
-            && d.etc is string && d.etc.size() <= 100
+            && (('e' in d)
+              ? (d.e is string && d.e.size() <= 3000 && !('ch' in d) && !('etc' in d))
+              : (d.ch is list && d.ch.size() <= 160 && d.etc is string && d.etc.size() <= 100))
             && aid == d.sid + '_' + string(d.no);
         }
         function pinOn() { return get(boardPath()).data.get('pinChange', true) != false; }
@@ -140,13 +145,20 @@ service cloud.firestore {
       }
 
       // 건의함: 교실 TV는 넣기만, 읽기 · 지우기는 담임 선생님만.
+      // 잠근 건의는 { e, at } 만 (내용 · 번호가 모두 잠겨 있음)
       match /suggest/{sid} {
         allow create: if ownsBoard() && request.resource.data.keys().hasOnly(['text', 'no', 'name', 'at'])
           && request.resource.data.text is string && request.resource.data.text.size() <= 300;
+        allow create: if ownsBoard() && request.resource.data.keys().hasOnly(['e', 'at'])
+          && request.resource.data.e is string && request.resource.data.e.size() <= 3000;
         allow create: if exists(boardPath()) && get(boardPath()).data.suggestOn == true
           && request.resource.data.keys().hasOnly(['text', 'no', 'name', 'at'])
           && request.resource.data.text is string && request.resource.data.text.size() >= 2 && request.resource.data.text.size() <= 300
           && request.resource.data.no is int && request.resource.data.name is string && request.resource.data.name.size() <= 20;
+        allow create: if exists(boardPath()) && get(boardPath()).data.suggestOn == true
+          && request.resource.data.keys().hasOnly(['e', 'at'])
+          && request.resource.data.e is string && request.resource.data.e.size() >= 20 && request.resource.data.e.size() <= 3000
+          && request.resource.data.at == request.time;
         allow read, delete: if ownsBoard();
       }
     }
@@ -163,7 +175,8 @@ service cloud.firestore {
     // TV 연결 숫자: TV(로그인 없음)가 만들고, 승인된 선생님만 숫자로 찾아봅니다.
     match /pair/{code} {
       allow create: if code.matches('^[1-9][0-9]{5}$')
-        && request.resource.data.keys().hasOnly(['sid', 'at'])
+        && request.resource.data.keys().hasOnly(['sid', 'at', 'pub'])
+        && (!('pub' in request.resource.data) || (request.resource.data.pub is string && request.resource.data.pub.size() <= 200))
         && request.resource.data.sid is string && request.resource.data.sid.size() >= 24 && request.resource.data.sid.size() <= 40
         && request.resource.data.at == request.time;
       allow get, delete: if approved();
@@ -172,7 +185,9 @@ service cloud.firestore {
     // TV 연결 답장: 선생님이 자기 반 TV 키를 넣고, 그 TV만(긴 무작위 이름) 읽고 지웁니다.
     match /pairResp/{sid} {
       allow create: if approved()
-        && request.resource.data.keys().hasOnly(['key', 'at'])
+        && request.resource.data.keys().hasOnly(['key', 'at', 'epub', 'ck'])
+        && (!('epub' in request.resource.data) || (request.resource.data.epub is string && request.resource.data.epub.size() <= 200))
+        && (!('ck' in request.resource.data) || (request.resource.data.ck is string && request.resource.data.ck.size() <= 300))
         && request.resource.data.key is string && request.resource.data.key.size() >= 20
         && get(/databases/$(database)/documents/boards/$(request.resource.data.key)).data.owner == request.auth.uid
         && request.resource.data.at == request.time;
