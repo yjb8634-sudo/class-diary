@@ -803,6 +803,40 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
   var QS = new URLSearchParams(location.search);
   var K = (QS.get('k') || '').replace(/[^a-z0-9]/g, '');
   var V = (QS.get('v') || '').replace(/[^a-z0-9]/g, '');   /* 학생 휴대폰용 보기 주소 (읽기 전용) */
+  /* ---- 각자 설치판: 연결 링크(#gc= TV · #gv= 학생 보기)에 저장소 주소가 들어 있어요 ---- */
+  var GASC = null;
+  function cnPack(obj) {
+    var b = btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
+    return 'CN1.' + b.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function cnParse(str) {
+    var m = String(str || '').match(/CN1\.([A-Za-z0-9_-]{10,})/);
+    if (!m) return null;
+    try {
+      var b = m[1].replace(/-/g, '+').replace(/_/g, '/');
+      var j = JSON.parse(decodeURIComponent(escape(atob(b))));
+      return j && /^https:\/\/script\.google(usercontent)?\.com\//.test(String(j.u || '')) ? j : null;
+    } catch (e) { return null; }
+  }
+  try {
+    var gm = location.hash.match(/[#&]g[cv]=([^&]+)/);
+    if (gm) {
+      var gc = cnParse(decodeURIComponent(gm[1]));
+      if (gc && gc.u && (gc.t || gc.v)) {
+        GASC = gc;
+        if (!gc.a && QS.get('edit') !== '1' && QS.get('pv') !== '1') localStorage.setItem('cn_gas_tv', JSON.stringify(gc));
+      }
+    }
+    if (!GASC && !K && !V) { var gsv = localStorage.getItem('cn_gas_tv'); if (gsv) GASC = JSON.parse(gsv); }
+  } catch (e) {}
+  if (GASC && GASC.t) K = String(GASC.t).replace(/[^a-z0-9]/g, '');
+  else if (GASC && GASC.v) V = String(GASC.v).replace(/[^a-z0-9]/g, '');
+  function fbLoad() {
+    if (!GASC) return import('./fb.js').then(function (m) { return m.fb(); });
+    return import('./gs2.js').then(function (m) {
+      return m.fbGas(GASC, { poll: VIEW ? 15000 : 8000, onSignOut: function () {} });
+    });
+  }
   var VIEW = !K && V.length >= 20;
   var WANT_EDIT = QS.get('edit') === '1';
   var PV = QS.get('pv') === '1';   /* 관리 화면 안 미리보기: 눌러도 저장 안 됨 */
@@ -983,10 +1017,19 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
         + '<div id="crPairCode" style="font-size:19vh;font-weight:800;letter-spacing:.12em;color:#F2D16B;line-height:1.1;font-variant-numeric:tabular-nums">······</div>'
         + '<div style="font-size:3.4vh;line-height:1.7;max-width:70rem">담임 선생님 휴대폰(또는 PC)에서 <b>클래스 나우</b>에 들어가<br><b style="color:#F2D16B">[TV 연결]</b> 칸에 위 숫자 6자리를 넣어 주세요.</div>'
         + '<div id="crPairMsg" style="font-size:2.6vh;opacity:.7">숫자를 받는 중…</div>'
-        + '<button id="crPairBtn" style="display:none;font-size:3vh;padding:1.4vh 3vw;border-radius:1.2vh;border:2px solid #F2D16B;background:transparent;color:#F2D16B">새 숫자 받기</button>';
+        + '<button id="crPairBtn" style="display:none;font-size:3vh;padding:1.4vh 3vw;border-radius:1.2vh;border:2px solid #F2D16B;background:transparent;color:#F2D16B">새 숫자 받기</button>'
+        + '<button id="crPairGas" style="position:fixed;right:1.6vw;bottom:1.6vh;font-size:1.9vh;padding:1vh 1.6vw;border-radius:1vh;border:1px solid #4A5F53;background:transparent;color:#9FB3A7;cursor:pointer">각자 설치판으로 연결</button>';
       document.body.appendChild(ov);
       codeEl = document.getElementById('crPairCode'); msgEl = document.getElementById('crPairMsg'); btn = document.getElementById('crPairBtn');
       btn.onclick = function () { rounds = 0; tries = 0; btn.style.display = 'none'; fresh(); };
+      document.getElementById('crPairGas').onclick = function () {
+        var v = prompt('담임 선생님: 클래스 나우 [TV 연결]에서 복사한 연결 링크(또는 CN1. 코드)를 붙여 넣어 주세요.');
+        if (v == null) return;
+        var c = cnParse(v);
+        if (!c || !c.u || !(c.t || c.v)) { alert('연결 코드를 읽지 못했어요. 링크 전체를 그대로 붙여 넣어 주세요.'); return; }
+        try { localStorage.setItem('cn_gas_tv', JSON.stringify(c)); } catch (e) {}
+        location.replace(location.pathname);
+      };
       FBp = import('./fb.js').then(function (m) { return m.fb(); });
       fresh();
     });
@@ -1028,7 +1071,7 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
   /* ---- Firestore: 우리 반 자료 · 조사 응답을 실시간으로 ---- */
   if (PAIR) { failMsg = ' '; readyNo(new Error(failMsg)); }
   else if (VIEW) {
-    import('./fb.js').then(function (m) { return m.fb(); }).then(function (F) {
+    fbLoad().then(function (F) {
       FB = F;
       F.F.onSnapshot(F.F.doc(F.db, 'views', V), function (snap) {
         if (!snap.exists()) { gone = true; B = null; failMsg = '이 주소는 더 이상 쓰지 않아요. 담임 선생님께 새 주소를 받아 주세요.'; readyNo(new Error(failMsg)); return; }
@@ -1038,7 +1081,7 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
   }
   else if (!K || K.length < 16) { failMsg = 'TV 주소가 올바르지 않아요. 관리 화면에서 [TV 화면 열기]로 다시 열어 주세요.'; readyNo(new Error(failMsg)); }
   else {
-    import('./fb.js').then(function (m) { return m.fb(); }).then(function (F) {
+    fbLoad().then(function (F) {
       FB = F;
       F.F.onSnapshot(F.F.doc(F.db, 'boards', K), function (snap) {
         if (!snap.exists()) {
@@ -1050,6 +1093,7 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
           ov.style.cssText = 'position:fixed;inset:0;z-index:99;background:#1D2A25;color:#E4E0D3;display:flex;align-items:center;justify-content:center;text-align:center;padding:2rem;font-size:1.8rem;line-height:1.7';
           ov.textContent = failMsg;
           if (PV) return;
+          if (GASC) { try { localStorage.removeItem('cn_gas_tv'); } catch (e2) {} }
           if (lsGet() === K) lsSet('');
           setTimeout(function () { if (gone) location.replace(location.pathname); }, 6000);
           return;
@@ -1308,7 +1352,7 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
       surveys: VIEW ? [] : (B.surveys || []).filter(function (s) { return s && (s.open || s.pub); }).map(function (s) { return summary(s, sts); }),
       students: sts.map(function (s) { return { no: s.no, name: s.name, hasPin: !!REG[s.no] }; }),
       weather: B.weatherOn !== false ? WX : null,
-      shareUrl: '', homeUrl: '', phoneApp: !VIEW && B.viewKey && B.phoneBtn !== false ? new URL('tv.html?v=' + B.viewKey, location.href).href : '', flash: flashOut(), ver: VER, url: location.href,
+      shareUrl: '', homeUrl: '', phoneApp: !VIEW && B.viewKey && B.phoneBtn !== false ? (GASC ? new URL('tv.html#gv=' + cnPack({ u: GASC.u, v: B.viewKey }), location.href).href : new URL('tv.html?v=' + B.viewKey, location.href).href) : '', flash: flashOut(), ver: VER, url: location.href,
       phone: VIEW, phoneJoin: VIEW, needPin: false,
       pinChange: pinOn(), pinLen: 6, pinSignup: VIEW && !!B.pinKey && B.pinChange !== false,
       pinHow: PIN_HOW
