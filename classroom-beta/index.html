@@ -2972,9 +2972,9 @@ function vSchoolCard(){
       : '<p class="lead" style="margin-top:6px">아직 학교를 고르지 않았어요. 학교를 고르면 급식 · 학사일정 · 나이스 시간표가 TV에 나와요.</p>'}
     <div class="row" style="margin-top:8px;display:flex;gap:8px"><input class="in grow" id="schQ" placeholder="${sc ? '다른 학교로 바꾸기: ' : ''}학교 이름으로 찾기" style="flex:1"><button class="b" data-a="schfind">찾기</button></div>
     <div id="schList" class="small" style="margin-top:6px;display:grid;gap:6px"></div>
-    ${other ? `<h3 style="margin:16px 0 4px;font-size:16px">나이스 인증키 <span class="small muted">선택</span></h3>
-    <p class="small muted">${sc.key ? '인증키로 받는 중이에요. 7교시까지 · 학사일정 3달치가 나와요.' : '인증키가 없으면 나이스 시간표는 5교시까지만 와요. 6교시부터는 아래 [직접 입력] 칸의 과목이 대신 나와요. 인증키는 나이스 교육정보 개방 포털(open.neis.go.kr)에서 무료로 받을 수 있어요.'}</p>
-    <div class="row" style="margin-top:6px;display:flex;gap:8px"><input class="in grow" id="schKey" placeholder="인증키 붙여 넣기" value="${esc(sc.key || '')}" style="flex:1" autocomplete="off"><button class="b" data-a="schkey">저장</button></div>
+    ${other ? `<details style="margin-top:14px"><summary class="small muted" style="cursor:pointer">고급: 내 나이스 인증키 쓰기 (넣지 않아도 돼요)</summary>
+    <p class="small muted" style="margin-top:6px">급식 · 학사일정 · 시간표는 클래스 나우 공용 인증키로 받아요. 공용 키가 막혔을 때만 선생님 키(open.neis.go.kr에서 무료 발급)를 넣어 주세요.</p>
+    <div class="row" style="margin-top:6px;display:flex;gap:8px"><input class="in grow" id="schKey" placeholder="인증키 붙여 넣기" value="${esc(sc.key || '')}" style="flex:1" autocomplete="off"><button class="b" data-a="schkey">저장</button></div></details>
     ${AUTO.err ? `<p class="small" style="color:var(--red);margin-top:6px">나이스 자료를 받지 못했어요: ${esc(AUTO.err)}</p>` : ''}` : ''}</section>`;
 }
 function vTimetable(){

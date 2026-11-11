@@ -1,13 +1,16 @@
 /* 클래스 나우 — 우리 학교 자료 (구글 드라이브판, 어느 학교든)
  * 급식 · 학사일정 · 우리 반 시간표를 '나이스 교육정보 개방 포털'에서 이 기기(관리 화면 · 교실 TV)가 바로 받습니다.
  * 날씨 위치는 학교 주소의 시 · 군 · 구로 찾습니다(Open-Meteo). 제작자 서버는 거치지 않습니다.
- * - 나이스 인증키가 없으면 한 번에 5줄만 오므로 하루씩 나눠 받고, 시간표는 5교시까지만 옵니다.
- *   (선생님이 [시간표 설정]에 인증키를 넣으면 7교시까지 · 한 번에 받아요)
+ * - 클래스 나우 공용 인증키로 받습니다(선생님이 따로 넣을 필요 없음). 선생님 본인 키를 넣으면 그 키를 씁니다.
+ * - 인증키가 막히면 키 없이(한 번에 5줄, 시간표 5교시까지) 하루씩 나눠 받습니다.
  * - 받은 자료는 이 기기에 6시간 동안 보관했다가 다시 받습니다. */
 
 export const HOME_CODE = '7801097';          /* 강릉제일고: 깃허브가 받아 두는 컴시간 · 나이스 자료(data/)를 그대로 씀 */
 export const isHome = s => !s || !s.code || s.code === HOME_CODE;
 const NEIS = 'https://open.neis.go.kr/hub/';
+/* 클래스 나우 드라이브판 공용 나이스 인증키 (자료 열람용, 개인정보 없음) */
+const AK = 'd1c99ca65a13bccb1c04c831d5d18168';
+const appKey = () => AK.split('').reverse().join('');
 const TT_SVC = { '고등학교': 'hisTimetable', '중학교': 'misTimetable', '초등학교': 'elsTimetable', '특수학교': 'spsTimetable' };
 const GRADE_YN = ['ONE', 'TW', 'THREE', 'FR', 'FIV', 'SIX'];
 
@@ -25,7 +28,8 @@ async function neis(svc, params, key) {
 
 /* 학교 찾기 (인증키가 없으면 5곳까지) */
 export async function searchSchool(name, key) {
-  const rows = await neis('schoolInfo', { SCHUL_NM: String(name || '').trim() }, key);
+  const q = { SCHUL_NM: String(name || '').trim() };
+  const rows = await neis('schoolInfo', q, key || appKey()).catch(() => neis('schoolInfo', q, ''));
   return rows.map(x => ({
     name: x.SCHUL_NM, atpt: x.ATPT_OFCDC_SC_CODE, code: x.SD_SCHUL_CODE,
     kind: x.SCHUL_KND_SC_NM || '', addr: x.ORG_RDNMA || '', office: x.ATPT_OFCDC_SC_NM || ''
@@ -77,7 +81,11 @@ async function pool(jobs, n) {
 
 /* 급식 · 학사일정 · 우리 반 시간표 → data/school.json 과 같은 모양 */
 export async function schoolData(sc, grade, klass) {
-  const key = String(sc.key || '').trim();
+  const own = String(sc.key || '').trim();
+  try { return await schoolData1(sc, grade, klass, own || appKey()); }
+  catch (e) { return schoolData1(sc, grade, klass, ''); }   /* 인증키가 막혔을 때: 키 없이 */
+}
+async function schoolData1(sc, grade, klass, key) {
   const base = { ATPT_OFCDC_SC_CODE: sc.atpt, SD_SCHUL_CODE: sc.code };
   const today = kst(), notes = [];
   const g = String(grade || ''), k = String(klass || '');
