@@ -1715,7 +1715,7 @@ function vLogin(){
 
       <section class="lp-end reveal"><h2>내일 아침 조회부터,<br><span class="hl">공지는 TV 한 번에</span></h2><p>설치 없이 지금 바로 시작할 수 있어요.</p>
         <button class="b y gbtn" data-go="login">${G_ICON} 구글 계정으로 시작하기</button></section>
-      <footer class="lp-foot"><span>제작자 : 돌티쌤 · 현직 교사가 만든 무료 도구예요</span><span>클래스 나우 (Class Now)${DRV_ON ? '' : ' · ' + esc(SCHOOL.name)}</span></footer>
+      <footer class="lp-foot"><span>제작자 : 돌티쌤 · 현직 교사가 만든 무료 도구예요</span><span>클래스 나우 (Class Now)${DRV_ON ? '' : ' · ' + esc(SCHOOL.name)}</span><span class="lp-copy" style="flex-basis:100%;font-size:12.5px;opacity:.75">© 2026 돌티쌤. 클래스 나우의 화면 · 코드 · 디자인을 허락 없이 복제 · 수정 · 배포하거나, AI 도구 등으로 베껴 비슷한 프로그램을 만드는 것을 금지합니다.</span></footer>
     </div></div>`;
   document.querySelectorAll('[data-go="login"]').forEach(b => b.onclick = DRV_ON ? drvLogin : login);
   { const g = $('gasIn'); if (g) g.onclick = gasCodeIn; }
@@ -2658,7 +2658,7 @@ function render(){
       <header class="top"><h1>${cur[2]}</h1><p>${TAB_DESC[cur[0]] || ''}</p></header>
       ${ckBar()}
       <div id="body">${({ flash: vFlash, notice: vNotice, look: vLook, time: vTime, cal: vCal, sound: vSound, backup: vBackupTab, roster: vRoster, survey: vSurvey, counsel: vCounsel, suggest: vSuggest, tv: vTvConnect, op: () => '<div id="opBox"></div>' })[S.tab]()}</div>
-      <div class="foot"><p class="privacy">${esc(S.user.email)}</p><p class="credit"><button class="updlink" data-a="updhist">📋 업데이트 내역</button>제작자 : 돌티쌤</p></div>
+      <div class="foot"><p class="privacy">${esc(S.user.email)}</p><p class="credit"><button class="updlink" data-a="updhist">📋 업데이트 내역</button>제작자 : 돌티쌤</p><p class="small muted" style="width:100%;margin-top:6px;font-size:12px;opacity:.7">© 2026 돌티쌤. 클래스 나우의 화면 · 코드 · 디자인을 허락 없이 복제 · 수정 · 배포하거나, AI 도구 등으로 베껴 비슷한 프로그램을 만드는 것을 금지합니다.</p></div>
     </main></div>`;
   { const on = document.querySelector('nav.tabs button.on'); if (on && window.innerWidth <= 900) on.scrollIntoView({ inline: 'center', block: 'nearest' }); }
   $('btnOut').onclick = logout;
