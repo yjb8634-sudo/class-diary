@@ -1189,11 +1189,17 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
   }
 
   /* ---- 학교 자료: 급식 · 학사일정 · 모든 반 시간표 (깃허브가 하루 두 번 나이스에서 받아 둠) ---- */
+  /* 다른 학교(구글 드라이브판): 이 TV가 나이스에서 바로 받음 */
+  function otherSchool() { var sc = B && B.school; return sc && sc.code && sc.code !== '7801097' ? sc : null; }
+  var schFor = '';
   function loadSchool() {
-    if (schBusy || (SCH && Date.now() - schAt < 30 * 60e3)) return;
-    schBusy = true;
-    fetch('../data/school.json?h=' + Math.floor(Date.now() / 600e3), { cache: 'no-cache' })
-      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    var sc = otherSchool(), sig = sc ? sc.code + (sc.key ? 'k' : '') + B.grade + '-' + B.klass : 'home';
+    if (sig !== schFor) { SCH = null; schAt = 0; }
+    if (schBusy || (SCH && Date.now() - schAt < (sc ? 60 : 30) * 60e3)) return;
+    schBusy = true; schFor = sig;
+    (sc ? import('./school.js').then(function (m) { return m.cachedData(sc, String(B.grade || ''), String(B.klass || '')); })
+      : fetch('../data/school.json?h=' + Math.floor(Date.now() / 600e3), { cache: 'no-cache' })
+        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }))
       .then(function (j) { SCH = j; schAt = Date.now(); kick(); })
       .catch(function () { schAt = Date.now() - 25 * 60e3; })
       .then(function () { schBusy = false; });
@@ -1201,6 +1207,7 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
   /* ---- 컴시간 시간표 (수업 교환 · 보강 반영, 깃허브가 수업일 30분마다 받아 둠) ---- */
   var CM = null, cmAt = 0, cmBusy = false;
   function loadComci() {
+    if (otherSchool()) { CM = null; return; }   /* 컴시간 자동은 강릉제일고만 */
     if (cmBusy || (CM && Date.now() - cmAt < 10 * 60e3)) return;
     cmBusy = true;
     fetch('../data/comci.json?h=' + Math.floor(Date.now() / 300e3), { cache: 'no-cache' })
@@ -1225,13 +1232,15 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
   function loadWeather() {
     if (wxBusy || Date.now() - wxAt < 20 * 60e3) return;
     wxBusy = true; wxAt = Date.now();
-    var q = 'latitude=37.7519&longitude=128.8761&timezone=Asia%2FSeoul';
+    var sc = B && B.school, here = sc && sc.lat != null && sc.lon != null;
+    var q = 'latitude=' + (here ? sc.lat : 37.7519) + '&longitude=' + (here ? sc.lon : 128.8761) + '&timezone=Asia%2FSeoul';
+    var place = here ? (sc.place || '') : '강릉';
     Promise.all([
       fetch('https://api.open-meteo.com/v1/forecast?' + q + '&current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min&forecast_days=1').then(function (r) { return r.json(); }),
       fetch('https://air-quality-api.open-meteo.com/v1/air-quality?' + q + '&current=pm10,pm2_5').then(function (r) { return r.json(); }).catch(function () { return {}; })
     ]).then(function (x) {
       var w = x[0], a = x[1], s = sky(Number(w.current.weather_code));
-      var o = { place: '강릉', temp: Math.round(w.current.temperature_2m),
+      var o = { place: place, temp: Math.round(w.current.temperature_2m),
         hi: w.daily ? Math.round(w.daily.temperature_2m_max[0]) : null, lo: w.daily ? Math.round(w.daily.temperature_2m_min[0]) : null,
         sky: s.t, icon: s.i, day: w.current.is_day !== 0,
         pm10: a.current && a.current.pm10 != null ? Math.round(a.current.pm10) : null,
@@ -1381,6 +1390,8 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
     else if (!SCH) ttNote = schAt ? '시간표를 불러오지 못했어요' : '시간표를 불러오는 중…';
     else if (TT && TT[today] && TT[today].length) {
       TT[today].forEach(function (x) { var n = String(x.p); subj[n] = subj[n] && subj[n] !== x.s ? subj[n] + '/' + x.s : x.s; });
+      /* 나이스 인증키가 없어 5교시까지만 왔으면, 그 뒤 교시는 직접 입력한 과목으로 */
+      if (SCH.partial && hasManual(dow)) { var mo = manualOf(dow); for (var mn in mo) if (!subj[mn] && mo[mn]) subj[mn] = mo[mn]; }
     } else if (hasManual(dow)) subj = manualOf(dow);
     else ttNote = '나이스에 오늘 ' + g + '학년 ' + k + '반 시간표가 없어요';
     var TCH = ((B.teachers || {})[String(dow)]) || {};

@@ -1244,6 +1244,7 @@ import { fb, OPERATOR, SCHOOL, DEFAULT_PERIODS, DEFAULT_SPECIALS, DEFAULT_LUNCH,
 import * as CKX from './ck.js';
 import * as GS2 from './gs2.js';
 import * as DRV from './drv.js';
+import * as SCHL from './school.js';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1333,15 +1334,35 @@ function vDrvSetup(){
     <p class="lead" style="margin-top:8px">처음 한 번만 적어 주세요. 자료는 <b>${esc(drvAuth().email() || '선생님')}</b> 구글 드라이브의 클래스 나우 전용 폴더에만 저장돼요.</p>
     <div class="row" style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <input class="in" id="dName" placeholder="선생님 이름" maxlength="20" style="width:150px" value="${esc(drvAuth().name() || '')}">
-      <select class="in" id="dGrade">${['1', '2', '3'].map(g => `<option value="${g}">${g}학년</option>`).join('')}</select>
+      <select class="in" id="dGrade">${['1', '2', '3', '4', '5', '6'].map(g => `<option value="${g}">${g}학년</option>`).join('')}</select>
       <input class="in" id="dKlass" inputmode="numeric" maxlength="2" placeholder="반" style="width:70px"><span>반</span></div>
+    <div style="margin-top:16px"><b>우리 학교</b> <span class="small muted">급식 · 학사일정 · 시간표 · 날씨에 써요</span>
+      <div class="row" style="margin-top:6px;display:flex;gap:8px"><input class="in grow" id="dSch" placeholder="학교 이름 (예: 강릉제일고등학교)" style="flex:1"><button class="b" id="dSchGo">찾기</button></div>
+      <div id="dSchList" class="small" style="margin-top:6px;display:grid;gap:6px"></div></div>
     <div class="row" style="margin-top:14px"><button class="b y" id="dGo">시작하기</button></div>
     <p class="small muted" style="margin-top:10px">공용 서버판 클래스 나우를 쓰셨다면, 시작한 뒤 [백업 · 되살리기]에서 백업 파일로 되살릴 수 있어요.</p></div></div>`;
+  let res = [], picked = null;
+  const find = async () => {
+    const q = $('dSch').value.trim(), L = $('dSchList');
+    if (q.length < 2) return toast('학교 이름을 두 글자 이상 적어 주세요.', true);
+    L.innerHTML = '<span class="muted">찾는 중…</span>';
+    try { res = await SCHL.searchSchool(q); }
+    catch (e) { L.innerHTML = `<span style="color:var(--red)">나이스에서 학교를 찾지 못했어요. (${esc(e.message)}) 학교 없이 시작하고 나중에 [시간표 설정]에서 골라도 돼요.</span>`; return; }
+    if (!res.length){ L.innerHTML = '<span class="muted">찾는 학교가 없어요. 학교 이름을 정확히 적어 주세요.</span>'; return; }
+    L.innerHTML = res.map((x, i) => `<button class="b sm" data-i="${i}" style="text-align:left;justify-content:flex-start">${esc(x.name)} <span class="muted">${esc(x.addr)}</span></button>`).join('')
+      + (res.length >= 5 ? '<span class="muted">5곳까지만 보여요. 안 보이면 학교 이름을 더 자세히 적어 주세요.</span>' : '');
+    L.querySelectorAll('[data-i]').forEach(b => b.onclick = () => { picked = res[+b.dataset.i]; L.innerHTML = `<b>✓ ${esc(picked.name)}</b> <span class="muted">${esc(picked.addr)}</span>`; });
+  };
+  $('dSchGo').onclick = find;
+  $('dSch').onkeydown = e => { if (e.key === 'Enter') find(); };
   $('dGo').onclick = async () => {
     const name = $('dName').value.trim(), grade = $('dGrade').value, klass = $('dKlass').value.replace(/\D/g, '');
     if (name.length < 2) return toast('이름을 적어 주세요.', true);
     if (!/^[1-9][0-9]?$/.test(klass)) return toast('반은 숫자로 적어 주세요.', true);
-    S.drvStore.write('keys/profile', { name, grade, klass, at: Date.now() });
+    if (!picked && !confirm('학교를 고르지 않으면 급식 · 학사일정 · 나이스 시간표가 TV에 안 나와요. 나중에 [시간표 설정]에서 고를 수 있어요. 이대로 시작할까요?')) return;
+    $('dGo').disabled = true;
+    const school = picked ? await SCHL.schoolPick(picked).catch(() => null) : null;
+    S.drvStore.write('keys/profile', Object.assign({ name, grade, klass, at: Date.now() }, school ? { school } : {}));
     try { await S.drvStore.flush(); } catch (e) { console.warn('drv flush', e); }
     startDrv();
   };
@@ -1805,6 +1826,7 @@ function watchBoard(){
       ensurePinBox(); watchReg(); watchReply();
       if (!S.updChecked){ S.updChecked = true; setTimeout(updOnOpen, 600); setTimeout(mobTip, 2500); }
       render(); syncView();
+      if (S.drv && !S.B.school && !S.schCopied){ S.schCopied = true; const pf = S.drvStore.read('keys/profile') || {}; if (pf.school) save({ school: pf.school, ttSource: SCHL.isHome(pf.school) ? S.B.ttSource : 'neis' }); }
       if (S.CK && !S.swept){ S.swept = true; setTimeout(() => privacySweep().catch(e => console.warn('sweep', e)), 1500); }
       if (S.drv && !S.swept){ S.swept = true; setTimeout(() => drvSweep().catch(e => console.warn('sweep', e)), 2500); }
     });
@@ -2893,7 +2915,7 @@ function vLook(){
     <div class="row" style="margin-top:12px;justify-content:flex-end"><button class="b y" data-a="ddsave">저장</button></div>
     <h2 style="margin-top:22px">보이기 설정</h2>
     <div style="display:grid;gap:8px;margin-top:8px">
-      <label class="chk"><input type="checkbox" data-a="tog" data-f="weatherOn" ${B.weatherOn !== false ? 'checked' : ''}> 시계 아래 강릉 날씨 · 미세먼지</label>
+      <label class="chk"><input type="checkbox" data-a="tog" data-f="weatherOn" ${B.weatherOn !== false ? 'checked' : ''}> 시계 아래 ${S.drv && B.school ? esc(B.school.place || '우리 지역') : '강릉'} 날씨 · 미세먼지</label>
       <label class="chk"><input type="checkbox" data-a="tog" data-f="birthdayOn" ${B.birthdayOn !== false ? 'checked' : ''}> 이번 주 생일 (학급 명단에 생일이 있을 때)</label>
       <label class="chk"><input type="checkbox" data-a="tog" data-f="suggestOn" ${B.suggestOn ? 'checked' : ''}> 오른쪽 아래 [건의사항] 단추</label></div></section></div>
 `;
@@ -2903,8 +2925,15 @@ function vLook(){
 /* 깃허브가 받아 두는 컴시간(data/comci.json) · 나이스(data/school.json) 시간표를 관리 화면에서도 보여 줌 */
 const AUTO = { cm: null, sc: null, at: 0, busy: false };
 function loadAuto(force){
+  const sc = S.drv && S.B && S.B.school && !SCHL.isHome(S.B.school) ? S.B.school : null, sig = sc ? sc.code + (sc.key ? 'k' : '') + S.B.grade + '-' + S.B.klass : 'home';
+  if (AUTO.sig !== sig){ AUTO.sig = sig; AUTO.at = 0; AUTO.cm = AUTO.sc = null; AUTO.err = ''; }
   if (AUTO.busy || (!force && Date.now() - AUTO.at < 5 * 60e3)) return;
   AUTO.busy = true;
+  if (sc){
+    SCHL.cachedData(sc, String(S.B.grade), String(S.B.klass), force).then(d => { AUTO.sc = d; AUTO.err = ''; }, e => { AUTO.sc = null; AUTO.err = e.message || String(e); })
+      .then(() => { AUTO.cm = null; AUTO.at = Date.now(); AUTO.busy = false; if (S.tab === 'time') render(); });
+    return;
+  }
   const h = Math.floor(Date.now() / 300e3), get = f => fetch('../data/' + f + '?h=' + h, { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).catch(() => null);
   Promise.all([get('comci.json'), get('school.json')]).then(([cm, sc]) => { AUTO.cm = cm; AUTO.sc = sc; AUTO.at = Date.now(); AUTO.busy = false; if (S.tab === 'time') render(); });
 }
@@ -2934,15 +2963,29 @@ function vAutoWeek(){
   return `<h3 style="margin:14px 0 6px;font-size:15px">📺 이번 주 TV에 나오는 시간표 <span class="small muted">${md(W[0])} ~ ${md(W[4])}${upd}</span></h3>
     ${!AUTO.at ? '<p class="small muted">시간표를 불러오는 중…</p>' : `<div class="ttwrap"><table class="t tt autow"><tr><th></th>${W.map((d, i) => `<th class="${d === today ? 'td' : ''}">${DN[i]} ${md(d)}<br><span class="small muted">${from[i]}</span></th>`).join('')}</tr>
     ${P.map((p, pi) => `<tr><th>${esc(p.n)}교시</th>${W.map((d, i) => { const c = cells[i][pi]; return `<td class="${d === today ? 'td' : ''}">${c.s ? `<b>${esc(c.s)}</b>${c.chg ? ' <span class="chgb">변경</span>' : ''}` : '<span class="muted">—</span>'}${c.t ? `<div class="small ${c.masked ? 'muted' : ''}" title="${c.masked ? '컴시간은 성만 보여 줘요. 아래 칸에 이름을 넣으면 TV에 나와요' : ''}">${esc(c.t)}</div>` : ''}</td>`; }).join('')}</tr>`).join('')}</table></div>
-    <p class="small muted" style="margin-top:6px">컴시간은 선생님 이름을 '김*'처럼 일부만 알려 줘요. TV에도 그대로 나오고, 아래 칸에 이름을 넣으면 그 이름으로 바뀌어요.</p>`}`;
+    ${S.drv && B.school && !SCHL.isHome(B.school) ? '' : `<p class="small muted" style="margin-top:6px">컴시간은 선생님 이름을 '김*'처럼 일부만 알려 줘요. TV에도 그대로 나오고, 아래 칸에 이름을 넣으면 그 이름으로 바뀌어요.</p>`}`}`;
+}
+function vSchoolCard(){
+  const sc = S.B.school, other = sc && !SCHL.isHome(sc);
+  return `<section class="card"><h2>🏫 우리 학교 <span class="sub">급식 · 학사일정 · 시간표 · 날씨</span></h2>
+    ${sc ? `<p class="lead" style="margin-top:6px"><b>${esc(sc.name)}</b> <span class="small muted">${esc(sc.addr || '')}</span><br><span class="small">날씨 · 미세먼지 위치: ${sc.place ? esc(sc.place) : '<span style="color:var(--red)">못 찾음 (강릉 기준으로 보여요)</span>'}</span></p>`
+      : '<p class="lead" style="margin-top:6px">아직 학교를 고르지 않았어요. 학교를 고르면 급식 · 학사일정 · 나이스 시간표가 TV에 나와요.</p>'}
+    <div class="row" style="margin-top:8px;display:flex;gap:8px"><input class="in grow" id="schQ" placeholder="${sc ? '다른 학교로 바꾸기: ' : ''}학교 이름으로 찾기" style="flex:1"><button class="b" data-a="schfind">찾기</button></div>
+    <div id="schList" class="small" style="margin-top:6px;display:grid;gap:6px"></div>
+    ${other ? `<h3 style="margin:16px 0 4px;font-size:16px">나이스 인증키 <span class="small muted">선택</span></h3>
+    <p class="small muted">${sc.key ? '인증키로 받는 중이에요. 7교시까지 · 학사일정 3달치가 나와요.' : '인증키가 없으면 나이스 시간표는 5교시까지만 와요. 6교시부터는 아래 [직접 입력] 칸의 과목이 대신 나와요. 인증키는 나이스 교육정보 개방 포털(open.neis.go.kr)에서 무료로 받을 수 있어요.'}</p>
+    <div class="row" style="margin-top:6px;display:flex;gap:8px"><input class="in grow" id="schKey" placeholder="인증키 붙여 넣기" value="${esc(sc.key || '')}" style="flex:1" autocomplete="off"><button class="b" data-a="schkey">저장</button></div>
+    ${AUTO.err ? `<p class="small" style="color:var(--red);margin-top:6px">나이스 자료를 받지 못했어요: ${esc(AUTO.err)}</p>` : ''}` : ''}</section>`;
 }
 function vTimetable(){
-  const B = S.B, P = (B.periods || DEFAULT_PERIODS).filter(p => p && p.n), src = B.ttSource === 'manual' ? 'manual' : (B.ttSource === 'neis' ? 'neis' : 'comci');
+  const B = S.B, P = (B.periods || DEFAULT_PERIODS).filter(p => p && p.n), noCm = S.drv && B.school && !SCHL.isHome(B.school);
+  let src = B.ttSource === 'manual' ? 'manual' : (B.ttSource === 'neis' ? 'neis' : 'comci');
+  if (noCm && src === 'comci') src = 'neis';
   const T = B.timetable || {}, TC = B.teachers || {}, D = ['월', '화', '수', '목', '금'];
   const cell = (m, d, n) => esc(((m || {})[String(d)] || {})[String(n)] || '');
   const WD = weekDates();
-  return `<section class="card"><h2>요일별 시간표 <span class="sub">과목 · 선생님 이름</span></h2>
-    <div class="row"><div class="seg">${[['comci', '컴시간 자동 (추천)'], ['neis', '나이스 자동'], ['manual', '직접 입력']].map(([v, l]) => `<button data-a="ttsrc" data-v="${v}" class="${src === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+  return `${S.drv ? vSchoolCard() : ''}<section class="card"><h2>요일별 시간표 <span class="sub">과목 · 선생님 이름</span></h2>
+    <div class="row"><div class="seg">${[['comci', '컴시간 자동 (추천)'], ['neis', '나이스 자동'], ['manual', '직접 입력']].filter(x => !(noCm && x[0] === 'comci')).map(([v, l]) => `<button data-a="ttsrc" data-v="${v}" class="${src === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
     <p class="lead" style="margin-top:8px">${src === 'manual' ? '아래 과목을 그대로 TV에 보여 줘요. 학기가 바뀌면 고쳐 주세요.'
       : src === 'comci' ? '<b>컴시간</b> 시간표를 씁니다. 일과계에서 <b>수업 교환 · 보강</b>을 입력하면 30분 안에 TV에 반영되고, 바뀐 교시에 <b style="color:var(--yellow)">변경</b> 표시가 붙어요. 컴시간 자료가 없는 날은 나이스 → 아래 과목 칸 순서로 대신 보여요.'
       : '과목은 나이스 것을 씁니다. 아래 과목 칸은 나이스에 그날 시간표가 없을 때만 대신 보여요. (나이스에는 수업 교환이 늦게 들어가거나 빠질 수 있어요)'}
@@ -2963,7 +3006,7 @@ function vTime(){
       <label class="small">반 <input class="in" id="sClass" type="number" min="1" max="20" value="${esc(B.klass)}" style="width:84px"></label>
       <label class="small">성함 <input class="in" id="sName" value="${esc(S.me.name)}" style="width:160px"></label>
       <span class="grow"></span><button class="b y" data-a="classsave">저장</button></div>
-    <p class="lead" style="margin:8px 0 0">시간표 과목은 이 학년 · 반 것을 자동으로 가져옵니다 (컴시간: 수업일 30분마다 · 나이스: 새벽 · 점심 무렵). 아래 [요일별 시간표]에서 출처를 고르거나 직접 넣을 수 있어요.</p></section>
+    <p class="lead" style="margin:8px 0 0">시간표 과목은 이 학년 · 반 것을 자동으로 가져옵니다 ${S.drv && S.B.school && !SCHL.isHome(S.B.school) ? '(나이스: TV가 몇 시간마다 받아요)' : '(컴시간: 수업일 30분마다 · 나이스: 새벽 · 점심 무렵)'}. 아래 [요일별 시간표]에서 출처를 고르거나 직접 넣을 수 있어요.</p></section>
   ${vTimetable()}
   <div class="grid2"><section class="card"><h2>교시 시각</h2>
     <p class="lead">TV가 '지금 몇 교시'인지 계산하는 데 씁니다.</p>
@@ -4130,6 +4173,32 @@ document.addEventListener('click', async ev => {
   switch (a){
     case 'gasout': return logout();
     case 'drvout': return drvSignOut();
+    case 'schfind': {
+      const q = ($('schQ').value || '').trim(), L = $('schList');
+      if (q.length < 2) return toast('학교 이름을 두 글자 이상 적어 주세요.', true);
+      L.innerHTML = '<span class="muted">찾는 중…</span>';
+      try { S.schRes = await SCHL.searchSchool(q, (S.B.school || {}).key); }
+      catch (e) { L.innerHTML = `<span style="color:var(--red)">나이스에서 학교를 찾지 못했어요. (${esc(e.message)})</span>`; return; }
+      L.innerHTML = S.schRes.length ? S.schRes.map((x, i) => `<button class="b sm" data-a="schpick" data-i="${i}" style="text-align:left;justify-content:flex-start">${esc(x.name)} <span class="muted">${esc(x.addr)}</span></button>`).join('') : '<span class="muted">찾는 학교가 없어요.</span>';
+      return;
+    }
+    case 'schpick': {
+      const x = (S.schRes || [])[+t.dataset.i]; if (!x) return;
+      t.disabled = true;
+      const sc = await SCHL.schoolPick(x);
+      if ((S.B.school || {}).key) sc.key = S.B.school.key;
+      const P = { school: sc };
+      if (!SCHL.isHome(sc) && (S.B.ttSource || 'comci') === 'comci') P.ttSource = 'neis';
+      AUTO.at = 0;
+      return save(P, sc.name + '(으)로 정했어요.' + (sc.place ? '' : ' 날씨 위치는 찾지 못해 강릉 기준으로 보여요.'));
+    }
+    case 'schkey': {
+      const k = ($('schKey').value || '').trim();
+      if (k && !/^[A-Za-z0-9]{16,64}$/.test(k)) return toast('인증키 모양이 아니에요. 다시 확인해 주세요.', true);
+      const sc = Object.assign({}, S.B.school); if (k) sc.key = k; else delete sc.key;
+      AUTO.at = 0;
+      return save({ school: sc }, k ? '인증키를 저장했어요.' : '인증키를 지웠어요.');
+    }
     case 'drvsync': { t.disabled = true; try { await S.drvStore.flush(); await S.drvStore.sync(); toast('구글 드라이브와 맞췄어요.'); } catch (e) { fail(e); } t.disabled = false; return; }
     case 'copyapk': { try { await navigator.clipboard.writeText(TV_APK); toast('TV 앱 주소를 복사했어요.'); } catch (e) { prompt('아래 주소를 복사해 주세요.', TV_APK); } return; }
     case 'gaslink': {
