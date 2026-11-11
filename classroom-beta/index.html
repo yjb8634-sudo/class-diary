@@ -1682,9 +1682,9 @@ function vLogin(){
         </div></section>
 
       <section class="lp-sec" id="q"><div class="sech reveal"><span class="secno">03 · 안심하고 쓰기</span><h2>우리 반 자료는<br><span class="hl">담임 선생님만</span></h2>
-          <p>🔒 학생 이름 · 조사 답은 <b>우리 반 열쇠로 잠가서만</b> 서버에 둡니다. 열쇠는 선생님 기기와 교실 TV에만 있어요.</p></div>
+          <p>${DRV_ON ? '🔒 제작자 서버가 없어요. 우리 반 자료는 <b>선생님 구글 드라이브의 클래스 나우 전용 폴더</b>에만 저장돼요. <a href="../privacy.html" target="_blank" rel="noopener">개인정보 처리방침</a>' : '🔒 학생 이름 · 조사 답은 <b>우리 반 열쇠로 잠가서만</b> 서버에 둡니다. 열쇠는 선생님 기기와 교실 TV에만 있어요.'}</p></div>
         <div class="safe reveal">
-          <div>학생 이름 · 생일 · 조사 답<b>잠가서 저장 · 운영자 · 서버도 못 봄</b></div>
+          ${DRV_ON ? '<div>학생 이름 · 생일 · 조사 답<b>선생님 구글 드라이브에만 · 제작자도 못 봄</b></div><div>교실 TV<b>구글 로그인 없이 코드로 연결 · 전용 폴더만</b></div>' : '<div>학생 이름 · 생일 · 조사 답<b>잠가서 저장 · 운영자 · 서버도 못 봄</b></div>'}
           <div>지난 조사 답 · 상담 기록<b>보관 기간이 지나면 저절로 지움</b></div>
           <div>학생 PIN<b>알아볼 수 없게 바꿔 저장 · 선생님도 못 봄</b></div>
           <div>우리 반 백업<b>선생님 구글 드라이브에만</b></div></div></section>
