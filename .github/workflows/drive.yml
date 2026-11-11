@@ -1,0 +1,35 @@
+# 구글 드라이브판(classroom-drive)은 시험판(classroom-beta)과 같은 파일을 씁니다.
+# 화면 파일이 주소(classroom-drive/)를 보고 스스로 드라이브판으로 켜지므로, 정식판 · 시험판(파이어베이스)은 그대로입니다.
+# 시험판에서 확인한 고침을 드라이브판에도 넣을 때: [Actions] → '구글 드라이브판 옮기기' → [Run workflow]
+
+name: 구글 드라이브판 옮기기
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: drive-edition
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: 시험판 → 드라이브판
+        run: |
+          set -e
+          git config user.name 'classroom-bot'
+          git config user.email 'classroom-bot@users.noreply.github.com'
+          test -f classroom-beta/index.html && test -f classroom-beta/drv.js
+          mkdir -p classroom-drive
+          find classroom-beta -maxdepth 1 -type f -exec cp -f {} classroom-drive/ \;
+          git add classroom-drive
+          if git diff --cached --quiet; then echo "바뀐 것이 없어요."; exit 0; fi
+          git commit -m "구글 드라이브판 옮기기: 시험판과 같게 ($(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M'))"
+          git push
+          echo "### ✅ 드라이브판에 옮겼어요. 1~2분 뒤 반영됩니다." >> "$GITHUB_STEP_SUMMARY"

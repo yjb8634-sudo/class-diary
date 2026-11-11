@@ -45,7 +45,8 @@ import android.widget.Toast;
 
 /**
  * 클래스 나우 교실 TV 화면을 주소창 없이 전체 화면으로 띄우는 앱.
- * - 구글 드라이브판(새 방식): TV에 코드가 뜨고, 선생님이 휴대폰에서 google.com/device 에 넣어 허용하면 연결됩니다.
+ * - 처음엔 예전 방식(정식판 · 시험판, 공용 서버)으로 열립니다. 구글 드라이브판은 설정 → [연결 방식 바꾸기]에서 고릅니다.
+ * - 구글 드라이브판: TV에 코드가 뜨고, 선생님이 휴대폰에서 google.com/device 에 넣어 허용하면 연결됩니다.
  *   TV에는 구글 로그인이 남지 않고, 앱은 '클래스 나우 전용 폴더(drive.appdata)'만 읽고 쓸 수 있어요.
  *   연결 열쇠(refresh token)는 이 기기 안에만 두고, 제작자 서버로는 아무것도 보내지 않습니다.
  * - 예전 방식: TV 화면이 6자리 연결 숫자를 보여 주고, 선생님이 클래스 나우에서 그 숫자를 넣으면 연결됩니다.
@@ -56,6 +57,7 @@ public class MainActivity extends Activity {
     static final String HOST = "yjb8634-sudo.github.io";
     static final String PROD = "https://" + HOST + "/class-diary/classroom/tv.html";
     static final String BETA = "https://" + HOST + "/class-diary/classroom-beta/tv.html";
+    static final String DRIVE = "https://" + HOST + "/class-diary/classroom-drive/tv.html";
 
     /* 구글 연결 (TV · 입력 제한 기기용 OAuth 클라이언트) */
     static final String CID = "373891623308-7f2fn8orobq47psjqgt6336jheffu519.apps.googleusercontent.com";
@@ -85,7 +87,8 @@ public class MainActivity extends Activity {
     };
 
     private boolean drive() { return "drive".equals(sp.getString("mode", "")); }
-    private String home() { return (sp.getBoolean("beta", false) ? BETA : PROD) + (drive() ? "?drv=1" : ""); }
+    /* 구글 드라이브판은 따로 된 주소. 예전 방식(공용 서버)은 정식판 · 시험판 그대로 */
+    private String home() { return drive() ? DRIVE : (sp.getBoolean("beta", false) ? BETA : PROD); }
 
     @SuppressLint({"SetJavaScriptEnabled", "ClickableViewAccessibility"})
     @Override
@@ -145,9 +148,8 @@ public class MainActivity extends Activity {
         setContentView(root);
         hideBars();
 
-        String mode = sp.getString("mode", "");
-        if (mode.isEmpty()) showChooser();
-        else if (drive() && sp.getString("rt", "").isEmpty()) startDeviceFlow();
+        /* 처음 설치 · 업데이트: 지금까지처럼 예전 방식(연결 숫자). 구글 드라이브판은 설정 메뉴에서 고름 */
+        if (drive() && sp.getString("rt", "").isEmpty()) startDeviceFlow();
         else if (b != null) web.restoreState(b);
         else web.loadUrl(home());
     }
@@ -201,22 +203,6 @@ public class MainActivity extends Activity {
     }
     private void panelHide() { flowGen++; panel.setVisibility(View.GONE); }
 
-    private void showChooser() {
-        flowGen++;
-        panelShow("클래스 나우 TV", "이 TV를 어떻게 연결할까요?\n(나중에 설정에서 바꿀 수 있어요)", null, null,
-                "구글 드라이브판: 자료가 선생님 구글 드라이브에만 저장돼요. (학교운영위원회 심의 부담을 줄인 새 방식)");
-        pBtn1.setVisibility(View.VISIBLE); pBtn2.setVisibility(View.VISIBLE);
-        pBtn1.setText("구글 계정으로 연결 (새 방식)");
-        pBtn2.setText("예전 방식 (연결 숫자)");
-        pBtn1.setOnClickListener(v -> {
-            /* 새 방식은 지금 시험판에 먼저 들어가 있어요 */
-            sp.edit().putString("mode", "drive").putBoolean("beta", true).apply();
-            startDeviceFlow();
-        });
-        pBtn2.setOnClickListener(v -> { sp.edit().putString("mode", "old").apply(); panelHide(); web.loadUrl(home()); });
-        pBtn1.requestFocus();
-    }
-
     /* ================= 구글 기기 코드 연결 (google.com/device) ================= */
     private static String enc(String s) { try { return URLEncoder.encode(s, "UTF-8"); } catch (Exception e) { return s; } }
     private static String cs() { return new StringBuilder(new String(Base64.decode(KS, Base64.DEFAULT), java.nio.charset.StandardCharsets.UTF_8)).reverse().toString(); }
@@ -249,7 +235,7 @@ public class MainActivity extends Activity {
         web.loadUrl("about:blank");
         panelShow("구글 계정으로 연결", "코드를 받는 중…", null, null, "");
         pBtn1.setVisibility(View.GONE);
-        pBtn2.setVisibility(View.VISIBLE); pBtn2.setText("예전 방식으로 쓰기");
+        pBtn2.setVisibility(View.VISIBLE); pBtn2.setText("예전 방식으로 돌아가기");
         pBtn2.setOnClickListener(v -> confirmMode("old"));
         io.execute(() -> deviceLoop(gen, 0));
     }
@@ -396,9 +382,9 @@ public class MainActivity extends Activity {
         String em = sp.getString("em", "");
         String[] items = {
                 "새로고침",
-                beta ? "정식판으로 바꾸기 (지금: 시험판)" : "시험판으로 바꾸기 (지금: 정식판)",
+                drv ? "(구글 드라이브판은 정식판 · 시험판 구분 없음)" : beta ? "정식판으로 바꾸기 (지금: 시험판)" : "시험판으로 바꾸기 (지금: 정식판)",
                 drv ? "구글 다시 연결 (다른 계정으로 바꾸기)" + (em.isEmpty() ? "" : "\n지금: " + em) : "TV 연결 다시 하기 (다른 반으로 바꾸기)",
-                drv ? "연결 방식 바꾸기 (지금: 구글 드라이브판)" : "연결 방식 바꾸기 (지금: 예전 방식)",
+                drv ? "연결 방식 바꾸기 (지금: 구글 드라이브판)" : "연결 방식 바꾸기 (지금: 예전 방식 · 공용 서버)",
                 "크롬에서 열기",
                 "앱 닫기"
         };
@@ -406,7 +392,7 @@ public class MainActivity extends Activity {
                 .setTitle("클래스 나우 TV")
                 .setItems(items, (d, i) -> {
                     if (i == 0) { if (panel.getVisibility() == View.VISIBLE && drv && sp.getString("rt", "").isEmpty()) startDeviceFlow(); else { mainError = false; web.reload(); } }
-                    else if (i == 1) { sp.edit().putBoolean("beta", !beta).apply(); if (panel.getVisibility() != View.VISIBLE) web.loadUrl(home()); }
+                    else if (i == 1) { if (drv) return; sp.edit().putBoolean("beta", !beta).apply(); if (panel.getVisibility() != View.VISIBLE) web.loadUrl(home()); }
                     else if (i == 2) { if (drv) confirmRelink(); else confirmRepair(); }
                     else if (i == 3) confirmMode(drv ? "old" : "drive");
                     else if (i == 4) openOutside(curUrl.startsWith("http") ? curUrl.replace("?drv=1", "") : home());
@@ -430,10 +416,10 @@ public class MainActivity extends Activity {
         new AlertDialog.Builder(this)
                 .setTitle("연결 방식 바꾸기")
                 .setMessage(toDrive
-                        ? "구글 드라이브판으로 바꿀까요?\n담임 선생님 휴대폰으로 구글 연결을 한 번 해야 해요. (새 방식은 지금 시험판에서 먼저 쓸 수 있어요)"
-                        : "예전 방식(연결 숫자)으로 바꿀까요?\n이 TV의 구글 연결은 끊고, TV 안의 우리 반 자료 사본도 지워요.")
+                        ? "구글 드라이브판으로 바꿀까요?\n자료를 담임 선생님 구글 드라이브에만 두는 방식이에요. 선생님 휴대폰으로 구글 연결을 한 번 해야 해요.\n(지금 쓰는 예전 방식 연결은 이 TV에 그대로 남아서, 언제든 돌아올 수 있어요)"
+                        : "예전 방식(연결 숫자 · 공용 서버)으로 돌아갈까요?\n이 TV의 구글 연결은 끊고, TV 안의 드라이브판 자료 사본도 지워요.")
                 .setPositiveButton("바꾸기", (d, w) -> {
-                    if (toDrive) { sp.edit().putString("mode", "drive").putBoolean("beta", true).apply(); startDeviceFlow(); }
+                    if (toDrive) { sp.edit().putString("mode", "drive").apply(); startDeviceFlow(); }
                     else { forgetDrive(true); sp.edit().putString("mode", "old").apply(); panelHide(); web.loadUrl(home()); }
                 })
                 .setNegativeButton("취소", null)

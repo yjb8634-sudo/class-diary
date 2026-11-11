@@ -833,7 +833,8 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
   else if (GASC && GASC.v) V = String(GASC.v).replace(/[^a-z0-9]/g, '');
   /* ---- 구글 드라이브판: TV 앱(ClassNowTV)이 구글 기기 코드로 연결, 자료는 선생님 드라이브 앱 전용 폴더에만 ---- */
   var TVAPP = window.ClassNowTV || null;
-  var DRV = (QS.get('drv') === '1' && !QS.get('k') && !V) || !!(TVAPP && TVAPP.isDrive && TVAPP.isDrive());
+  /* 드라이브판 주소(classroom-drive/)에서만: 공용 서버(파이어베이스)에는 연결하지 않음 */
+  var DRV = /\/classroom-drive\//.test(location.pathname) && !QS.get('k') && !V;
   var DSTORE = null, DRVAUTH = false;
   if (DRV) { GASC = null; V = ''; K = 'drivewaitingforkey'; }   /* 진짜 열쇠는 드라이브에서 읽어 옴 */
   function drvNote(html, btn) {

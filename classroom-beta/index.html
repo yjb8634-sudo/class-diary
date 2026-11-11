@@ -1298,7 +1298,8 @@ async function startGas(conn){
 }
 /* ───── 구글 드라이브판: 선생님 구글 드라이브(앱 전용 숨은 폴더)에만 저장, 제작자 서버 없음 ───── */
 const DRV_WEB_ID = '373891623308-p4jucro4leu2d06i8hjuk2v4l0u2443f.apps.googleusercontent.com';
-const DRV_ON = true;   /* 시작하기 단추 = 구글 드라이브판 */
+/* 구글 드라이브판은 따로 된 주소(classroom-drive/)에서만 켜집니다. 정식판 · 시험판은 지금처럼 공용 서버(파이어베이스) 그대로. */
+const DRV_ON = /\/classroom-drive\//.test(location.pathname);
 const TV_APK = 'https://yjb8634-sudo.github.io/class-diary/classnow-tv.apk';
 let DA = null;
 const drvAuth = () => DA || (DA = DRV.adminAuth(DRV_WEB_ID));
@@ -1316,9 +1317,9 @@ function vDrvLogin(){
   $('app').innerHTML = `<div class="center"><div class="card" style="max-width:460px"><h2>클래스 나우</h2>
     <p class="lead" style="margin-top:8px">구글 연결 시간이 끝났어요. 한 번만 눌러 다시 이어 주세요.${da.email() ? `<br><span class="small muted">${esc(da.email())}</span>` : ''}</p>
     <div class="row" style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="b y gbtn" id="dIn">${G_ICON} 구글로 계속하기</button></div>
-    <p class="small muted" style="margin-top:12px">자료는 선생님 구글 드라이브에만 있어요. <button class="updlink" id="dOld" style="font-size:inherit">다른 방식으로 로그인</button></p></div></div>`;
+    <p class="small muted" style="margin-top:12px">자료는 선생님 구글 드라이브에만 있어요. <button class="updlink" id="dOld" style="font-size:inherit">다른 구글 계정으로</button></p></div></div>`;
   $('dIn').onclick = drvLogin;
-  $('dOld').onclick = () => { try { localStorage.removeItem('cn_drv'); } catch (e) {} location.reload(); };
+  $('dOld').onclick = () => { const a = drvAuth(); a.request('first').then(() => { try { localStorage.setItem('cn_drv', '1'); } catch (e) {} location.reload(); }).catch(e => toast(e.message, true)); };
 }
 function vDrvFail(e){
   $('app').innerHTML = `<div class="center"><div class="card"><h2>구글 드라이브에 연결하지 못했어요</h2>
@@ -1335,7 +1336,7 @@ function vDrvSetup(){
       <select class="in" id="dGrade">${['1', '2', '3'].map(g => `<option value="${g}">${g}학년</option>`).join('')}</select>
       <input class="in" id="dKlass" inputmode="numeric" maxlength="2" placeholder="반" style="width:70px"><span>반</span></div>
     <div class="row" style="margin-top:14px"><button class="b y" id="dGo">시작하기</button></div>
-    <p class="small muted" style="margin-top:10px">예전 클래스 나우(공용 서버)를 쓰셨다면, 시작한 뒤 [백업 · 되살리기]에서 백업 파일로 되살릴 수 있어요.</p></div></div>`;
+    <p class="small muted" style="margin-top:10px">공용 서버판 클래스 나우를 쓰셨다면, 시작한 뒤 [백업 · 되살리기]에서 백업 파일로 되살릴 수 있어요.</p></div></div>`;
   $('dGo').onclick = async () => {
     const name = $('dName').value.trim(), grade = $('dGrade').value, klass = $('dKlass').value.replace(/\D/g, '');
     if (name.length < 2) return toast('이름을 적어 주세요.', true);
@@ -1437,16 +1438,16 @@ function vTvConnectDrv(B){
       <p class="lead" style="margin-top:4px">교실 TV(전자칠판)에 <b>클래스 나우 TV 앱</b>을 깔고, 선생님 휴대폰으로 <b>구글 연결을 한 번</b>만 허용하면 돼요. TV에는 구글 로그인이 남지 않고, TV 앱은 클래스 나우 전용 폴더만 볼 수 있어요.</p>
       <ol class="pairsteps">
         <li>TV 브라우저에서 아래 주소로 <b>TV 앱</b>을 받아 설치합니다. (이미 깔려 있으면 건너뛰기)<br><span class="addr" style="font-size:15px;word-break:break-all">${esc(TV_APK)}</span></li>
-        <li>TV 앱을 열고 <b>[구글 계정으로 연결]</b>을 누르면 TV에 <b>코드</b>가 나와요.</li>
+        <li>TV 앱을 열고 <b>[구글 드라이브판으로 연결]</b>을 누르면 TV에 <b>코드</b>가 나와요.</li>
         <li>선생님 휴대폰에서 <b class="addr">google.com/device</b> 를 열어 그 코드를 넣고, <b>${em ? esc(em) : '이 컴퓨터와 같은 구글 계정'}</b>으로 허용합니다.</li>
         <li>TV에 우리 반 화면이 나오면 끝! 다음부터는 TV 앱만 켜면 돼요.</li></ol>
-      <p class="small muted" style="margin-top:8px">TV 앱 설정: 화면 왼쪽 위 모서리를 3초 누르거나 리모컨 [메뉴]. 지금은 시험판이라, 설정에서 <b>시험판으로 바꾸기</b>를 먼저 눌러 주세요.</p>
+      <p class="small muted" style="margin-top:8px">TV 앱을 이미 예전 방식(연결 숫자)으로 쓰고 있다면: 화면 왼쪽 위 모서리를 3초 누르거나 리모컨 [메뉴] → <b>연결 방식 바꾸기</b>.</p>
       <div class="row" style="margin-top:8px"><button class="b" data-a="copyapk">TV 앱 주소 복사</button></div></section>`;
 }
 async function start(){
+  if (DRV_ON){ S.fb = null; return drvWanted() ? startDrv() : vLogin(); }   /* 드라이브판: 공용 서버에 아예 연결하지 않음 */
   const g = gasBoot();
   if (g) return startGas(g);
-  if (drvWanted()) return startDrv();
   try { S.fb = await fb(); }
   catch (e) {
     if (DRV_ON){ S.fb = null; return vLogin(); }   /* 공용 서버가 막혀도 구글 드라이브판은 시작할 수 있어요 */
@@ -1587,7 +1588,7 @@ function vLogin(){
           <p class="sub">매일 칠판에 쓰던 공지, 단톡방에 올리던 가정통신문, 종이로 걷던 동의서와 희망 조사. <b>클래스 나우</b>가 우리 반 스마트 TV에 띄우고 학생이 TV에서 바로 답해요. 학교에서 받은 <b>엑셀 · 한글 조사 양식</b>도 그대로 올리면, 학생 답이 양식에 채워져 바로 제출할 수 있어요.</p>
           <div class="cta"><button class="b y gbtn" id="btnLogin" data-go="login">${G_ICON} 구글 계정으로 시작하기</button><a class="b ol" href="#f">${svg('play')} 어떻게 쓰나요 <span class="mn">3분</span></a></div>
           <div class="chks"><span>설치 없음</span><span>완전 무료</span><span>PC · 휴대폰 · TV</span><span>3분이면 시작</span></div>
-          <p class="small" style="margin:10px 0 0;opacity:.75">${DRV_ON ? '자료는 선생님 구글 드라이브에만 저장돼요. 예전 방식: <button class="updlink" id="oldIn" style="font-size:inherit">공용 서버로 로그인</button> · ' : '각자 설치판을 쓰고 계신가요? '}<button class="updlink" id="gasIn" style="font-size:inherit">${DRV_ON ? '설치판 연결 링크로 열기' : '연결 링크(코드)로 열기'}</button></p>
+          <p class="small" style="margin:10px 0 0;opacity:.75">${DRV_ON ? '자료는 선생님 구글 드라이브에만 저장돼요. 제작자 서버가 없어요. · <a href="../privacy.html" target="_blank" rel="noopener">개인정보 처리방침</a>' : '각자 설치판을 쓰고 계신가요? <button class="updlink" id="gasIn" style="font-size:inherit">연결 링크(코드)로 열기</button>'}</p>
           <div class="newc"><a href="#fx"><i>NEW</i>학교 양식(엑셀 · 한글) 그대로 조사 → 받아서 바로 제출 →</a><a href="#f2"><i>NEW</i>학생 호출, "네, 갈게요" 답장까지 →</a></div>
         </div>
         <div class="cmp reveal">
@@ -1694,7 +1695,7 @@ function vLogin(){
       <footer class="lp-foot"><span>제작자 : 강릉제일고 유준배 선생님 · 현직 교사가 만든 무료 도구예요</span><span>클래스 나우 (Class Now) · ${esc(SCHOOL.name)}</span></footer>
     </div></div>`;
   document.querySelectorAll('[data-go="login"]').forEach(b => b.onclick = DRV_ON ? drvLogin : login);
-  { const g = $('gasIn'); if (g) g.onclick = gasCodeIn; const o = $('oldIn'); if (o) o.onclick = () => S.fb && S.fb.A ? login() : toast('예전 방식(공용 서버)에 연결하지 못했어요. 인터넷을 확인해 주세요.', true); }
+  { const g = $('gasIn'); if (g) g.onclick = gasCodeIn; }
   if (DRV_ON) drvAuth().loadGis().catch(() => {});
   const R = document.querySelectorAll('.lp .reveal');
   const reveal = () => {
