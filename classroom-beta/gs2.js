@@ -46,6 +46,11 @@ export async function fbGas(conn, opts) {
   const auth = conn.a ? { a: conn.a } : conn.t ? { t: conn.t } : { vk: conn.v };
 
   async function call(ops) {
+    if (opts.transport) {   /* 드라이브판: 같은 기기 안에서 바로 처리 (서버 없음) */
+      const j = await opts.transport({ v: 1, auth, ops });
+      if (!j || !j.ok) throw new Error((j && j.err) || '저장소 오류');
+      return JSON.parse(JSON.stringify(j.r));
+    }
     const r = await fetch(conn.u, { method: 'POST', redirect: 'follow',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ v: 1, auth, ops }) });
@@ -99,6 +104,7 @@ export async function fbGas(conn, opts) {
     const slow = typeof document !== 'undefined' && document.hidden ? 4 : 1;
     kick(fails ? Math.min(60000, POLL * (fails + 1)) : POLL * slow);
   }
+  if (opts.onChange) opts.onChange(() => { if (!busy) kick(40); });
   function onSnapshot(q, cb, err) {
     const s = { q: q.type ? q : { type: 'doc', path: q.path }, cb, err, last: undefined };
     SUBS.add(s); kick(1);

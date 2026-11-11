@@ -831,7 +831,55 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
   } catch (e) {}
   if (GASC && GASC.t) K = String(GASC.t).replace(/[^a-z0-9]/g, '');
   else if (GASC && GASC.v) V = String(GASC.v).replace(/[^a-z0-9]/g, '');
+  /* ---- 구글 드라이브판: TV 앱(ClassNowTV)이 구글 기기 코드로 연결, 자료는 선생님 드라이브 앱 전용 폴더에만 ---- */
+  var TVAPP = window.ClassNowTV || null;
+  var DRV = (QS.get('drv') === '1' && !QS.get('k') && !V) || !!(TVAPP && TVAPP.isDrive && TVAPP.isDrive());
+  var DSTORE = null, DRVAUTH = false;
+  if (DRV) { GASC = null; V = ''; K = 'drivewaitingforkey'; }   /* 진짜 열쇠는 드라이브에서 읽어 옴 */
+  function drvNote(html, btn) {
+    onBody(function () {
+      var ov = document.getElementById('crDrv');
+      if (!html) { if (ov) ov.remove(); return; }
+      if (!ov) {
+        ov = document.body.appendChild(document.createElement('div')); ov.id = 'crDrv';
+        ov.style.cssText = 'position:fixed;inset:0;z-index:101;background:#1D2A25;color:#E4E0D3;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4vh 5vw;gap:2.4vh;font-size:3.4vh;line-height:1.7';
+      }
+      ov.innerHTML = html + (btn && TVAPP && TVAPP.relink ? '<button id="crDrvRe" style="margin-top:2vh;font-size:2.8vh;padding:1.2vh 2.6vw;border-radius:1.2vh;border:2px solid #F2D16B;background:transparent;color:#F2D16B">구글 다시 연결</button>' : '');
+      var b = document.getElementById('crDrvRe'); if (b) b.onclick = function () { TVAPP.relink(); };
+    });
+  }
+  function drvKey(st) {
+    var k = String((st.read('keys/owner') || {}).boardKey || '').replace(/[^a-z0-9]/g, '');
+    return k.length >= 16 ? k : '';
+  }
+  function drvLoad() {
+    return import('./drv.js').then(function (D) {
+      var au = D.tvAuth();
+      var admin = !au.bridge;   /* 선생님 컴퓨터 브라우저 미리 보기: 관리 화면과 같은 기기로 */
+      return D.openStore({ kind: admin ? 'admin' : 'tv', token: au.token, every: admin ? 6000 : 8000,
+        onAuthNeeded: function () { DRVAUTH = true; drvNote('<div style="font-size:4.4vh;font-weight:800;color:#F2D16B">구글 연결이 끊겼어요</div><div>담임 선생님이 TV 앱 설정에서 <b>구글 다시 연결</b>을 해 주세요.</div>', true); }
+      }).then(function (st) {
+        DSTORE = st;
+        st.onChange(function () { if (DRVAUTH && st.status().auth) { DRVAUTH = false; drvNote(''); } });
+        return new Promise(function (res) {
+          var k = drvKey(st);
+          if (k) return res(k);
+          drvNote('<div style="font-size:4.4vh;font-weight:800;color:#F2D16B">구글 드라이브에 연결됐어요 ✓</div><div>담임 선생님 컴퓨터에서 <b>클래스 나우</b>를 열어 우리 반을 먼저 만들어 주세요.<br>만들면 이 화면이 저절로 바뀝니다.</div>');
+          var un = st.onChange(function () { var k2 = drvKey(st); if (k2) { un(); drvNote(''); res(k2); } });
+        }).then(function (k) {
+          K = k; window.__BOOT.t = K;
+          /* 선생님이 반을 새로 만들거나 드라이브 자료를 지우면 다시 시작 */
+          st.onChange(function () { var k3 = drvKey(st); if (k3 !== K) setTimeout(function () { location.reload(); }, 1500); });
+          return import('./gs2.js').then(function (m) {
+            return m.fbGas(admin && WANT_EDIT ? { u: 'drive', a: 'drive-admin' } : { u: 'drive', t: K },
+              { transport: st.transport, onChange: st.onChange, poll: 3000, onSignOut: function () {} });
+          });
+        });
+      });
+    });
+  }
   function fbLoad() {
+    if (DRV) return drvLoad();
     if (!GASC) return import('./fb.js').then(function (m) { return m.fb(); });
     return import('./gs2.js').then(function (m) {
       return m.fbGas(GASC, { poll: VIEW ? 15000 : 8000, onSignOut: function () {} });
@@ -843,6 +891,7 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
   var VER = 'fb-2026-11-18a';
   window.__BOOT = { t: K || V, preview: PV ? 1 : 0, phone: VIEW, ver: VER };
   if (VIEW) document.write('<style>#btnMine,#btnEdit,#btnShare{display:none !important}html,body{height:auto !important;overflow:auto !important}</style>');
+  if (DRV && !TVAPP) document.write('<div style="position:fixed;right:0;bottom:0;z-index:120;background:#2F6B55;color:#fff;font:700 13px/1 sans-serif;padding:6px 10px;border-top-left-radius:8px;pointer-events:none">미리 보기 · 이 컴퓨터</div>');
   var FB = null, B = null, gone = false, SCH = null, schAt = 0, schBusy = false, WX = null, wxAt = 0, wxBusy = false;
   var ANS = {}, EXIST = {}, CNS = [], SEV = [], USER = null, OWNER = false, editDone = false;
   var REG = {}, regPk = '', regUnsub = null, PROOF = {};
@@ -1093,6 +1142,7 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
           ov.style.cssText = 'position:fixed;inset:0;z-index:99;background:#1D2A25;color:#E4E0D3;display:flex;align-items:center;justify-content:center;text-align:center;padding:2rem;font-size:1.8rem;line-height:1.7';
           ov.textContent = failMsg;
           if (PV) return;
+          if (DRV) { ov.textContent = '담임 선생님 컴퓨터에서 클래스 나우를 열면 우리 반 화면이 다시 나와요.'; return; }
           if (GASC) { try { localStorage.removeItem('cn_gas_tv'); } catch (e2) {} }
           if (lsGet() === K) lsSet('');
           setTimeout(function () { if (gone) location.replace(location.pathname); }, 6000);
@@ -1104,7 +1154,7 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
         decodeBoard(snap.data()).then(function (d) {
           if (my !== decSeq) return;
           B = d; watchReg();
-          if (!WANT_EDIT && !PV && lsGet() !== K) lsSet(K);
+          if (!WANT_EDIT && !PV && !DRV && lsGet() !== K) lsSet(K);
           var g0 = document.getElementById('crGone'); if (g0) g0.remove();
           readyOk(); checkOwner(); kick(); onBody(keyBanner);
           if (RAWANS) decodeAns(RAWANS);
@@ -1128,9 +1178,12 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
         if (B) kick();
       }, function () {});
       F.A.onAuthStateChanged(F.auth, function (u) { USER = u; checkOwner(); });
-    }).catch(function () {
+    }).catch(function (e) {
       failMsg = '인터넷 연결을 확인해 주세요. (학교 망에서 막혔다면 담임 선생님께 알려 주세요)';
+      if (DRV && TVAPP && /구글|연결|응답/.test(String(e && e.message))) drvNote('<div style="font-size:4.4vh;font-weight:800;color:#F2D16B">구글 드라이브에 연결하지 못했어요</div><div>' + String(e.message).replace(/[<>&]/g, '') + '</div><div style="font-size:2.6vh;opacity:.75">인터넷이면 잠시 뒤 저절로 다시 시도해요.</div>', true);
+      else if (DRV && !TVAPP) failMsg = '관리 화면에서 구글 연결을 먼저 해 주세요. (미리 보기는 선생님 컴퓨터에서만 돼요)';
       readyNo(new Error(failMsg));
+      if (DRV && TVAPP) setTimeout(function () { location.reload(); }, 60000);
     });
   }
 
@@ -1352,7 +1405,7 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
       surveys: VIEW ? [] : (B.surveys || []).filter(function (s) { return s && (s.open || s.pub); }).map(function (s) { return summary(s, sts); }),
       students: sts.map(function (s) { return { no: s.no, name: s.name, hasPin: !!REG[s.no] }; }),
       weather: B.weatherOn !== false ? WX : null,
-      shareUrl: '', homeUrl: '', phoneApp: !VIEW && B.viewKey && B.phoneBtn !== false ? (GASC ? new URL('tv.html#gv=' + cnPack({ u: GASC.u, v: B.viewKey }), location.href).href : new URL('tv.html?v=' + B.viewKey, location.href).href) : '', flash: flashOut(), ver: VER, url: location.href,
+      shareUrl: '', homeUrl: '', phoneApp: !VIEW && !DRV && B.viewKey && B.phoneBtn !== false ? (GASC ? new URL('tv.html#gv=' + cnPack({ u: GASC.u, v: B.viewKey }), location.href).href : new URL('tv.html?v=' + B.viewKey, location.href).href) : '', flash: flashOut(), ver: VER, url: location.href,
       phone: VIEW, phoneJoin: VIEW, needPin: false,
       pinChange: pinOn(), pinLen: 6, pinSignup: VIEW && !!B.pinKey && B.pinChange !== false,
       pinHow: PIN_HOW
