@@ -1583,7 +1583,7 @@ function vLogin(){
     <div class="lp-in" id="top">
       <section class="hero">
         <div class="reveal">
-          <span class="eyebrow"><i></i>${esc(SCHOOL.name)} 담임 선생님을 위한 무료 도구</span>
+          <span class="eyebrow"><i></i>${DRV_ON ? '' : esc(SCHOOL.name) + ' '}담임 선생님을 위한 무료 도구</span>
           <h1>공지 확인부터<br>현황조사까지,<br>교실 TV <span class="hl">한 번에</span><span class="stamp" style="right:.2em;top:1.45em">DONE ✓</span></h1>
           <p class="sub">매일 칠판에 쓰던 공지, 단톡방에 올리던 가정통신문, 종이로 걷던 동의서와 희망 조사. <b>클래스 나우</b>가 우리 반 스마트 TV에 띄우고 학생이 TV에서 바로 답해요. 학교에서 받은 <b>엑셀 · 한글 조사 양식</b>도 그대로 올리면, 학생 답이 양식에 채워져 바로 제출할 수 있어요.</p>
           <div class="cta"><button class="b y gbtn" id="btnLogin" data-go="login">${G_ICON} 구글 계정으로 시작하기</button><a class="b ol" href="#f">${svg('play')} 어떻게 쓰나요 <span class="mn">3분</span></a></div>
@@ -1692,7 +1692,7 @@ function vLogin(){
 
       <section class="lp-end reveal"><h2>내일 아침 조회부터,<br><span class="hl">공지는 TV 한 번에</span></h2><p>설치 없이 지금 바로 시작할 수 있어요.</p>
         <button class="b y gbtn" data-go="login">${G_ICON} 구글 계정으로 시작하기</button></section>
-      <footer class="lp-foot"><span>제작자 : 강릉제일고 유준배 선생님 · 현직 교사가 만든 무료 도구예요</span><span>클래스 나우 (Class Now) · ${esc(SCHOOL.name)}</span></footer>
+      <footer class="lp-foot"><span>제작자 : 준배쌤 · 현직 교사가 만든 무료 도구예요</span><span>클래스 나우 (Class Now)${DRV_ON ? '' : ' · ' + esc(SCHOOL.name)}</span></footer>
     </div></div>`;
   document.querySelectorAll('[data-go="login"]').forEach(b => b.onclick = DRV_ON ? drvLogin : login);
   { const g = $('gasIn'); if (g) g.onclick = gasCodeIn; }
@@ -2634,7 +2634,7 @@ function render(){
       <header class="top"><h1>${cur[2]}</h1><p>${TAB_DESC[cur[0]] || ''}</p></header>
       ${ckBar()}
       <div id="body">${({ flash: vFlash, notice: vNotice, look: vLook, time: vTime, cal: vCal, sound: vSound, backup: vBackupTab, roster: vRoster, survey: vSurvey, counsel: vCounsel, suggest: vSuggest, tv: vTvConnect, op: () => '<div id="opBox"></div>' })[S.tab]()}</div>
-      <div class="foot"><p class="privacy">${esc(S.user.email)}</p><p class="credit"><button class="updlink" data-a="updhist">📋 업데이트 내역</button>제작자 : 강릉제일고 유준배 선생님</p></div>
+      <div class="foot"><p class="privacy">${esc(S.user.email)}</p><p class="credit"><button class="updlink" data-a="updhist">📋 업데이트 내역</button>제작자 : 준배쌤</p></div>
     </main></div>`;
   { const on = document.querySelector('nav.tabs button.on'); if (on && window.innerWidth <= 900) on.scrollIntoView({ inline: 'center', block: 'nearest' }); }
   $('btnOut').onclick = logout;
@@ -2975,7 +2975,7 @@ function vTime(){
   <section class="card"><h2>특별 시간 <span class="sub">조회 · 청소 · 종례처럼 교시가 아닌 시간</span></h2>
     ${SP.map((x, i) => `<div class="row" style="margin-top:8px"><input class="in" data-xn="${i}" value="${esc(x.name)}" style="width:150px"><input class="in" type="time" data-xs="${i}" value="${esc(x.s)}">~<input class="in" type="time" data-xe="${i}" value="${esc(x.e)}"><button class="b sm r" data-a="xdel" data-i="${i}">빼기</button></div>`).join('')}
     <div class="row" style="margin-top:12px"><button class="b sm" data-a="xadd">특별 시간 추가</button></div>
-    <div class="row" style="margin-top:22px;justify-content:flex-end"><button class="b sm" data-a="pdef">강릉제일고 기본값으로</button><button class="b y" data-a="psave">교시 · 특별 시간 저장</button></div></section></div>`;
+    <div class="row" style="margin-top:22px;justify-content:flex-end"><button class="b sm" data-a="pdef">${DRV_ON ? '' : '강릉제일고 '}기본값으로</button><button class="b y" data-a="psave">교시 · 특별 시간 저장</button></div></section></div>`;
 }
 
 /* ---------- 학급 일정 ---------- */
@@ -4353,7 +4353,7 @@ document.addEventListener('click', async ev => {
     case 'pdel': { const c = collectPeriods(); c.P.splice(+t.dataset.i, 1); return save({ periods: c.P, specials: c.SP, lunch: c.lunch }); }
     case 'xadd': { const c = collectPeriods(); c.SP.push({ name: '', s: '', e: '' }); return save({ periods: c.P, specials: c.SP, lunch: c.lunch }); }
     case 'xdel': { const c = collectPeriods(); c.SP.splice(+t.dataset.i, 1); return save({ periods: c.P, specials: c.SP, lunch: c.lunch }); }
-    case 'pdef': if (!confirm('교시 시각을 강릉제일고 기본값으로 되돌릴까요?')) return; return save({ periods: DEFAULT_PERIODS, specials: DEFAULT_SPECIALS, lunch: DEFAULT_LUNCH }, '기본값으로 바꿨어요.');
+    case 'pdef': if (!confirm('교시 시각을 ' + (DRV_ON ? '' : '강릉제일고 ') + '기본값으로 되돌릴까요?')) return; return save({ periods: DEFAULT_PERIODS, specials: DEFAULT_SPECIALS, lunch: DEFAULT_LUNCH }, '기본값으로 바꿨어요.');
     case 'psave': {
       const c = collectPeriods();
       if (c.P.some(p => !p.s || !p.e || p.e <= p.s)) return toast('시작 · 끝 시각을 확인해 주세요. (끝이 시작보다 뒤여야 해요)', true);
