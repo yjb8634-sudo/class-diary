@@ -96,6 +96,8 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle b) {
         super.onCreate(b);
         sp = getSharedPreferences("tv", MODE_PRIVATE);
+        /* 이 TV에서 앱을 쓴 적이 있는지 (웹 화면 저장소가 이미 있으면 예전부터 쓰던 TV) */
+        boolean usedBefore = new java.io.File(getApplicationInfo().dataDir, "app_webview").exists();
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         root = new FrameLayout(this);
@@ -149,8 +151,12 @@ public class MainActivity extends Activity {
         setContentView(root);
         hideBars();
 
-        /* 처음 설치 · 업데이트: 지금까지처럼 예전 방식(연결 숫자). 구글 드라이브판은 설정 메뉴에서 고름 */
-        if (drive() && sp.getString("rt", "").isEmpty()) startDeviceFlow();
+        /* 업데이트(전에 쓰던 TV): 지금까지처럼 예전 방식. 새로 설치한 TV: 연결 방식 고르기 */
+        if (sp.getString("mode", "").isEmpty()) {
+            if (usedBefore) sp.edit().putString("mode", "old").apply();
+        }
+        if (sp.getString("mode", "").isEmpty()) showChooser();
+        else if (drive() && sp.getString("rt", "").isEmpty()) startDeviceFlow();
         else if (b != null) web.restoreState(b);
         else web.loadUrl(home());
     }
@@ -203,6 +209,18 @@ public class MainActivity extends Activity {
         panel.bringToFront();
     }
     private void panelHide() { flowGen++; panel.setVisibility(View.GONE); }
+
+    private void showChooser() {
+        flowGen++;
+        panelShow("클래스 나우 TV", "이 TV를 어떻게 연결할까요?\n(나중에 설정 → 연결 방식 바꾸기에서 바꿀 수 있어요)", null, null,
+                "구글 드라이브판: 선생님 구글 계정으로 연결 (자료는 선생님 구글 드라이브에만)\n예전 방식: 관리 화면에 6자리 숫자를 넣어 연결");
+        pBtn1.setVisibility(View.VISIBLE); pBtn2.setVisibility(View.VISIBLE);
+        pBtn1.setText("구글 드라이브판으로 연결");
+        pBtn2.setText("예전 방식 (연결 숫자)");
+        pBtn1.setOnClickListener(v -> { sp.edit().putString("mode", "drive").apply(); startDeviceFlow(); });
+        pBtn2.setOnClickListener(v -> { sp.edit().putString("mode", "old").apply(); panelHide(); web.loadUrl(home()); });
+        pBtn1.requestFocus();
+    }
 
     /* ================= 구글 기기 코드 연결 (google.com/device) ================= */
     private static String enc(String s) { try { return URLEncoder.encode(s, "UTF-8"); } catch (Exception e) { return s; } }

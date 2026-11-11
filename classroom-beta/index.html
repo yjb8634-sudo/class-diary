@@ -152,6 +152,73 @@ nav.tabs button .dot{position:absolute;top:6px;right:8px;min-width:18px;height:1
 #mobModal .ckw{background:#FFF6DB;border:1.5px solid #E6B84A;color:#4A3A10;border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.6;margin:0 0 12px}
 #mobModal .ckerr{color:#B33A2B;font-weight:700;font-size:13.5px;min-height:1.2em;margin:0 0 8px}
 #mobModal label.ckc{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;line-height:1.55;margin:0 0 12px;color:#24453A}
+/* ---------- 구글 드라이브판 첫 화면 (깔끔한 설명 페이지) ---------- */
+body.lp2on{background:#fff}
+.lp2{--k:#191F28;--k2:#4E5968;--k3:#8B95A1;--ln:#E5E8EB;--bg2:#F7F8FA;--ac:#2F6B55;background:#fff;color:var(--k);min-height:100vh;font-size:16px;line-height:1.7;letter-spacing:-.01em}
+.lp2 a{color:inherit}
+.l2-w{max-width:760px;margin:0 auto;padding:0 20px}
+.l2-nav{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--ln)}
+.l2-nav .l2-w{display:flex;align-items:center;gap:16px;height:56px}
+.l2-lg{display:flex;align-items:center;gap:8px;font-weight:700;text-decoration:none;font-size:16px}
+.l2-ic{width:26px;height:26px;display:inline-block}
+.l2-nav nav{margin-left:auto;display:flex;gap:18px;font-size:14.5px;color:var(--k2);overflow-x:auto;white-space:nowrap}
+.l2-nav nav a{text-decoration:none}.l2-nav nav a:hover{color:var(--k)}
+.l2-hero{padding:56px 0 8px}
+.l2-hi{display:flex;align-items:center;gap:16px}
+.l2-big{width:64px;height:64px;flex:none}
+.l2-kick{margin:0;font-size:13.5px;color:var(--k3);font-weight:600}
+.lp2 h1{margin:2px 0 0;font-size:32px;line-height:1.25;font-weight:800;letter-spacing:-.03em}
+.lp2 h1 span{font-size:18px;font-weight:600;color:var(--k3);margin-left:4px;letter-spacing:0}
+.l2-tag{margin:22px 0 6px;font-size:21px;font-weight:700}
+.l2-lead{margin:0;color:var(--k2)}
+.l2-cta{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
+.l2-b{display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 18px;border-radius:10px;border:1px solid var(--ln);background:#fff;color:var(--k);font:inherit;font-size:15px;font-weight:600;text-decoration:none;cursor:pointer}
+.l2-b:hover{background:var(--bg2)}
+.l2-b.pri{background:var(--k);border-color:var(--k);color:#fff}.l2-b.pri:hover{background:#333D4B}
+.l2-b.pri svg{width:18px;height:18px;background:#fff;border-radius:50%;padding:2px;box-sizing:content-box}
+.l2-b.ghost{border-color:transparent;color:var(--k2)}
+.l2-req{margin:12px 0 0;font-size:13.5px;color:var(--k3)}
+.l2-note{margin-top:28px;padding:16px 18px;border-radius:12px;background:var(--bg2);font-size:15px;color:var(--k2)}
+.l2-note b{color:var(--k)}.l2-note a{color:var(--ac);font-weight:600}
+.l2-sec{padding:64px 0 0}
+.l2-lb{margin:0 0 6px;font-size:13.5px;font-weight:700;color:var(--ac)}
+.lp2 h2{margin:0 0 22px;font-size:24px;line-height:1.35;font-weight:800;letter-spacing:-.025em}
+.lp2 h3{margin:0 0 6px;font-size:17px;font-weight:700}
+.l2-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.l2-3>div,.l2-dl>div{padding:18px;border:1px solid var(--ln);border-radius:12px}
+.l2-3 p,.l2-dl p{margin:0;font-size:14.5px;color:var(--k2)}
+.l2-f{padding:18px 0;border-top:1px solid var(--ln)}
+.l2-f:last-child{border-bottom:1px solid var(--ln)}
+.l2-f ul,.l2-hist ul{margin:0;padding-left:18px;color:var(--k2);font-size:15px}
+.l2-f li,.l2-hist li{margin:3px 0}
+.l2-steps{margin:0;padding:0;list-style:none;counter-reset:s}
+.l2-steps li{position:relative;padding:0 0 18px 44px;counter-increment:s}
+.l2-steps li:before{content:counter(s);position:absolute;left:0;top:0;width:28px;height:28px;border-radius:50%;background:var(--k);color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.l2-steps p{margin:2px 0 0;color:var(--k2);font-size:15px}
+.lp2 kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13.5px;background:var(--bg2);border:1px solid var(--ln);border-radius:6px;padding:1px 6px;word-break:break-all}
+.l2-dl{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.l2-hist>div{display:grid;grid-template-columns:120px 1fr;gap:12px;padding:14px 0;border-top:1px solid var(--ln)}
+.l2-d{margin:0;font-weight:700;font-size:15px}.l2-d i{font-style:normal;font-size:11.5px;font-weight:700;color:#fff;background:var(--ac);border-radius:6px;padding:1px 6px;margin-left:4px;vertical-align:2px}
+.l2-faq details{border-top:1px solid var(--ln);padding:14px 0}
+.l2-faq details:last-child{border-bottom:1px solid var(--ln)}
+.l2-faq summary{cursor:pointer;font-weight:700;list-style:none}
+.l2-faq summary::-webkit-details-marker{display:none}
+.l2-faq summary:after{content:'+';float:right;color:var(--k3);font-weight:400}
+.l2-faq details[open] summary:after{content:'−'}
+.l2-faq p{margin:8px 0 0;color:var(--k2);font-size:15px}
+.l2-help p{color:var(--k2);margin:0}
+.l2-foot{margin-top:80px;padding:28px 0 40px;border-top:1px solid var(--ln);font-size:13.5px;color:var(--k3)}
+.l2-foot nav{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:10px}
+.l2-foot nav a{text-decoration:none;color:var(--k2)}
+.l2-foot p{margin:4px 0}.l2-cp{font-size:12.5px}
+@media (max-width:640px){
+  .l2-nav nav{display:none}
+  .l2-hero{padding-top:36px}.lp2 h1{font-size:28px}.l2-tag{font-size:19px}
+  .l2-3,.l2-dl{grid-template-columns:1fr}
+  .l2-hist>div{grid-template-columns:1fr;gap:2px}
+  .l2-b{flex:1 1 auto;justify-content:center}
+  .l2-sec{padding-top:52px}
+}
 .drvban{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:9000;display:flex;gap:10px;align-items:center;flex-wrap:wrap;max-width:calc(100vw - 32px);padding:10px 14px;border-radius:14px;background:#FFF6DB;border:1.5px solid #E6B84A;color:#4A3A10;font-size:14.5px;line-height:1.5;box-shadow:0 6px 24px rgba(0,0,0,.18)}
 .ckbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:0 0 16px;padding:12px 16px;border-radius:14px;background:#FFF6DB;border:1.5px solid #E6B84A;color:#4A3A10;font-size:14.5px;line-height:1.55}
 .ckbar b{color:#2A2108}.ckbar .b{margin-left:auto}
@@ -1400,6 +1467,7 @@ async function drvSignOut(){
   location.reload();
 }
 async function startDrv(){
+  document.body.classList.remove('lp2on');
   const da = drvAuth();
   da.loadGis().catch(() => {});
   if (!da.valid(60e3)) return vDrvLogin();
@@ -1577,6 +1645,7 @@ const G_ICON = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335"
 /* 도입 애니메이션: 앱(페이지)을 새로 열 때마다 한 번. 로그인한 상태여도 나옵니다 */
 let INTRO = 0; const INTRO_Q = [];
 function introPlay(go){
+  if (DRV_ON){ if (go) try { go(); } catch (e) {} return; }   /* 드라이브판: 도입 애니메이션 없이 */
   if (go) INTRO_Q.push(go);
   const flush = () => { while (INTRO_Q.length) try { INTRO_Q.shift()(); } catch (e) {} };
   if (INTRO === 2){ flush(); return; }
@@ -1597,7 +1666,86 @@ function introPlay(go){
   T.push(setTimeout(done, 3300));
   el.addEventListener('click', done);
 }
+/* ---------- 구글 드라이브판 첫 화면: 깔끔한 설명 페이지 ---------- */
+function vLoginDrv(){
+  document.body.classList.add('lp2on');
+  const priv = DRV_HOST ? 'privacy.html' : '../privacy.html';
+  const HIST = [
+    ['2026. 11. 11', true, ['구글 드라이브판을 열었어요. 학급 자료는 선생님 구글 드라이브의 클래스 나우 전용 폴더에만 저장되고, 제작자 서버는 없어요.', '교실 TV 앱은 TV에 뜬 코드를 휴대폰 google.com/device 에 넣어 연결해요. TV에는 구글 로그인이 남지 않아요.', '어느 학교든 학교만 고르면 급식 · 학사일정 · 시간표(나이스)와 우리 지역 날씨가 나와요.']],
+    ['2026. 11. 10', false, ['보관 기간이 지난 자료를 저절로 지워요. (마감한 조사 답 60일 · 지난 상담 14일 · 건의 6개월 · 학생 일정 30일)']],
+    ['2026. 11. 6', false, ['학교에서 받은 엑셀 · 한글 조사 양식을 그대로 올리면, 학생 답이 양식에 채워진 채로 내려받아져요.', '교실 TV에서 첨부파일이 크게 열려요.']],
+    ['2026. 11. 2', false, ['[시간표 설정]에서 이번 주 TV 시간표를 미리 보고 빈칸을 채울 수 있어요.']],
+    ['2026. 10. 27', false, ['이미 낸 답은 그 학생 PIN으로만 바꿀 수 있게 고를 수 있어요.', '조사 결과를 그림으로 만들어 단톡방에 보낼 수 있어요.', '교실 TV 소리: 수업 1분 전 종소리, 점심 · 청소 시간 노래, 생일 축하 노래.']]
+  ];
+  const FAQ = [
+    ['정말 무료인가요?', '네. 현직 교사가 만든 무료 프로그램이고, 광고도 없어요.'],
+    ['학생 정보는 어디에 저장되나요? 제작자가 볼 수 있나요?', '선생님 본인 구글 드라이브의 \'클래스 나우 전용 숨은 폴더\'에만 저장돼요. 제작자 서버가 없어서 제작자는 볼 수 없어요. 학생 정보는 번호 · 이름 · 생일(선택)만 받아요.'],
+    ['학생 휴대폰이 필요한가요?', '아니요. 학생은 교실 TV(전자칠판)에서 자기 번호를 누르고 답해요. 구글 설문 같은 링크형 조사는 QR로 띄울 수도 있어요.'],
+    ['교실 TV에 선생님 구글 계정이 남지 않나요?', '남지 않아요. TV 앱이 보여 주는 코드를 선생님 휴대폰에서 허용하는 방식이라, TV에는 비밀번호도 로그인 화면도 없어요. TV 앱은 클래스 나우 전용 폴더만 볼 수 있어요.'],
+    ['우리 학교 시간표 · 급식도 나오나요?', '네. 처음에 학교를 고르면 나이스 교육정보 개방 포털에서 급식 · 학사일정 · 시간표를 받아 와요. 시간표는 직접 고쳐 쓸 수도 있어요.'],
+    ['한 시간마다 다시 로그인하라고 해요.', '서버 없이 구글에 연결하면 한 번에 한 시간까지만 이어져요. 화면 위 [구글 다시 연결]을 한 번 누르면 되고, 그사이 바뀐 내용은 컴퓨터에 보관했다가 바로 올라가요. 교실 TV는 한 번 연결하면 계속 이어져요.'],
+    ['학교를 옮기거나 그만 쓰면 자료는요?', '자료는 선생님 구글 드라이브에 있어서 학교를 옮겨도 그대로예요. 모두 지우려면 구글 드라이브 → 설정 → 앱 관리 → 클래스 나우 → 숨겨진 앱 데이터 삭제를 누르세요.']
+  ];
+  $('app').innerHTML = `<div class="lp2">
+  <header class="l2-nav"><div class="l2-w"><a class="l2-lg" href="#top"><span class="l2-ic">${mark()}</span>클래스 나우</a>
+    <nav><a href="#use">쓰임</a><a href="#feat">기능</a><a href="#start">시작하기</a><a href="#data">학생 정보</a><a href="#faq">묻고 답하기</a></nav></div></header>
+  <main class="l2-w" id="top">
+    <section class="l2-hero">
+      <div class="l2-hi"><span class="l2-big">${mark()}</span><div><p class="l2-kick">학급 운영</p><h1>클래스 나우 <span>Class Now</span></h1></div></div>
+      <p class="l2-tag">교실 TV로 하는 학급 운영</p>
+      <p class="l2-lead">공지는 칠판에, 가정통신문은 단톡방에, 희망 조사는 종이로 따로 하고 계신가요? 클래스 나우는 선생님이 올린 공지 · 설문 · 시간표를 교실 TV(전자칠판)에 띄우고, 학생이 TV에서 바로 답한 결과를 선생님 컴퓨터로 모아 줍니다.</p>
+      <div class="l2-cta"><button class="l2-b pri" id="btnLogin" data-go="login">${G_ICON}구글 계정으로 시작하기</button>
+        <a class="l2-b" href="${esc(TV_APK)}" download>교실 TV 앱 내려받기</a>
+        <a class="l2-b ghost" href="#start">시작 안내</a></div>
+      <p class="l2-req">무료 · 설치 없이 웹에서 · 교실 TV는 안드로이드 전자칠판 · 스마트 TV(앱)</p>
+      <div class="l2-note"><b>학생 정보는 선생님 구글 드라이브에만 둡니다.</b> 제작자 서버가 없어서 제작자도 학급 자료를 볼 수 없어요. <a href="${priv}" target="_blank" rel="noopener">개인정보 처리방침</a></div>
+    </section>
+
+    <section class="l2-sec" id="use"><p class="l2-lb">이럴 때 씁니다</p><h2>매일 반복하는 담임 일</h2>
+      <div class="l2-3">
+        <div><h3>아침 공지 · 가정통신문</h3><p>칠판에 쓰고 단톡방에 다시 올리던 공지를 한 번에. 중요한 공지는 TV 맨 위에 고정돼요.</p></div>
+        <div><h3>학교 현황 조사</h3><p>업무 메신저로 받은 엑셀 · 한글 양식을 올리면, 학생이 TV에서 답하고 양식 그대로 받아 제출해요.</p></div>
+        <div><h3>학생 호출 · 상담</h3><p>교무실에서 학생을 부르면 교실 TV에 크게 뜨고, 학생의 "갈게요" 답이 선생님 화면으로 와요.</p></div></div></section>
+
+    <section class="l2-sec" id="feat"><p class="l2-lb">주요 기능</p><h2>공지부터 조사 결과까지</h2>
+      <div class="l2-f"><h3>공지 · 알림장</h3><ul><li>보통 · 중요 · 긴급으로 나눠 TV에 띄우고, 보이는 기간이 지나면 알아서 내려가요</li><li>제출 서류 · 준비물은 마감일과 함께, 첨부한 PDF · 사진은 TV에서 크게 열려요</li></ul></div>
+      <div class="l2-f"><h3>설문 · 투표 · 현황 조사</h3><ul><li>고르는 조사는 TV에서 번호를 누르고 답하고, 결과는 바로 집계돼요</li><li>학교 양식(엑셀 .xlsx · 한글 .hwpx)을 그대로 올리고 양식대로 내려받아요</li><li>익명 조사 · 결과 공개 여부 선택, 이미 낸 답은 학생 PIN으로만 바꾸기</li></ul></div>
+      <div class="l2-f"><h3>학생 호출 · 상담 신청 · 건의함</h3><ul><li>학생 호출과 답장("네, 갈게요" · "지금 없어요")</li><li>학생이 TV에서 상담 날짜 · 시간을 신청하고, 이름 없이 건의를 남겨요</li></ul></div>
+      <div class="l2-f"><h3>시간표 · 급식 · 학사일정 · 날씨</h3><ul><li>학교만 고르면 나이스에서 시간표 · 급식 · 학사일정을 받아 TV에 보여 줘요</li><li>지금 몇 교시인지, 다음 시간은 무엇인지 TV가 알려 줘요</li></ul></div>
+      <div class="l2-f"><h3>교실 TV 소리 · 타이머</h3><ul><li>수업 1분 전 종소리, 점심 · 청소 시간 노래, 생일 축하 노래 (모두 켜고 끌 수 있어요)</li><li>모둠 활동 · 쪽지 시험용 타이머</li></ul></div></section>
+
+    <section class="l2-sec" id="start"><p class="l2-lb">시작하기</p><h2>10분이면 교실 TV가 켜져요</h2>
+      <ol class="l2-steps">
+        <li><b>구글 계정으로 시작하기</b><p>이 페이지의 [구글 계정으로 시작하기]를 누르고, 이름 · 학년 · 반 · 학교를 적어 우리 반을 만들어요.</p></li>
+        <li><b>교실 TV에 앱 설치</b><p>TV 브라우저에서 <kbd>${esc(TV_APK.replace(/^https:\/\//, ''))}</kbd> 를 열어 클래스 나우 TV 앱을 받아 설치해요.</p></li>
+        <li><b>TV 앱 연결</b><p>TV 앱에서 [구글 드라이브판으로 연결]을 누르면 코드가 떠요. 선생님 휴대폰으로 <kbd>google.com/device</kbd> 를 열어 그 코드를 넣고 허용하면 끝이에요.</p></li></ol></section>
+
+    <section class="l2-sec" id="data"><p class="l2-lb">학생 정보와 인터넷</p><h2>무엇을, 어디에 두나요</h2>
+      <div class="l2-dl">
+        <div><h3>저장 위치</h3><p>학생 명단(번호 · 이름 · 생일 선택), 조사 답, 상담 신청, 건의는 선생님 구글 드라이브의 클래스 나우 전용 숨은 폴더에만 저장돼요. 교실 TV에는 화면을 띄우기 위한 사본만 남아요.</p></div>
+        <div><h3>구글 권한</h3><p>클래스 나우 전용 폴더(drive.appdata)와 선생님이 직접 올린 첨부파일(drive.file)만 다뤄요. 메일 · 연락처 · 드라이브의 다른 파일에는 접근하지 않아요.</p></div>
+        <div><h3>인터넷으로 주고받는 것</h3><p>구글 드라이브(우리 반 자료), 나이스 교육정보 개방 포털(학교 코드 · 학년 · 반으로 급식 · 시간표), Open-Meteo(지역 좌표로 날씨). 학생 정보는 나이스 · 날씨 서비스로 보내지 않아요.</p></div>
+        <div><h3>보관 기간</h3><p>마감한 조사 답 60일 · 지난 상담 14일 · 건의 6개월 · 학생이 올린 일정 30일이 지나면 저절로 지워요. 학생 PIN은 알아볼 수 없게 바꿔 저장해요.</p></div></div></section>
+
+    <section class="l2-sec" id="hist"><p class="l2-lb">버전 기록</p><h2>고쳐 온 것</h2>
+      <div class="l2-hist">${HIST.map(([d, nw, it]) => `<div><p class="l2-d">${d}${nw ? ' <i>최신</i>' : ''}</p><ul>${it.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`).join('')}</div></section>
+
+    <section class="l2-sec" id="faq"><p class="l2-lb">묻고 답하기</p><h2>먼저 확인해 보세요</h2>
+      <div class="l2-faq">${FAQ.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}</div></section>
+
+    <section class="l2-sec l2-help"><p class="l2-lb">도움</p><h2>막히는 곳이 있으면</h2>
+      <p>잘 안 되는 점이나 바랐으면 하는 기능을 문의 게시판에 남겨 주세요.</p>
+      <div class="l2-cta"><a class="l2-b" href="https://github.com/yjb8634-sudo/class-diary/issues" target="_blank" rel="noopener">문의 게시판</a><button class="l2-b pri" data-go="login">${G_ICON}구글 계정으로 시작하기</button></div></section>
+  </main>
+  <footer class="l2-foot"><div class="l2-w"><nav><a href="#use">소개</a><a href="#start">시작하기</a><a href="#faq">묻고 답하기</a><a href="${priv}" target="_blank" rel="noopener">개인정보 처리방침</a></nav>
+    <p>제작자 : 돌티쌤 · 현직 교사가 만든 무료 도구예요</p>
+    <p class="l2-cp">© 2026 돌티쌤. 클래스 나우의 화면 · 코드 · 디자인을 허락 없이 복제 · 수정 · 배포하거나, AI 도구 등으로 베껴 비슷한 프로그램을 만드는 것을 금지합니다.</p></div></footer>
+  </div>`;
+  document.querySelectorAll('[data-go="login"]').forEach(b => b.onclick = drvLogin);
+  drvAuth().loadGis().catch(() => {});
+}
 function vLogin(){
+  if (DRV_ON) return vLoginDrv();
   const n15 = Array.from({length: 24}, (_, k) => `<span style="animation-delay:${(k * 0.17).toFixed(2)}s">${k + 1}</span>`).join('');
   $('app').innerHTML = `<div class="lp">
     <header class="lp-nav"><a class="lg" href="#top"><span class="bi2">${mark()}</span>클래스 나우<i class="en">Class Now</i></a>
