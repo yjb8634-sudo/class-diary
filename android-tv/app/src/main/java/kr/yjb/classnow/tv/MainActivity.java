@@ -57,7 +57,8 @@ public class MainActivity extends Activity {
     static final String HOST = "yjb8634-sudo.github.io";
     static final String PROD = "https://" + HOST + "/class-diary/classroom/tv.html";
     static final String BETA = "https://" + HOST + "/class-diary/classroom-beta/tv.html";
-    static final String DRIVE = "https://" + HOST + "/class-diary/classroom-drive/tv.html";
+    static final String DHOST = "classnowkr.github.io";   /* 구글 드라이브판 짧은 주소 */
+    static final String DRIVE = "https://" + DHOST + "/tv.html";
 
     /* 구글 연결 (TV · 입력 제한 기기용 OAuth 클라이언트) */
     static final String CID = "373891623308-7f2fn8orobq47psjqgt6336jheffu519.apps.googleusercontent.com";
@@ -324,7 +325,12 @@ public class MainActivity extends Activity {
 
     private class Bridge {
         private boolean ok() {
-            try { Uri u = Uri.parse(curUrl); return ours(u) && u.getPath() != null && u.getPath().startsWith("/class-diary/"); } catch (Exception e) { return false; }
+            try {
+                Uri u = Uri.parse(curUrl);
+                if (u == null) return false;
+                if (DHOST.equalsIgnoreCase(u.getHost())) return true;
+                return HOST.equalsIgnoreCase(u.getHost()) && u.getPath() != null && u.getPath().startsWith("/class-diary/");
+            } catch (Exception e) { return false; }
         }
         @JavascriptInterface public boolean isDrive() { return ok() && drive(); }
         @JavascriptInterface public String email() { return ok() ? sp.getString("em", "") : ""; }
@@ -449,7 +455,7 @@ public class MainActivity extends Activity {
     }
 
     private static boolean ours(Uri u) {
-        return u != null && HOST.equalsIgnoreCase(u.getHost());
+        return u != null && (HOST.equalsIgnoreCase(u.getHost()) || DHOST.equalsIgnoreCase(u.getHost()));
     }
 
     private void showError() {

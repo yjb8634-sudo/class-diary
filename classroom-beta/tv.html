@@ -834,7 +834,9 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
   /* ---- 구글 드라이브판: TV 앱(ClassNowTV)이 구글 기기 코드로 연결, 자료는 선생님 드라이브 앱 전용 폴더에만 ---- */
   var TVAPP = window.ClassNowTV || null;
   /* 드라이브판 주소(classroom-drive/)에서만: 공용 서버(파이어베이스)에는 연결하지 않음 */
-  var DRV = /\/classroom-drive\//.test(location.pathname) && !QS.get('k') && !V;
+  var DRV_HOST = location.hostname === 'classnowkr.github.io';
+  var DATA_URL = DRV_HOST ? 'https://yjb8634-sudo.github.io/class-diary/data/' : '../data/';
+  var DRV = (DRV_HOST || /\/classroom-drive\//.test(location.pathname)) && !QS.get('k') && !V;
   var DSTORE = null, DRVAUTH = false;
   if (DRV) { GASC = null; V = ''; K = 'drivewaitingforkey'; }   /* 진짜 열쇠는 드라이브에서 읽어 옴 */
   function drvNote(html, btn) {
@@ -1198,7 +1200,7 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
     if (schBusy || (SCH && Date.now() - schAt < (sc ? 60 : 30) * 60e3)) return;
     schBusy = true; schFor = sig;
     (sc ? import('./school.js').then(function (m) { return m.cachedData(sc, String(B.grade || ''), String(B.klass || '')); })
-      : fetch('../data/school.json?h=' + Math.floor(Date.now() / 600e3), { cache: 'no-cache' })
+      : fetch(DATA_URL + 'school.json?h=' + Math.floor(Date.now() / 600e3), { cache: 'no-cache' })
         .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }))
       .then(function (j) { SCH = j; schAt = Date.now(); kick(); })
       .catch(function () { schAt = Date.now() - 25 * 60e3; })
@@ -1210,7 +1212,7 @@ html[data-tvp="stripe"] body{background-image:repeating-linear-gradient(135deg,v
     if (otherSchool()) { CM = null; return; }   /* 컴시간 자동은 강릉제일고만 */
     if (cmBusy || (CM && Date.now() - cmAt < 10 * 60e3)) return;
     cmBusy = true;
-    fetch('../data/comci.json?h=' + Math.floor(Date.now() / 300e3), { cache: 'no-cache' })
+    fetch(DATA_URL + 'comci.json?h=' + Math.floor(Date.now() / 300e3), { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function (j) { CM = j; cmAt = Date.now(); kick(); })
       .catch(function () { cmAt = Date.now() - 5 * 60e3; })

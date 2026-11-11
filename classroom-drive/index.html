@@ -1300,8 +1300,10 @@ async function startGas(conn){
 /* ───── 구글 드라이브판: 선생님 구글 드라이브(앱 전용 숨은 폴더)에만 저장, 제작자 서버 없음 ───── */
 const DRV_WEB_ID = '373891623308-p4jucro4leu2d06i8hjuk2v4l0u2443f.apps.googleusercontent.com';
 /* 구글 드라이브판은 따로 된 주소(classroom-drive/)에서만 켜집니다. 정식판 · 시험판은 지금처럼 공용 서버(파이어베이스) 그대로. */
-const DRV_ON = /\/classroom-drive\//.test(location.pathname);
-const TV_APK = 'https://yjb8634-sudo.github.io/class-diary/classnow-tv.apk';
+const DRV_HOST = location.hostname === 'classnowkr.github.io';   /* 짧은 주소: https://classnowkr.github.io */
+const DRV_ON = DRV_HOST || /\/classroom-drive\//.test(location.pathname);
+const TV_APK = DRV_HOST ? location.origin + '/tv.apk' : 'https://yjb8634-sudo.github.io/class-diary/classnow-tv.apk';
+const DATA_URL = DRV_HOST ? 'https://yjb8634-sudo.github.io/class-diary/data/' : '../data/';
 let DA = null;
 const drvAuth = () => DA || (DA = DRV.adminAuth(DRV_WEB_ID));
 function drvWanted(){ try { return localStorage.getItem('cn_drv') === '1'; } catch (e) { return false; } }
@@ -2934,7 +2936,7 @@ function loadAuto(force){
       .then(() => { AUTO.cm = null; AUTO.at = Date.now(); AUTO.busy = false; if (S.tab === 'time') render(); });
     return;
   }
-  const h = Math.floor(Date.now() / 300e3), get = f => fetch('../data/' + f + '?h=' + h, { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).catch(() => null);
+  const h = Math.floor(Date.now() / 300e3), get = f => fetch(DATA_URL + f + '?h=' + h, { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).catch(() => null);
   Promise.all([get('comci.json'), get('school.json')]).then(([cm, sc]) => { AUTO.cm = cm; AUTO.sc = sc; AUTO.at = Date.now(); AUTO.busy = false; if (S.tab === 'time') render(); });
 }
 function weekDates(){
