@@ -152,6 +152,7 @@ var CNCORE = (function () {
       if (me.kind === 'admin') {
         r.name = p.name || ''; r.grade = p.grade || ''; r.klass = p.klass || '';
         r.email = p.email || ''; r.sheetUrl = env.sheetUrl ? env.sheetUrl() : '';
+        if (env.pingExtra) { try { Object.assign(r, env.pingExtra() || {}); } catch (e2) {} }
       }
       return r;
     }
@@ -159,6 +160,11 @@ var CNCORE = (function () {
     if (op === 'drive' || op === 'tvdoc') {
       if (me.kind !== 'admin') throw new Error('권한이 없어요');
       return op === 'drive' ? env.driveSave(o) : env.tvDoc(o);
+    }
+    /* 판마다 다른 요청(데스크톱판의 TV 짝지음 등)은 env 가 맡습니다 */
+    if (env.extraOp) {
+      var ex = env.extraOp(op, o, me.kind);
+      if (ex !== undefined) return ex;
     }
     var seg = String(o.path || '').split('/').filter(Boolean);
     if (!seg.length || seg.length % 2 && op !== 'list') throw new Error('주소가 올바르지 않아요: ' + o.path);

@@ -146,6 +146,7 @@ nav.tabs button .dot{position:absolute;top:6px;right:8px;min-width:18px;height:1
 #mobModal .bt .pri{background:#2F6B55;border-color:#2F6B55;color:#fff}
 #mobModal .bt .ins{background:#E6B84A;border-color:#E6B84A;color:#2A2108}
 #mobModal .bt [hidden]{display:none}
+.paircode{font-size:64px;font-weight:800;letter-spacing:12px;text-align:center;color:#F2D16B;background:#17251F;border:2px solid #2F6B55;border-radius:16px;padding:18px 10px;margin-top:14px;font-variant-numeric:tabular-nums}
 #mobModal .ckin{display:block;width:100%;box-sizing:border-box;margin:6px 0 10px;padding:11px 12px;border:1.5px solid #B9CFC4;border-radius:10px;font-size:16px;background:#fff;color:#1D2A25}
 #mobModal .ckp{font-size:14px;line-height:1.65;color:#24453A;margin:0 0 10px}
 #mobModal .ckp b{color:#1D2A25}
@@ -2276,6 +2277,10 @@ const gasTvLink = (edit, admin) => new URL('tv.html' + (edit ? '?edit=1' : '') +
 const gasViewLink = () => new URL('tv.html#gv=' + GS2.cnPack({ u: GASCONN.u, v: S.B.viewKey }), location.href).href;
 function gasCard(){
   const I = S.info || {};
+  if (I.desktop) return `<section class="card"><h2>🗄️ 자료 저장 위치 <span class="sub">데스크톱판</span></h2>
+    <p class="lead" style="margin-top:6px">우리 반 자료는 <b>이 컴퓨터 안</b>에만 저장돼요. 서버도 계정도 없어요.</p>
+    <p class="small muted" style="margin-top:8px;word-break:break-all">저장 폴더: ${esc(I.dir || '')}</p>
+    <p class="small muted" style="margin-top:4px">저장소 버전 ${esc(I.ver || '')} · 컴퓨터를 바꾸거나 포맷하기 전에는 [우리 반 백업]으로 파일을 받아 두세요.</p></section>`;
   return `<section class="card"><h2>🗄️ 자료 저장 위치 <span class="sub">각자 설치판</span></h2>
     <p class="lead" style="margin-top:6px">우리 반 자료는 <b>선생님 본인 구글 계정의 시트</b>에만 저장돼요. 제작자 서버는 없고, 운영자 승인도 필요 없어요.</p>
     <div class="row" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
@@ -2400,7 +2405,7 @@ function addPending(kind, files){
   }
   render();
 }
-const DRIVE_VIEW = id => 'https://drive.google.com/file/d/' + encodeURIComponent(id) + '/view';
+const DRIVE_VIEW = id => /^lf[a-z0-9]/.test(id) ? '/files/' + id : 'https://drive.google.com/file/d/' + encodeURIComponent(id) + '/view';   /* lf… = 데스크톱판 PC 안 파일 */
 function fileChips(L){ return (L || []).length ? `<div class="files">${L.map(f => `<a class="fchip" href="${DRIVE_VIEW(f.id)}" target="_blank" rel="noopener">📎<span>${esc(f.name)}</span></a>`).join('')}</div>` : ''; }
 function pendBox(kind, label){
   const L = S.pend[kind] || [];
@@ -2535,7 +2540,28 @@ function fontPickHtml(cur, act){
 }
 
 /* ---------- TV 연결 (탭) ---------- */
+function vTvConnectDesk(B){
+  const I = S.info || {};
+  const addrs = (I.lan && I.lan.length ? I.lan : []).map(ip => `http://${ip}:${I.port}`);
+  const addrHtml = addrs.length
+    ? addrs.map(u => `<b class="addr">${esc(u)}</b>`).join(' <span class="muted">또는</span> ')
+    : '<span class="muted">(이 컴퓨터가 네트워크에 연결되면 주소가 나와요)</span>';
+  return `    <section class="card tvbox"><div class="row"><h2 style="margin:0;flex:1;font-size:21px">📺 TV 연결 <span class="sub">데스크톱판</span></h2>
+      <a class="b" href="${esc(tvUrl())}" target="_blank" rel="noopener">TV 화면 미리 보기</a>
+      <a class="b" href="${esc(tvUrl(true))}" target="_blank" rel="noopener">화면 배치 조정</a></div>
+      <p class="lead" style="margin-top:4px">학급 자료가 이 컴퓨터 안에 있어서, 교실 전자칠판이 <b>같은 학교 네트워크로 이 컴퓨터에 접속</b>해요. 처음 한 번만 연결하면 그다음부터는 TV가 기억해요.</p>
+      <ol class="pairsteps"><li>전자칠판(TV) 브라우저에서 ${addrHtml} 를 엽니다.</li>
+        <li>아래 [연결 숫자 만들기]를 누르고, TV에 <b>숫자 6자리</b>를 넣으면 끝!</li></ol>
+      <div class="row pairrow" style="gap:8px;flex-wrap:wrap"><button class="b y" data-a="pairgo">🔢 연결 숫자 만들기</button></div>
+      <div id="pairCodeBox"></div>
+      <p class="lead" style="margin:10px 0 0">전자칠판이 이 컴퓨터 화면을 그대로 보여 주는 교실(HDMI 연결)이라면, 오른쪽 아래 트레이의 클래스 나우 아이콘 → <b>[TV 화면 열기]</b>로 전체 화면을 띄우면 돼요.</p>
+      <p class="small muted" style="margin:8px 0 0">전자칠판에서 주소가 안 열리면 학교 네트워크가 기기끼리 통신을 막아 둔 경우예요. 그때는 HDMI 방식으로 써 주세요.</p></section>
+  <section class="card"><h2>TV 주소 바꾸기</h2>
+    <p class="lead">TV 연결이 학생들에게 퍼졌을 때 새 열쇠로 바꿉니다. 바꾼 뒤 전자칠판에서 한 번 다시 연결해 주세요. (공지 · 명단 등 내용은 그대로, 조사 응답 · 건의는 새로 시작)</p>
+    <button class="b r" data-a="rekey">새 TV 열쇠 만들기</button></section>`;
+}
 function vTvConnectGas(B){
+  if (S.info && S.info.desktop) return vTvConnectDesk(B);
   const viewbox = `<div class="viewbox"><div class="row"><b style="flex:1">📱 학생 휴대폰용 주소 <span class="small muted" style="font-weight:400">단톡방 공유용 · 보기만 됨 · 번호만 보여요</span></b>
         ${B.viewKey ? `<button class="b sm" data-a="viewqr">QR 보기</button><button class="b sm" data-a="copyview">주소 복사</button><button class="b sm" data-a="viewnew">새 주소로 바꾸기</button><button class="b sm r" data-a="viewoff">끄기</button>` : `<button class="b sm y" data-a="viewmake">학생용 주소 만들기</button>`}</div>
         ${B.viewKey ? `<input class="in" readonly value="${esc(viewUrl())}" style="width:100%;margin-top:8px" id="viewUrlIn">
@@ -4027,7 +4053,9 @@ document.addEventListener('click', async ev => {
     case 'bellgo': S.bellOpen = false; S.tab = t.dataset.v; try { localStorage.setItem('cr_tab2', S.tab); } catch (e) {} S.edit = ''; render(); window.scrollTo(0, 0); return;
     case 'reloadapp': location.reload(); return;
     case 'updhist': updModal('history'); return;
-    case 'mobile': mobModal('admin'); return;
+    case 'mobile':
+      if (S.gas && S.info && S.info.desktop){ toast('휴대폰에서 쓰기는 구글 드라이브 동기화 기능과 함께 곧 추가돼요.'); return; }
+      mobModal('admin'); return;
     case 'viewqr': mobModal('view'); return;
     case 'copyview': { const i = $('viewUrlIn'); i.select(); try { await navigator.clipboard.writeText(i.value); } catch (e) { document.execCommand('copy'); } toast('학생용 주소를 복사했어요. 단톡방에 붙여 넣으세요.'); return; }
     case 'viewmake': case 'viewnew': {
@@ -4083,6 +4111,14 @@ document.addEventListener('click', async ev => {
       document.querySelectorAll('[data-tts]').forEach(el => { const [d, n] = el.dataset.tts.split('|'), v = el.value.trim().slice(0, 12); if (v) (T[d] = T[d] || {})[n] = v; });
       document.querySelectorAll('[data-ttt]').forEach(el => { const [d, n] = el.dataset.ttt.split('|'), v = el.value.trim().slice(0, 6); if (v) (TC[d] = TC[d] || {})[n] = v; });
       return save({ timetable: T, teachers: TC }, '시간표를 저장했어요.');
+    }
+    case 'pairgo': {
+      try {
+        const r = await S.fb.gasOne({ op: 'pairstart' });
+        const el = $('pairCodeBox');
+        if (el) el.innerHTML = `<div class="paircode">${esc(r.code)}</div><p class="lead" style="text-align:center;margin:4px 0 0">10분 안에 TV에 넣어 주세요. 연결되면 TV에 우리 반 화면이 떠요.</p>`;
+      } catch (e) { fail(e); }
+      return;
     }
     case 'copytv': { const i = $('tvUrlIn'), v = i ? i.value : tvUrl(); try { await navigator.clipboard.writeText(v); } catch (e) { if (i){ i.select(); document.execCommand('copy'); } } toast(S.gas ? 'TV 연결 링크를 복사했어요. 나에게 보내기로 TV에서 열어 주세요.' : 'TV 주소를 복사했어요.'); return; }
     case 'unpend': S.pend[t.dataset.k].splice(+t.dataset.i, 1); render(); return;

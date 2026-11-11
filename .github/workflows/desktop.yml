@@ -1,0 +1,45 @@
+# 클래스 나우 데스크톱(Windows 설치 파일)을 만들어 GitHub Releases 에 올립니다.
+# [Actions] 탭에서 [Run workflow] 로 실행하세요. desktop/package.json 의 version 을 올리고 돌리면 새 버전이 됩니다.
+# 설치한 앱은 Releases 를 보고 스스로 업데이트해요.
+
+name: 데스크톱 앱 만들기
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-app
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 준비 (화면 복사 + 패키지 설치)
+        working-directory: desktop
+        run: |
+          node mkscreens.js
+          npm install --no-audit --no-fund
+
+      - name: 설치 파일 만들어 올리기
+        working-directory: desktop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --win nsis --publish always
+
+      - name: 결과 알리기
+        shell: bash
+        working-directory: desktop
+        run: |
+          V=$(node -p "require('./package.json').version")
+          echo "::notice title=클래스 나우 데스크톱::v$V 설치 파일을 Releases 에 올렸어요 → https://github.com/yjb8634-sudo/class-diary/releases/latest"

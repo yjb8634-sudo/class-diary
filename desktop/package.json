@@ -1,0 +1,52 @@
+{
+  "name": "classnow-desktop",
+  "productName": "ClassNow",
+  "version": "0.1.0",
+  "description": "클래스 나우 데스크톱 — 교실 TV 학급 게시판 (자료는 선생님 PC 안에만 저장)",
+  "main": "main.js",
+  "author": "유준배",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "node mkscreens.js && electron .",
+    "dist": "node mkscreens.js && electron-builder --win nsis --publish never",
+    "release": "node mkscreens.js && electron-builder --win nsis --publish always"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.0"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "kr.classnow.desktop",
+    "productName": "ClassNow",
+    "icon": "build/icon.png",
+    "files": [
+      "main.js",
+      "server.js",
+      "store.js",
+      "core.js",
+      "screens/**"
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "shortcutName": "클래스 나우",
+      "uninstallDisplayName": "클래스 나우",
+      "artifactName": "ClassNow-Setup-${version}.${ext}",
+      "deleteAppDataOnUninstall": false
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "yjb8634-sudo",
+      "repo": "class-diary",
+      "releaseType": "release"
+    }
+  }
+}

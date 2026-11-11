@@ -8,12 +8,17 @@ export function cnPack(obj) {
   const b = btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
   return 'CN1.' + b.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
+/* 저장소 주소로 허용하는 곳: 앱스 스크립트, 또는 같은 네트워크의 교탁 PC(데스크톱판) */
+export function cnOkUrl(u) {
+  if (/^https:\/\/script\.google(usercontent)?\.com\//.test(u)) return true;
+  return /^http:\/\/(127\.0\.0\.1|localhost|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})(:\d+)?\//.test(u);
+}
 export function cnParse(s) {
   const m = String(s || '').trim().match(/CN1\.([A-Za-z0-9_-]{10,})/);
   if (!m) return null;
   try {
     const j = JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g, '+').replace(/_/g, '/')))));
-    if (!j || !/^https:\/\/script\.google(usercontent)?\.com\//.test(String(j.u || ''))) return null;
+    if (!j || !cnOkUrl(String(j.u || ''))) return null;
     return j;
   } catch (e) { return null; }
 }
